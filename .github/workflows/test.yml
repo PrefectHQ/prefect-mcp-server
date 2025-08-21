@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.13"]
       fail-fast: false
     timeout-minutes: 10
 
@@ -46,38 +46,25 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
-
-      - name: Set up Python
-        run: uv python install ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: uv sync --frozen
+          python-version: ${{ matrix.python-version }}
 
       - name: Run tests
         run: uv run pytest tests -v
 
   lint:
-    name: "Lint & Type Check"
+    timeout-minutes: 2
+
     runs-on: ubuntu-latest
-    timeout-minutes: 5
 
     steps:
       - uses: actions/checkout@v4
-
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
-      - name: Set up Python
-        run: uv python install 3.12
-
-      - name: Install dependencies
-        run: uv sync --frozen
-
-      - name: Run ruff check
-        run: uv run ruff check
-
-      - name: Run ruff format check
-        run: uv run ruff format --check
+      - name: Run pre-commit
+        run: uv run pre-commit run --all-files
+        env:
+          SKIP: no-commit-to-branch
