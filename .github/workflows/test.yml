@@ -15,6 +15,12 @@ on:
       - ".github/workflows/**"
 
   pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "uv.lock"
+      - "pyproject.toml"
+      - ".github/workflows/**"
 
   workflow_dispatch:
 
