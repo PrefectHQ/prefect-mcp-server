@@ -1,13 +1,12 @@
 """Test configuration and fixtures for Prefect MCP Server."""
 
-from typing import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Generator
 from uuid import UUID
 
 import pytest
 from fastmcp import FastMCP
 from prefect import flow
 from prefect.client.orchestration import PrefectClient, get_client
-from prefect.client.schemas.objects import Flow
 from prefect.testing.utilities import prefect_test_harness
 
 from prefect_mcp_server.server import mcp
@@ -36,11 +35,10 @@ def prefect_mcp_server() -> FastMCP:
 @pytest.fixture
 async def test_flow(prefect_client: PrefectClient) -> UUID:
     """Create a test flow and return its ID."""
+
     @flow(name="test-flow", description="A test flow for MCP tests")
     def my_test_flow(x: int = 1, y: str = "hello") -> str:
         return f"{y} {x}"
-    
+
     flow_id = await prefect_client.create_flow(my_test_flow)
     return flow_id
-
-

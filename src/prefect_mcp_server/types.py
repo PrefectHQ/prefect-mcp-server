@@ -1,11 +1,13 @@
 """Type definitions for Prefect MCP server."""
 
-from typing import Any, TypedDict
+from typing import Any
+
+from typing_extensions import TypedDict
 
 
 class DeploymentInfo(TypedDict):
     """Information about a single deployment."""
-    
+
     id: str
     name: str
     description: str | None
@@ -19,7 +21,7 @@ class DeploymentInfo(TypedDict):
 
 class DeploymentsResult(TypedDict):
     """Result of listing deployments."""
-    
+
     success: bool
     count: int
     deployments: list[DeploymentInfo]
@@ -28,7 +30,7 @@ class DeploymentsResult(TypedDict):
 
 class EventInfo(TypedDict):
     """Simplified event information for LLM consumption."""
-    
+
     id: str
     event_type: str
     occurred: str
@@ -45,7 +47,7 @@ class EventInfo(TypedDict):
 
 class EventsResult(TypedDict):
     """Result of reading events."""
-    
+
     success: bool
     count: int
     events: list[EventInfo]  # Structured event objects for LLM consumption
@@ -55,7 +57,7 @@ class EventsResult(TypedDict):
 
 class FlowRunInfo(TypedDict):
     """Information about a flow run."""
-    
+
     id: str
     name: str | None
     deployment_id: str | None
@@ -68,7 +70,7 @@ class FlowRunInfo(TypedDict):
 
 class FlowRunStats(TypedDict):
     """Statistics about flow runs."""
-    
+
     total: int
     failed: int
     cancelled: int
@@ -79,7 +81,7 @@ class FlowRunStats(TypedDict):
 
 class WorkPoolInfo(TypedDict):
     """Information about a work pool."""
-    
+
     name: str
     type: str
     is_paused: bool
@@ -88,7 +90,7 @@ class WorkPoolInfo(TypedDict):
 
 class DashboardResult(TypedDict):
     """Dashboard overview of Prefect instance."""
-    
+
     success: bool
     flow_runs: FlowRunStats
     active_work_pools: list[WorkPoolInfo]
@@ -97,7 +99,7 @@ class DashboardResult(TypedDict):
 
 class RunDeploymentResult(TypedDict):
     """Result of running a deployment."""
-    
+
     success: bool
     flow_run: FlowRunInfo | None
     deployment: dict[str, Any] | None

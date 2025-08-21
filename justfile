@@ -28,6 +28,10 @@ setup: check-uv
 test:
     uv run --frozen pytest -xvs tests
 
+# Run linting
+lint:
+    uv run --frozen ruff check --fix
+
 # Run ty type checker on all files
 typecheck:
     uv run --frozen ty check
