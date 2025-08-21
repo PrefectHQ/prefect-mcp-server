@@ -5,23 +5,24 @@ a [FastMCP](https://github.com/jlowin/fastmcp) server for interacting with [`pre
 ## quick start
 
 ```bash
-# from github
-uvx prefect-mcp-server@git+https://github.com/prefecthq/prefect-mcp-server.git
+# add to claude code
+claude mcp add prefect \
+  -e PREFECT_API_URL=your-url \
+  -e PREFECT_API_KEY=your-key \
+  -- uvx prefect-mcp-server@git+https://github.com/prefecthq/prefect-mcp-server.git
 ```
 
-```bash
-# clone and install
-gh repo clone prefecthq/prefect-mcp-server && cd prefect-mcp-server
-uv run prefect-mcp-server
-```
+> [!NOTE]
+> `PREFECT_API_KEY` is only relevant when using Prefect Cloud. You may want `PREFECT_API_AUTH_STRING` for an open source server with [basic auth configured](https://docs.prefect.io/v3/advanced/security-settings#basic-authentication).
 
 ## features
 
-**resources** - read deployment and event data
+**resources** - read-only data snapshots
+- `prefect://dashboard` - get dashboard overview with flow run stats and work pool status
 - `prefect://deployments/list` - list all deployments with their details
-- `prefect://events/recent` - get recent events from the prefect instance
 
-**tools** - trigger deployments
+**tools** - actions and queries
+- `read_events` - query and filter events with time ranges and type prefixes
 - `run_deployment_by_name` - run a deployment by flow/deployment name
 
 ## installation
@@ -29,10 +30,6 @@ uv run prefect-mcp-server
 ```bash
 # from github
 uv add prefect-mcp-server@git+https://github.com/prefecthq/prefect-mcp-server.git
-
-# or from source
-gh repo clone prefecthq/prefect-mcp-server && cd prefect-mcp-server
-uv sync
 ```
 
 ## configuration
@@ -56,49 +53,7 @@ export PREFECT_API_KEY="your-api-key"
 export PREFECT_API_URL="http://localhost:4200/api"
 ```
 
-## usage
-
-### with claude code
-
-```bash
-# add to claude code
-claude mcp add prefect \
-  -e PREFECT_API_URL=your-url \
-  -e PREFECT_API_KEY=your-key \
-  -- uvx prefect-mcp-server@git+https://github.com/prefecthq/prefect-mcp-server.git
-```
-
-### standalone server
-
-```bash
-# as a python module
-uv run prefect-mcp-server
-
-# or using fastmcp cli
-uv run fastmcp run src/prefect_mcp_server/server.py
-```
-
-### programmatic usage
-
-```python
-from fastmcp import Client
-
-async def main():
-    async with Client("prefect-mcp-server") as client:
-        # list deployments
-        deployments = await client.read_resource("prefect://deployments/list")
-        
-        # run a deployment by name
-        result = await client.call_tool(
-            "run_deployment_by_name",
-            {"flow_name": "my-flow", "deployment_name": "production"}
-        )
-        
-        # read events
-        events = await client.read_resource("prefect://events/recent")
-```
-
-## examples
+## sample client usage
 
 ```python
 # list deployments
@@ -115,8 +70,18 @@ result = await client.call_tool(
     }
 )
 
-# read recent events
-events = await client.read_resource("prefect://events/recent")
+# get dashboard overview
+dashboard = await client.read_resource("prefect://dashboard")
+# returns: {"success": true, "flow_runs": {...}, "active_work_pools": [...]}
+
+# query events with filtering
+events = await client.call_tool(
+    "read_events",
+    {
+        "event_type_prefix": "prefect.flow-run",
+        "limit": 10
+    }
+)
 # returns: {"success": true, "count": 10, "events": [...], "total": 50}
 ```
 
