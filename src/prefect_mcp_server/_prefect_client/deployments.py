@@ -3,6 +3,7 @@
 from typing import Any
 from uuid import UUID
 
+import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from prefect.client.orchestration import get_client
 
 from prefect_mcp_server.settings import settings

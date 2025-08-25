@@ -2,6 +2,7 @@
 
 from typing import Annotated, Any
 
+import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from fastmcp import FastMCP
 from pydantic import Field
 
