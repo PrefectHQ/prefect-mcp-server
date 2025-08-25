@@ -41,7 +41,8 @@ async def read_events(
     event_type_prefix: Annotated[
         str | None,
         Field(
-            description="Filter events by type prefix (e.g., 'prefect.flow-run', 'prefect.deployment')"
+            description="Filter events by type prefix",
+            examples=["prefect.flow-run", "prefect.deployment", "prefect.task-run"],
         ),
     ] = None,
     limit: Annotated[
@@ -50,13 +51,15 @@ async def read_events(
     occurred_after: Annotated[
         str | None,
         Field(
-            description="ISO 8601 timestamp to filter events after (e.g., '2024-01-01T00:00:00Z')"
+            description="ISO 8601 timestamp to filter events after",
+            examples=["2024-01-01T00:00:00Z", "2024-12-25T10:30:00Z"],
         ),
     ] = None,
     occurred_before: Annotated[
         str | None,
         Field(
-            description="ISO 8601 timestamp to filter events before (e.g., '2024-01-02T00:00:00Z')"
+            description="ISO 8601 timestamp to filter events before",
+            examples=["2024-01-02T00:00:00Z", "2024-12-26T10:30:00Z"],
         ),
     ] = None,
 ) -> EventsResult:
@@ -84,17 +87,35 @@ async def read_events(
 
 @mcp.tool
 async def run_deployment_by_name(
-    flow_name: Annotated[str, Field(description="The name of the flow")],
-    deployment_name: Annotated[str, Field(description="The name of the deployment")],
+    flow_name: Annotated[
+        str, Field(description="The name of the flow", examples=["my-flow", "etl-flow"])
+    ],
+    deployment_name: Annotated[
+        str,
+        Field(
+            description="The name of the deployment", examples=["production", "daily"]
+        ),
+    ],
     parameters: Annotated[
         dict[str, Any] | None,
-        Field(description="Optional parameter overrides for the flow run"),
+        Field(
+            description="Optional parameter overrides for the flow run",
+            examples=[{"date": "2024-01-01", "user_id": 123}, {"env": "prod"}],
+        ),
     ] = None,
     name: Annotated[
-        str | None, Field(description="Optional custom name for the flow run")
+        str | None,
+        Field(
+            description="Optional custom name for the flow run",
+            examples=["daily-etl-2024-01-01", "manual-trigger"],
+        ),
     ] = None,
     tags: Annotated[
-        list[str] | None, Field(description="Optional tags to add to the flow run")
+        list[str] | None,
+        Field(
+            description="Optional tags to add to the flow run",
+            examples=[["production", "daily"], ["manual", "test"]],
+        ),
     ] = None,
 ) -> RunDeploymentResult:
     """Run a deployment by its flow and deployment names.
