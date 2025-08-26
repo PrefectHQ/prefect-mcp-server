@@ -1,9 +1,12 @@
 """Flow run operations for the Prefect MCP server."""
 
 from typing import Any
+from uuid import UUID
 
 import prefect.main  # noqa: F401
 from prefect import get_client
+from prefect.client.schemas.filters import FlowRunFilter, FlowRunFilterName
+from prefect.client.schemas.sorting import FlowRunSort
 
 # Log level mapping from Python logging levels to readable names
 LOG_LEVEL_NAMES = {
@@ -20,6 +23,50 @@ def get_log_level_name(level: int | None) -> str | None:
     if level is None:
         return None
     return LOG_LEVEL_NAMES.get(level, f"LEVEL_{level}")
+
+
+def is_valid_uuid(value: str) -> bool:
+    """Check if a string is a valid UUID."""
+    try:
+        UUID(value)
+        return True
+    except (ValueError, AttributeError):
+        return False
+
+
+async def search_flow_runs_by_name(name: str, limit: int = 10) -> list[dict[str, Any]]:
+    """Search for flow runs by name.
+
+    Args:
+        name: The flow run name to search for
+        limit: Maximum number of results to return
+
+    Returns:
+        List of matching flow runs with basic info
+    """
+    async with get_client() as client:
+        # Create filter for exact name match
+        flow_run_filter = FlowRunFilter(name=FlowRunFilterName(like_=name))
+
+        # Get matching flow runs, sorted by start time (newest first)
+        flow_runs = await client.read_flow_runs(
+            flow_run_filter=flow_run_filter,
+            sort=FlowRunSort.START_TIME_DESC,
+            limit=limit,
+        )
+
+        # Return simplified info for each match
+        return [
+            {
+                "id": str(fr.id),
+                "name": fr.name,
+                "state_name": fr.state_name,
+                "state_type": fr.state_type.value if fr.state_type else None,
+                "created": fr.created.isoformat() if fr.created else None,
+                "flow_name": fr.labels.get("prefect.flow.name") if fr.labels else None,
+            }
+            for fr in flow_runs
+        ]
 
 
 async def get_flow_run(

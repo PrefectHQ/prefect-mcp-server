@@ -1,9 +1,10 @@
 """Prefect MCP Server - Clean implementation following FastMCP patterns."""
 
-from typing import Annotated, Any
+from dataclasses import dataclass
+from typing import Annotated, Any, Literal
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
-from fastmcp import FastMCP
+from fastmcp import Context, FastMCP
 from pydantic import Field
 
 from prefect_mcp_server import _prefect_client
@@ -110,11 +111,16 @@ async def read_events(
 
 @mcp.tool
 async def get_flow_run(
-    flow_run_id: Annotated[
+    ctx: Context,
+    flow_run_identifier: Annotated[
         str,
         Field(
-            description="The ID of the flow run to retrieve",
-            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
+            description="The flow run ID (UUID) or name to retrieve",
+            examples=[
+                "068adce4-aeec-7e9b-8000-97b7feeb70fa",
+                "dazzling-jackal",
+                "my-scheduled-run",
+            ],
         ),
     ],
     include_logs: Annotated[
@@ -132,17 +138,85 @@ async def get_flow_run(
         ),
     ] = 100,
 ) -> FlowRunResult:
-    """Get detailed information about a flow run.
+    """Get detailed information about a flow run by ID or name.
 
-    Retrieves comprehensive flow run details including state, parameters,
-    timestamps, and optionally the execution logs with readable log levels.
+    Accepts either a flow run UUID or name. If multiple flow runs have the same name,
+    will prompt you to select which one.
 
     Examples:
-        - Get flow run details: get_flow_run("068adce4-aeec-7e9b-8000-97b7feeb70fa")
-        - With logs: get_flow_run("068adce4-aeec-7e9b-8000-97b7feeb70fa", include_logs=True)
-        - With limited logs: get_flow_run("068adce4-aeec-7e9b-8000-97b7feeb70fa", include_logs=True, log_limit=50)
+        - By UUID: get_flow_run("068adce4-aeec-7e9b-8000-97b7feeb70fa")
+        - By name: get_flow_run("my-flow-run-name")
+        - With logs: get_flow_run("my-flow-run", include_logs=True)
     """
-    return await _prefect_client.get_flow_run(flow_run_id, include_logs, log_limit)
+    # Check if it's a valid UUID
+    if _prefect_client.is_valid_uuid(flow_run_identifier):
+        return await _prefect_client.get_flow_run(
+            flow_run_identifier, include_logs, log_limit
+        )
+
+    # Search by name
+    matching_runs = await _prefect_client.search_flow_runs_by_name(flow_run_identifier)
+
+    if len(matching_runs) == 0:
+        return {
+            "success": False,
+            "flow_run": None,
+            "error": f"No flow runs found with name '{flow_run_identifier}'",
+        }
+
+    if len(matching_runs) == 1:
+        # Exactly one match - use it directly
+        return await _prefect_client.get_flow_run(
+            matching_runs[0]["id"], include_logs, log_limit
+        )
+
+    # Multiple matches - need to elicit which one
+    # Create a dynamic dataclass with the specific flow run IDs as options
+    flow_run_choices = {
+        fr["id"]: f"{fr['name']} ({fr['state_name']}, created {fr['created'][:19]})"
+        for fr in matching_runs
+    }
+
+    @dataclass
+    class FlowRunChoice:
+        """Which flow run to inspect?"""
+
+        flow_run_id: Literal[tuple(flow_run_choices.keys())]  # type: ignore
+
+    # Build a helpful message showing the options
+    options_msg = (
+        f"Found {len(matching_runs)} flow runs named '{flow_run_identifier}':\n\n"
+    )
+    for fr in matching_runs:
+        flow_name = f" - Flow: {fr['flow_name']}" if fr.get("flow_name") else ""
+        options_msg += (
+            f"• {fr['name']} (ID: {fr['id'][:8]}...)\n"
+            f"  State: {fr['state_name']}, Created: {fr['created'][:19]}{flow_name}\n\n"
+        )
+    options_msg += "Which one would you like to inspect?"
+
+    # Request user selection
+    result = await ctx.elicit(
+        message=options_msg,
+        response_type=FlowRunChoice,
+    )
+
+    if result.action == "accept":
+        return await _prefect_client.get_flow_run(
+            result.data.flow_run_id, include_logs, log_limit
+        )
+    elif result.action == "decline":
+        return {
+            "success": False,
+            "flow_run": None,
+            "error": "Flow run selection declined",
+        }
+    else:  # cancel
+        return {
+            "success": False,
+            "flow_run": None,
+            "error": "Flow run selection cancelled",
+        }
 
 
 @mcp.tool
