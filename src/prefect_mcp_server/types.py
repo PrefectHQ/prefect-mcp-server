@@ -110,6 +110,27 @@ class RunDeploymentResult(TypedDict):
     error_type: str | None
 
 
+class LogEntry(TypedDict):
+    """A single log entry from a flow or task run."""
+
+    timestamp: str | None
+    level: int
+    level_name: str
+    message: str
+    name: str
+
+
+class LogsResult(TypedDict):
+    """Result of fetching logs for a flow run."""
+
+    success: bool
+    flow_run_id: str
+    logs: list[LogEntry]
+    truncated: bool
+    limit: int
+    error: str | None
+
+
 class FlowRunDetail(TypedDict):
     """Detailed flow run information."""
 

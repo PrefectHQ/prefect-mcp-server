@@ -13,6 +13,7 @@ from prefect_mcp_server.types import (
     DeploymentsResult,
     EventsResult,
     FlowRunResult,
+    LogsResult,
     RunDeploymentResult,
     TaskRunResult,
 )
@@ -75,18 +76,16 @@ async def get_flow_run(flow_run_id: str) -> FlowRunResult:
 
 
 @mcp.resource("prefect://flow-runs/{flow_run_id}/logs")
-async def get_flow_run_with_logs(flow_run_id: str) -> FlowRunResult:
-    """Get detailed information about a flow run including execution logs.
+async def get_flow_run_logs(flow_run_id: str) -> LogsResult:
+    """Get execution logs for a flow run.
 
-    Retrieves comprehensive flow run details including state, parameters,
-    timestamps, and the execution logs with readable log levels (up to 100 entries).
+    Retrieves up to 100 log entries from the flow run execution,
+    including timestamps, log levels, and messages.
 
     Examples:
-        - With logs: prefect://flow-runs/068adce4-aeec-7e9b-8000-97b7feeb70fa/logs
+        - Get logs: prefect://flow-runs/068adce4-aeec-7e9b-8000-97b7feeb70fa/logs
     """
-    return await _prefect_client.get_flow_run(
-        flow_run_id, include_logs=True, log_limit=100
-    )
+    return await _prefect_client.get_flow_run_logs(flow_run_id, limit=100)
 
 
 @mcp.resource("prefect://deployments/{deployment_id}")

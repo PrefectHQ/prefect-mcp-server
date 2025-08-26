@@ -1,9 +1,13 @@
 """Flow run operations for the Prefect MCP server."""
 
 from typing import Any
+from uuid import UUID
 
 import prefect.main  # noqa: F401
 from prefect import get_client
+from prefect.client.schemas.filters import LogFilter, LogFilterFlowRunId
+
+from prefect_mcp_server.types import LogEntry, LogsResult
 
 # Log level mapping from Python logging levels to readable names
 LOG_LEVEL_NAMES = {
@@ -157,4 +161,62 @@ async def get_flow_run(
                 "success": False,
                 "flow_run": None,
                 "error": str(e),
+            }
+
+
+async def get_flow_run_logs(flow_run_id: str, limit: int = 100) -> LogsResult:
+    """Get only the logs for a flow run.
+
+    Args:
+        flow_run_id: The ID of the flow run
+        limit: Maximum number of log entries to return
+
+    Returns:
+        LogsResult with just the logs, no flow run details
+    """
+    async with get_client() as client:
+        try:
+            # Fetch logs directly
+            log_filter = LogFilter(
+                flow_run_id=LogFilterFlowRunId(any_=[UUID(flow_run_id)])
+            )
+
+            logs = await client.read_logs(
+                log_filter=log_filter,
+                limit=limit,
+                sort="TIMESTAMP_ASC",
+            )
+
+            # Convert to LogEntry format
+            log_entries: list[LogEntry] = []
+            for log in logs:
+                log_entries.append(
+                    {
+                        "timestamp": log.timestamp.isoformat()
+                        if log.timestamp
+                        else None,
+                        "level": log.level,
+                        "level_name": get_log_level_name(log.level),
+                        "message": log.message,
+                        "name": log.name,
+                    }
+                )
+
+            return {
+                "success": True,
+                "flow_run_id": flow_run_id,
+                "logs": log_entries,
+                "truncated": len(log_entries) >= limit,
+                "limit": limit,
+                "error": None,
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "flow_run_id": flow_run_id,
+                "logs": [],
+                "truncated": False,
+                "limit": limit,
+                "error": f"Failed to fetch logs: {str(e)}",
             }
