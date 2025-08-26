@@ -156,3 +156,6 @@ class FlowRunResult(TypedDict, total=False):
     log_summary: LogSummary | None  # Only present if logs were truncated
     error: str | None
     log_error: str | None  # Only present if log fetch failed
+    multiple_matches: (
+        list[dict[str, Any]] | None
+    )  # Present when multiple flow runs have the same name

@@ -1,7 +1,6 @@
 """Prefect MCP Server - Clean implementation following FastMCP patterns."""
 
-from dataclasses import dataclass
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from fastmcp import Context, FastMCP
@@ -170,53 +169,37 @@ async def get_flow_run(
             matching_runs[0]["id"], include_logs, log_limit
         )
 
-    # Multiple matches - need to elicit which one
-    # Create a dynamic dataclass with the specific flow run IDs as options
-    flow_run_choices = {
-        fr["id"]: f"{fr['name']} ({fr['state_name']}, created {fr['created'][:19]})"
-        for fr in matching_runs
-    }
-
-    @dataclass
-    class FlowRunChoice:
-        """Which flow run to inspect?"""
-
-        flow_run_id: Literal[tuple(flow_run_choices.keys())]  # type: ignore
-
-    # Build a helpful message showing the options
-    options_msg = (
-        f"Found {len(matching_runs)} flow runs named '{flow_run_identifier}':\n\n"
-    )
+    # Multiple matches - return information about all matches
+    # User can then call again with a specific UUID
+    matches_info = []
     for fr in matching_runs:
-        flow_name = f" - Flow: {fr['flow_name']}" if fr.get("flow_name") else ""
-        options_msg += (
-            f"• {fr['name']} (ID: {fr['id'][:8]}...)\n"
-            f"  State: {fr['state_name']}, Created: {fr['created'][:19]}{flow_name}\n\n"
+        matches_info.append(
+            {
+                "id": fr["id"],
+                "name": fr["name"],
+                "state": fr["state_name"],
+                "created": fr["created"][:19],
+                "flow_name": fr.get("flow_name"),
+            }
         )
-    options_msg += "Which one would you like to inspect?"
 
-    # Request user selection
-    result = await ctx.elicit(
-        message=options_msg,
-        response_type=FlowRunChoice,
+    # Sort by created date, most recent first
+    matches_info.sort(key=lambda x: x["created"], reverse=True)
+
+    error_msg = (
+        f"Found {len(matching_runs)} flow runs named '{flow_run_identifier}'. "
+        f"Please specify the exact UUID:\n\n"
     )
+    for match in matches_info:
+        flow_info = f" (Flow: {match['flow_name']})" if match["flow_name"] else ""
+        error_msg += f"• {match['id']}\n  State: {match['state']}, Created: {match['created']}{flow_info}\n"
 
-    if result.action == "accept":
-        return await _prefect_client.get_flow_run(
-            result.data.flow_run_id, include_logs, log_limit
-        )
-    elif result.action == "decline":
-        return {
-            "success": False,
-            "flow_run": None,
-            "error": "Flow run selection declined",
-        }
-    else:  # cancel
-        return {
-            "success": False,
-            "flow_run": None,
-            "error": "Flow run selection cancelled",
-        }
+    return {
+        "success": False,
+        "flow_run": None,
+        "error": error_msg,
+        "multiple_matches": matches_info,
+    }
 
 
 @mcp.tool
