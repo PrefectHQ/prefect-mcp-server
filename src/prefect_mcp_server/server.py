@@ -17,6 +17,27 @@ from prefect_mcp_server.types import (
 mcp = FastMCP("Prefect MCP Server")
 
 
+# Prompts - guidance for LLM interactions
+@mcp.prompt
+def debug_flow_run(
+    flow_run_id: str | None = None,
+    deployment_name: str | None = None,
+    work_pool_name: str | None = None,
+) -> str:
+    """Generate debugging guidance for troubleshooting Prefect flow runs.
+
+    Provides structured steps for investigating flow run failures,
+    deployment issues, and infrastructure problems.
+    """
+    from prefect_mcp_server._prefect_client.prompts import create_debug_prompt
+
+    return create_debug_prompt(
+        flow_run_id=flow_run_id,
+        deployment_name=deployment_name,
+        work_pool_name=work_pool_name,
+    )
+
+
 # Resources - read-only operations
 @mcp.resource("prefect://dashboard")
 async def get_dashboard() -> DashboardResult:
