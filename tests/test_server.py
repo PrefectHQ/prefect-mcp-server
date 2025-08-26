@@ -17,14 +17,23 @@ async def test_server_has_expected_capabilities(prefect_mcp_server: FastMCP) -> 
         assert "prefect://dashboard" in resource_uris
         assert len(resources) == 2
 
+        # Check resource templates separately
+        templates = await client.list_resource_templates()
+        template_uris = [str(t.uriTemplate) for t in templates]
+        assert "prefect://flow-runs/{flow_run_id}" in template_uris
+        assert "prefect://deployments/{deployment_id}" in template_uris
+        assert "prefect://task-runs/{task_run_id}" in template_uris
+        assert len(templates) == 3
+
         tools = await client.list_tools()
         tool_names = [t.name for t in tools]
         assert "run_deployment_by_name" in tool_names
         assert "read_events" in tool_names
-        assert "get_flow_run" in tool_names
-        assert "get_deployment" in tool_names
-        assert "get_task_run" in tool_names
-        assert len(tools) == 5
+        # These are now resource templates, not tools
+        assert "get_flow_run" not in tool_names
+        assert "get_deployment" not in tool_names
+        assert "get_task_run" not in tool_names
+        assert len(tools) == 2
 
 
 async def test_list_deployments_with_test_data(

@@ -60,6 +60,63 @@ async def list_deployments() -> DeploymentsResult:
     return await _prefect_client.fetch_deployments()
 
 
+# Resources - read-only operations (continued)
+@mcp.resource("prefect://flow-runs/{flow_run_id}")
+async def get_flow_run(
+    flow_run_id: str,
+    include_logs: bool = False,
+    log_limit: int = 100,
+) -> FlowRunResult:
+    """Get detailed information about a flow run.
+
+    Retrieves comprehensive flow run details including state, parameters,
+    timestamps, and optionally the execution logs with readable log levels.
+
+    Query parameters:
+        - include_logs: Whether to include execution logs (default: false)
+        - log_limit: Maximum number of log entries to return (default: 100, max: 1000)
+
+    Examples:
+        - Basic: prefect://flow-runs/068adce4-aeec-7e9b-8000-97b7feeb70fa
+        - With logs: prefect://flow-runs/068adce4-aeec-7e9b-8000-97b7feeb70fa?include_logs=true
+        - Limited logs: prefect://flow-runs/068adce4-aeec-7e9b-8000-97b7feeb70fa?include_logs=true&log_limit=50
+    """
+    # Validate log_limit range
+    if log_limit < 1 or log_limit > 1000:
+        log_limit = min(max(log_limit, 1), 1000)
+
+    return await _prefect_client.get_flow_run(flow_run_id, include_logs, log_limit)
+
+
+@mcp.resource("prefect://deployments/{deployment_id}")
+async def get_deployment(deployment_id: str) -> DeploymentResult:
+    """Get detailed information about a deployment.
+
+    Retrieves comprehensive deployment details including parameters,
+    infrastructure overrides, schedules, and recent flow run history.
+    Essential for debugging parameter mismatches and configuration issues.
+
+    Examples:
+        - Get deployment details: prefect://deployments/068adce4-aeec-7e9b-8000-97b7feeb70fa
+    """
+    return await _prefect_client.get_deployment(deployment_id)
+
+
+@mcp.resource("prefect://task-runs/{task_run_id}")
+async def get_task_run(task_run_id: str) -> TaskRunResult:
+    """Get detailed information about a specific task run.
+
+    Retrieves comprehensive task run details including state, cache information,
+    and retry counts. Note that 'task_inputs' contains dependency tracking
+    information (upstream task relationships), not the actual parameter values
+    passed to the task.
+
+    Examples:
+        - Get task run details: prefect://task-runs/068adce4-aeec-7e9b-8000-97b7feeb70fa
+    """
+    return await _prefect_client.get_task_run(task_run_id)
+
+
 # Tools - actions that modify state
 @mcp.tool
 async def read_events(
@@ -111,43 +168,6 @@ async def read_events(
 
 
 @mcp.tool
-async def get_flow_run(
-    flow_run_id: Annotated[
-        str,
-        Field(
-            description="The ID of the flow run to retrieve",
-            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
-        ),
-    ],
-    include_logs: Annotated[
-        bool,
-        Field(
-            description="Whether to include execution logs",
-        ),
-    ] = False,
-    log_limit: Annotated[
-        int,
-        Field(
-            description="Maximum number of log entries to return",
-            ge=1,
-            le=1000,
-        ),
-    ] = 100,
-) -> FlowRunResult:
-    """Get detailed information about a flow run.
-
-    Retrieves comprehensive flow run details including state, parameters,
-    timestamps, and optionally the execution logs with readable log levels.
-
-    Examples:
-        - Get flow run details: get_flow_run("068adce4-aeec-7e9b-8000-97b7feeb70fa")
-        - With logs: get_flow_run("068adce4-aeec-7e9b-8000-97b7feeb70fa", include_logs=True)
-        - With limited logs: get_flow_run("068adce4-aeec-7e9b-8000-97b7feeb70fa", include_logs=True, log_limit=50)
-    """
-    return await _prefect_client.get_flow_run(flow_run_id, include_logs, log_limit)
-
-
-@mcp.tool
 async def run_deployment_by_name(
     flow_name: Annotated[
         str, Field(description="The name of the flow", examples=["my-flow", "etl-flow"])
@@ -193,48 +213,3 @@ async def run_deployment_by_name(
         name=name,
         tags=tags,
     )
-
-
-@mcp.tool
-async def get_deployment(
-    deployment_id: Annotated[
-        str,
-        Field(
-            description="The ID of the deployment to retrieve",
-            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
-        ),
-    ],
-) -> DeploymentResult:
-    """Get detailed information about a deployment.
-
-    Retrieves comprehensive deployment details including parameters,
-    infrastructure overrides, schedules, and recent flow run history.
-    Essential for debugging parameter mismatches and configuration issues.
-
-    Examples:
-        - Get deployment details: get_deployment("068adce4-aeec-7e9b-8000-97b7feeb70fa")
-    """
-    return await _prefect_client.get_deployment(deployment_id)
-
-
-@mcp.tool
-async def get_task_run(
-    task_run_id: Annotated[
-        str,
-        Field(
-            description="The ID of the task run to retrieve",
-            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
-        ),
-    ],
-) -> TaskRunResult:
-    """Get detailed information about a specific task run.
-
-    Retrieves comprehensive task run details including state, cache information,
-    and retry counts. Note that 'task_inputs' contains dependency tracking
-    information (upstream task relationships), not the actual parameter values
-    passed to the task.
-
-    Examples:
-        - Get task run details: get_task_run("068adce4-aeec-7e9b-8000-97b7feeb70fa")
-    """
-    return await _prefect_client.get_task_run(task_run_id)
