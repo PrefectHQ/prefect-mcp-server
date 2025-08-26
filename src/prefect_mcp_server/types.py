@@ -134,8 +134,17 @@ class LogEntry(TypedDict):
 
     timestamp: str | None
     level: int | None
+    level_name: str | None  # Human-readable log level (INFO, ERROR, etc)
     message: str
     name: str | None
+
+
+class LogSummary(TypedDict):
+    """Summary of log retrieval."""
+
+    returned_logs: int
+    truncated: bool
+    limit: int
 
 
 class FlowRunResult(TypedDict, total=False):
@@ -144,5 +153,6 @@ class FlowRunResult(TypedDict, total=False):
     success: bool
     flow_run: FlowRunDetail | None
     logs: list[LogEntry]  # Only present if include_logs=True
+    log_summary: LogSummary | None  # Only present if logs were truncated
     error: str | None
     log_error: str | None  # Only present if log fetch failed

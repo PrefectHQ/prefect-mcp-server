@@ -123,17 +123,26 @@ async def get_flow_run(
             description="Whether to include execution logs",
         ),
     ] = False,
+    log_limit: Annotated[
+        int,
+        Field(
+            description="Maximum number of log entries to return",
+            ge=1,
+            le=1000,
+        ),
+    ] = 100,
 ) -> FlowRunResult:
     """Get detailed information about a flow run.
 
     Retrieves comprehensive flow run details including state, parameters,
-    timestamps, and optionally the execution logs.
+    timestamps, and optionally the execution logs with readable log levels.
 
     Examples:
         - Get flow run details: get_flow_run("068adce4-aeec-7e9b-8000-97b7feeb70fa")
         - With logs: get_flow_run("068adce4-aeec-7e9b-8000-97b7feeb70fa", include_logs=True)
+        - With limited logs: get_flow_run("068adce4-aeec-7e9b-8000-97b7feeb70fa", include_logs=True, log_limit=50)
     """
-    return await _prefect_client.get_flow_run(flow_run_id, include_logs)
+    return await _prefect_client.get_flow_run(flow_run_id, include_logs, log_limit)
 
 
 @mcp.tool

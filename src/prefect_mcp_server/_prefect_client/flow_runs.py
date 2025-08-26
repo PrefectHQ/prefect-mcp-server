@@ -5,13 +5,32 @@ from typing import Any
 import prefect.main  # noqa: F401
 from prefect import get_client
 
+# Log level mapping from Python logging levels to readable names
+LOG_LEVEL_NAMES = {
+    10: "DEBUG",
+    20: "INFO",
+    30: "WARNING",
+    40: "ERROR",
+    50: "CRITICAL",
+}
 
-async def get_flow_run(flow_run_id: str, include_logs: bool = False) -> dict[str, Any]:
+
+def get_log_level_name(level: int | None) -> str | None:
+    """Convert numeric log level to readable name."""
+    if level is None:
+        return None
+    return LOG_LEVEL_NAMES.get(level, f"LEVEL_{level}")
+
+
+async def get_flow_run(
+    flow_run_id: str, include_logs: bool = False, log_limit: int = 100
+) -> dict[str, Any]:
     """Get detailed information about a flow run.
 
     Args:
         flow_run_id: The ID of the flow run to retrieve
         include_logs: Whether to include execution logs
+        log_limit: Maximum number of log entries to return (default 100)
 
     Returns:
         Dictionary containing flow run details and optionally logs
@@ -20,6 +39,21 @@ async def get_flow_run(flow_run_id: str, include_logs: bool = False) -> dict[str
         try:
             # Fetch the flow run
             flow_run = await client.read_flow_run(flow_run_id)
+
+            # Try to get flow name from labels first (no extra API call needed!)
+            # This appears to be reliably populated in recent Prefect versions
+            flow_name = None
+            if flow_run.labels:
+                flow_name = flow_run.labels.get("prefect.flow.name")
+
+            # Fallback: fetch flow if we have flow_id but no name in labels
+            if not flow_name and flow_run.flow_id:
+                try:
+                    flow = await client.read_flow(flow_run.flow_id)
+                    flow_name = flow.name
+                except Exception:
+                    # If we can't fetch the flow, continue without it
+                    pass
 
             # Calculate duration if both times exist
             duration = None
@@ -31,7 +65,7 @@ async def get_flow_run(flow_run_id: str, include_logs: bool = False) -> dict[str
                 "flow_run": {
                     "id": str(flow_run.id),
                     "name": flow_run.name,
-                    "flow_name": None,  # Will need to fetch flow separately if needed
+                    "flow_name": flow_name,
                     "state_type": flow_run.state_type.value
                     if flow_run.state_type
                     else None,
@@ -80,7 +114,13 @@ async def get_flow_run(flow_run_id: str, include_logs: bool = False) -> dict[str
                     logs = await client.read_logs(
                         log_filter=log_filter,
                         sort=LogSort.TIMESTAMP_ASC,
+                        limit=log_limit + 1,  # Get one extra to check if truncated
                     )
+
+                    # Check if logs were truncated
+                    truncated = len(logs) > log_limit
+                    if truncated:
+                        logs = logs[:log_limit]  # Trim to limit
 
                     # Format logs for readability
                     log_entries = []
@@ -91,12 +131,21 @@ async def get_flow_run(flow_run_id: str, include_logs: bool = False) -> dict[str
                                 if log.timestamp
                                 else None,
                                 "level": log.level,
+                                "level_name": get_log_level_name(log.level),
                                 "message": log.message,
                                 "name": log.name,
                             }
                         )
 
                     result["logs"] = log_entries
+
+                    # Add log summary if truncated
+                    if truncated:
+                        result["log_summary"] = {
+                            "returned_logs": len(log_entries),
+                            "truncated": True,
+                            "limit": log_limit,
+                        }
                 except Exception as e:
                     result["logs"] = []
                     result["log_error"] = f"Could not fetch logs: {str(e)}"
