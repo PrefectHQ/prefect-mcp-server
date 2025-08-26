@@ -52,6 +52,7 @@ async def test_get_deployment_success():
         result = await get_deployment("12345678-1234-5678-1234-567812345678")
 
         assert result["success"] is True
+        assert result["deployment"] is not None
         assert result["deployment"]["name"] == "test-deployment"
         assert result["deployment"]["flow_name"] == "test-flow"
         assert len(result["deployment"]["recent_runs"]) == 1
@@ -72,6 +73,7 @@ async def test_get_deployment_not_found():
 
         assert result["success"] is False
         assert result["deployment"] is None
+        assert result["error"] is not None
         assert "Error fetching deployment" in result["error"]
 
 
@@ -113,6 +115,7 @@ async def test_get_task_run_success():
         result = await get_task_run("12345678-1234-5678-1234-567812345678")
 
         assert result["success"] is True
+        assert result["task_run"] is not None
         assert result["task_run"]["name"] == "test-task"
         assert result["task_run"]["state_name"] == "Completed"
         assert result["task_run"]["duration"] == 30.0  # 30 seconds
