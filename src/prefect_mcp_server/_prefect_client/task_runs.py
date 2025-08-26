@@ -58,7 +58,7 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
             }
 
         except Exception as e:
-            error_msg = str(e)
+            error_msg = str(e) if e else "Unknown error"
             if "404" in error_msg or "not found" in error_msg.lower():
                 return {
                     "success": False,
