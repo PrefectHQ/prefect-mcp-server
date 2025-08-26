@@ -1,12 +1,10 @@
 """Tests for the debug_flow_run prompt."""
 
-import pytest
 from fastmcp import Client
 
 from prefect_mcp_server.server import mcp
 
 
-@pytest.mark.asyncio
 async def test_debug_flow_run_prompt_exists():
     """Test that the debug_flow_run prompt is available."""
     async with Client(mcp) as client:
@@ -15,7 +13,6 @@ async def test_debug_flow_run_prompt_exists():
         assert "debug_flow_run" in prompt_names
 
 
-@pytest.mark.asyncio
 async def test_debug_flow_run_prompt_no_params():
     """Test prompt with no parameters returns general guidance."""
     async with Client(mcp) as client:
@@ -31,7 +28,6 @@ async def test_debug_flow_run_prompt_no_params():
         assert "Common issues to check:" in content
 
 
-@pytest.mark.asyncio
 async def test_debug_flow_run_prompt_with_flow_run_id():
     """Test prompt with flow_run_id parameter."""
     async with Client(mcp) as client:
@@ -42,7 +38,6 @@ async def test_debug_flow_run_prompt_with_flow_run_id():
         assert "Check the current state and any error messages" in content
 
 
-@pytest.mark.asyncio
 async def test_debug_flow_run_prompt_with_deployment():
     """Test prompt with deployment_name parameter."""
     async with Client(mcp) as client:
@@ -55,7 +50,6 @@ async def test_debug_flow_run_prompt_with_deployment():
         assert "Verify work pool assignment" in content
 
 
-@pytest.mark.asyncio
 async def test_debug_flow_run_prompt_with_work_pool():
     """Test prompt with work_pool_name parameter."""
     async with Client(mcp) as client:
@@ -68,7 +62,6 @@ async def test_debug_flow_run_prompt_with_work_pool():
         assert "Verify the work pool is online" in content
 
 
-@pytest.mark.asyncio
 async def test_debug_flow_run_prompt_all_params():
     """Test prompt with all parameters."""
     async with Client(mcp) as client:
