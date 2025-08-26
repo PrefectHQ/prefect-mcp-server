@@ -218,12 +218,3 @@ class TaskRunResult(TypedDict):
     success: bool
     task_run: TaskRunDetail | None
     error: str | None
-
-
-class TaskRunsResult(TypedDict):
-    """Result of listing task runs."""
-
-    success: bool
-    count: int
-    task_runs: list[TaskRunDetail]
-    error: str | None

@@ -22,7 +22,9 @@ async def test_server_has_expected_capabilities(prefect_mcp_server: FastMCP) -> 
         assert "run_deployment_by_name" in tool_names
         assert "read_events" in tool_names
         assert "get_flow_run" in tool_names
-        assert len(tools) == 3
+        assert "get_deployment" in tool_names
+        assert "get_task_run" in tool_names
+        assert len(tools) == 5
 
 
 async def test_list_deployments_with_test_data(

@@ -3,9 +3,8 @@
 from uuid import UUID
 
 from prefect.client.orchestration import get_client
-from prefect.client.schemas.filters import FlowRunFilter, FlowRunFilterId
 
-from prefect_mcp_server.types import TaskRunDetail, TaskRunResult, TaskRunsResult
+from prefect_mcp_server.types import TaskRunDetail, TaskRunResult
 
 
 async def get_task_run(task_run_id: str) -> TaskRunResult:
@@ -72,82 +71,3 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
                     "task_run": None,
                     "error": f"Error fetching task run: {error_msg}",
                 }
-
-
-async def get_task_runs_for_flow(flow_run_id: str, limit: int = 100) -> TaskRunsResult:
-    """Get all task runs for a specific flow run."""
-    async with get_client() as client:
-        try:
-            # Use proper filter for flow runs
-            flow_run_filter = FlowRunFilter(
-                id=FlowRunFilterId(any_=[UUID(flow_run_id)])
-            )
-
-            task_runs = await client.read_task_runs(
-                flow_run_filter=flow_run_filter,
-                limit=limit,
-                sort="EXPECTED_START_TIME_ASC",
-            )
-
-            # Transform to list of TaskRunDetail
-            task_run_details = []
-            for task_run in task_runs:
-                detail: TaskRunDetail = {
-                    "id": str(task_run.id),
-                    "name": task_run.name,
-                    "task_key": task_run.task_key,
-                    "flow_run_id": str(task_run.flow_run_id)
-                    if task_run.flow_run_id
-                    else None,
-                    "state_type": task_run.state.type.value if task_run.state else None,
-                    "state_name": task_run.state.name if task_run.state else None,
-                    "state_message": task_run.state.message
-                    if task_run.state and hasattr(task_run.state, "message")
-                    else None,
-                    "created": task_run.created.isoformat()
-                    if task_run.created
-                    else None,
-                    "updated": task_run.updated.isoformat()
-                    if task_run.updated
-                    else None,
-                    "start_time": task_run.start_time.isoformat()
-                    if task_run.start_time
-                    else None,
-                    "end_time": task_run.end_time.isoformat()
-                    if task_run.end_time
-                    else None,
-                    "duration": None,
-                    "task_inputs": getattr(task_run, "task_inputs", {}),
-                    "tags": task_run.tags or [],
-                    "cache_expiration": task_run.cache_expiration.isoformat()
-                    if task_run.cache_expiration
-                    else None,
-                    "cache_key": task_run.cache_key,
-                    "retry_count": (task_run.run_count - 1)
-                    if task_run.run_count
-                    else 0,
-                    "max_retries": getattr(task_run, "max_retries", None),
-                }
-
-                # Calculate duration if both timestamps exist
-                if task_run.start_time and task_run.end_time:
-                    detail["duration"] = (
-                        task_run.end_time - task_run.start_time
-                    ).total_seconds()
-
-                task_run_details.append(detail)
-
-            return {
-                "success": True,
-                "count": len(task_run_details),
-                "task_runs": task_run_details,
-                "error": None,
-            }
-
-        except Exception as e:
-            return {
-                "success": False,
-                "count": 0,
-                "task_runs": [],
-                "error": f"Error fetching task runs: {str(e)}",
-            }

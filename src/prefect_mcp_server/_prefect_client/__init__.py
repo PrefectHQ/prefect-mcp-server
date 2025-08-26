@@ -9,10 +9,7 @@ from prefect_mcp_server._prefect_client.deployments import (
 )
 from prefect_mcp_server._prefect_client.events import fetch_events
 from prefect_mcp_server._prefect_client.flow_runs import get_flow_run
-from prefect_mcp_server._prefect_client.task_runs import (
-    get_task_run,
-    get_task_runs_for_flow,
-)
+from prefect_mcp_server._prefect_client.task_runs import get_task_run
 
 __all__ = [
     "fetch_dashboard",
@@ -21,7 +18,6 @@ __all__ = [
     "get_deployment",
     "get_flow_run",
     "get_task_run",
-    "get_task_runs_for_flow",
     "run_deployment_by_id",
     "run_deployment_by_name",
 ]

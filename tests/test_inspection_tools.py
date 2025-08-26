@@ -1,12 +1,12 @@
 """Tests for deployment and task run inspection tools."""
 
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
 from prefect_mcp_server._prefect_client import (
     get_deployment,
     get_task_run,
-    get_task_runs_for_flow,
 )
 
 
@@ -75,36 +75,31 @@ async def test_get_deployment_not_found():
 
 async def test_get_task_run_success():
     """Test successful task run retrieval."""
-    mock_task_run = {
-        "id": "12345678-1234-5678-1234-567812345678",
-        "name": "test-task",
-        "task_key": "test-key",
-        "flow_run_id": "87654321-4321-8765-4321-876543218765",
-        "state": {
-            "type": "COMPLETED",
-            "name": "Completed",
-            "message": "Task completed successfully",
-        },
-        "created": "2024-01-01T00:00:00Z",
-        "updated": "2024-01-01T00:01:00Z",
-        "start_time": "2024-01-01T00:00:30Z",
-        "end_time": "2024-01-01T00:01:00Z",
-        "task_inputs": {"input1": "value1"},
-        "tags": ["test"],
-        "cache_expiration": None,
-        "cache_key": None,
-        "run_count": 1,
-        "max_retries": 3,
-    }
+    mock_task_run = MagicMock()
+    mock_task_run.id = UUID("12345678-1234-5678-1234-567812345678")
+    mock_task_run.name = "test-task"
+    mock_task_run.task_key = "test-key"
+    mock_task_run.flow_run_id = UUID("87654321-4321-8765-4321-876543218765")
+    mock_task_run.state = MagicMock()
+    mock_task_run.state.type = MagicMock(value="COMPLETED")
+    mock_task_run.state.name = "Completed"
+    mock_task_run.state.message = "Task completed successfully"
+    mock_task_run.created = datetime(2024, 1, 1, 0, 0, 0)
+    mock_task_run.updated = datetime(2024, 1, 1, 0, 1, 0)
+    mock_task_run.start_time = datetime(2024, 1, 1, 0, 0, 30)
+    mock_task_run.end_time = datetime(2024, 1, 1, 0, 1, 0)
+    mock_task_run.task_inputs = {"input1": "value1"}
+    mock_task_run.tags = ["test"]
+    mock_task_run.cache_expiration = None
+    mock_task_run.cache_key = None
+    mock_task_run.run_count = 1
+    mock_task_run.max_retries = 3
 
     with patch(
         "prefect_mcp_server._prefect_client.task_runs.get_client"
     ) as mock_get_client:
         mock_client = AsyncMock()
-        mock_response = AsyncMock()
-        mock_response.json = lambda: mock_task_run
-        mock_response.raise_for_status = AsyncMock()
-        mock_client._client.get = AsyncMock(return_value=mock_response)
+        mock_client.read_task_run = AsyncMock(return_value=mock_task_run)
         mock_get_client.return_value.__aenter__.return_value = mock_client
 
         result = await get_task_run("12345678-1234-5678-1234-567812345678")
@@ -114,67 +109,4 @@ async def test_get_task_run_success():
         assert result["task_run"]["name"] == "test-task"
         assert result["task_run"]["state_name"] == "Completed"
         assert result["task_run"]["duration"] == 30.0  # 30 seconds
-        assert result["error"] is None
-
-
-async def test_get_task_runs_for_flow_success():
-    """Test successful task runs retrieval for a flow."""
-    mock_task_runs = [
-        {
-            "id": f"1234567{i}-1234-5678-1234-567812345678",
-            "name": f"task-{i}",
-            "task_key": f"key-{i}",
-            "flow_run_id": "87654321-4321-8765-4321-876543218765",
-            "state": {"type": "COMPLETED", "name": "Completed", "message": None},
-            "created": f"2024-01-01T00:0{i}:00Z",
-            "updated": f"2024-01-01T00:0{i}:30Z",
-            "start_time": f"2024-01-01T00:0{i}:00Z",
-            "end_time": f"2024-01-01T00:0{i}:30Z",
-            "task_inputs": {},
-            "tags": [],
-            "cache_expiration": None,
-            "cache_key": None,
-            "run_count": 1,
-            "max_retries": 3,
-        }
-        for i in range(3)
-    ]
-
-    with patch(
-        "prefect_mcp_server._prefect_client.task_runs.get_client"
-    ) as mock_get_client:
-        mock_client = AsyncMock()
-        mock_response = AsyncMock()
-        mock_response.json = lambda: mock_task_runs
-        mock_response.raise_for_status = AsyncMock()
-        mock_client._client.post = AsyncMock(return_value=mock_response)
-        mock_get_client.return_value.__aenter__.return_value = mock_client
-
-        result = await get_task_runs_for_flow("87654321-4321-8765-4321-876543218765")
-
-        assert result["success"] is True
-        assert result["count"] == 3
-        assert len(result["task_runs"]) == 3
-        assert result["task_runs"][0]["name"] == "task-0"
-        assert result["task_runs"][0]["duration"] == 30.0
-        assert result["error"] is None
-
-
-async def test_get_task_runs_for_flow_empty():
-    """Test task runs retrieval for flow with no tasks."""
-    with patch(
-        "prefect_mcp_server._prefect_client.task_runs.get_client"
-    ) as mock_get_client:
-        mock_client = AsyncMock()
-        mock_response = AsyncMock()
-        mock_response.json = lambda: []
-        mock_response.raise_for_status = AsyncMock()
-        mock_client._client.post = AsyncMock(return_value=mock_response)
-        mock_get_client.return_value.__aenter__.return_value = mock_client
-
-        result = await get_task_runs_for_flow("87654321-4321-8765-4321-876543218765")
-
-        assert result["success"] is True
-        assert result["count"] == 0
-        assert len(result["task_runs"]) == 0
         assert result["error"] is None

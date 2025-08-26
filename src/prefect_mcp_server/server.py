@@ -15,7 +15,6 @@ from prefect_mcp_server.types import (
     FlowRunResult,
     RunDeploymentResult,
     TaskRunResult,
-    TaskRunsResult,
 )
 
 mcp = FastMCP("Prefect MCP Server")
@@ -237,33 +236,3 @@ async def get_task_run(
         - Get task run details: get_task_run("068adce4-aeec-7e9b-8000-97b7feeb70fa")
     """
     return await _prefect_client.get_task_run(task_run_id)
-
-
-@mcp.tool
-async def get_task_runs(
-    flow_run_id: Annotated[
-        str,
-        Field(
-            description="The ID of the flow run to get task runs for",
-            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
-        ),
-    ],
-    limit: Annotated[
-        int,
-        Field(
-            description="Maximum number of task runs to return",
-            ge=1,
-            le=500,
-        ),
-    ] = 100,
-) -> TaskRunsResult:
-    """List all task runs within a flow run.
-
-    Essential for understanding complex flow failures by examining
-    which tasks succeeded, failed, or are still running.
-
-    Examples:
-        - Get all task runs: get_task_runs("068adce4-aeec-7e9b-8000-97b7feeb70fa")
-        - Get limited task runs: get_task_runs("068adce4-aeec-7e9b-8000-97b7feeb70fa", limit=50)
-    """
-    return await _prefect_client.get_task_runs_for_flow(flow_run_id, limit)

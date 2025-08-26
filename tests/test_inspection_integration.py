@@ -9,7 +9,6 @@ from prefect.client.orchestration import get_client
 from prefect_mcp_server._prefect_client import (
     get_deployment,
     get_task_run,
-    get_task_runs_for_flow,
 )
 
 
@@ -76,19 +75,18 @@ async def test_flow_and_task_runs():
         if not flow_runs:
             pytest.skip("No flow runs available for testing")
 
-        flow_run_id = str(flow_runs[0].id)
+        # Get task runs directly from client to test get_task_run
+        from prefect.client.schemas.filters import FlowRunFilter, FlowRunFilterId
 
-        # Test get_task_runs_for_flow
-        result = await get_task_runs_for_flow(flow_run_id)
-
-        assert result["success"] is True
-        assert result["count"] >= 0  # Might be 0 if tasks haven't been tracked
-        assert isinstance(result["task_runs"], list)
-        assert result["error"] is None
+        flow_run_filter = FlowRunFilter(id=FlowRunFilterId(any_=[flow_runs[0].id]))
+        task_runs = await client.read_task_runs(
+            flow_run_filter=flow_run_filter,
+            limit=10,
+        )
 
         # If we have task runs, test getting a single one
-        if result["count"] > 0:
-            task_run_id = result["task_runs"][0]["id"]
+        if task_runs:
+            task_run_id = str(task_runs[0].id)
 
             task_result = await get_task_run(task_run_id)
 
@@ -107,15 +105,3 @@ async def test_get_task_run_not_found():
     assert result["task_run"] is None
     assert result["error"] is not None
     assert "not found" in result["error"].lower() or "Error fetching" in result["error"]
-
-
-async def test_task_runs_for_nonexistent_flow():
-    """Test get_task_runs_for_flow with non-existent flow run ID."""
-    fake_id = str(uuid4())
-    result = await get_task_runs_for_flow(fake_id)
-
-    # Should succeed but return empty list
-    assert result["success"] is True
-    assert result["count"] == 0
-    assert result["task_runs"] == []
-    assert result["error"] is None
