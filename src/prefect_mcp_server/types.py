@@ -156,3 +156,74 @@ class FlowRunResult(TypedDict, total=False):
     log_summary: LogSummary | None  # Only present if logs were truncated
     error: str | None
     log_error: str | None  # Only present if log fetch failed
+
+
+class DeploymentDetail(TypedDict):
+    """Detailed deployment information."""
+
+    id: str
+    name: str | None
+    description: str | None
+    flow_id: str | None
+    flow_name: str | None
+    tags: list[str]
+    parameters: dict[str, Any]
+    parameter_openapi_schema: dict[str, Any]
+    infrastructure_overrides: dict[str, Any]
+    work_pool_name: str | None
+    work_queue_name: str | None
+    schedules: list[dict[str, Any]]
+    is_schedule_active: bool | None
+    created: str | None
+    updated: str | None
+    recent_runs: list[dict[str, Any]]
+    paused: bool
+    enforce_parameter_schema: bool
+
+
+class DeploymentResult(TypedDict):
+    """Result of getting deployment details."""
+
+    success: bool
+    deployment: DeploymentDetail | None
+    error: str | None
+
+
+class TaskRunDetail(TypedDict):
+    """Detailed task run information."""
+
+    id: str
+    name: str | None
+    task_key: str | None
+    flow_run_id: str | None
+    state_type: str | None
+    state_name: str | None
+    state_message: str | None
+    created: str | None
+    updated: str | None
+    start_time: str | None
+    end_time: str | None
+    duration: float | None
+    task_inputs: dict[str, Any]
+    tags: list[str]
+    cache_expiration: str | None
+    cache_key: str | None
+    retry_count: int
+    max_retries: int | None
+
+
+class TaskRunResult(TypedDict):
+    """Result of getting task run details."""
+
+    success: bool
+    task_run: TaskRunDetail | None
+    error: str | None
+
+
+class TaskRunsResult(TypedDict):
+    """Result of listing task runs."""
+
+    success: bool
+    count: int
+    task_runs: list[TaskRunDetail]
+    error: str | None

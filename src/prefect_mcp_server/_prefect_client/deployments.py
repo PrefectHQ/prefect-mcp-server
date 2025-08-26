@@ -8,11 +8,102 @@ from prefect.client.orchestration import get_client
 
 from prefect_mcp_server.settings import settings
 from prefect_mcp_server.types import (
+    DeploymentDetail,
     DeploymentInfo,
+    DeploymentResult,
     DeploymentsResult,
     FlowRunInfo,
     RunDeploymentResult,
 )
+
+
+async def get_deployment(deployment_id: str) -> DeploymentResult:
+    """Get detailed information about a specific deployment."""
+    try:
+        async with get_client() as client:
+            deployment = await client.read_deployment(UUID(deployment_id))
+
+            if not deployment:
+                return {
+                    "success": False,
+                    "deployment": None,
+                    "error": f"Deployment '{deployment_id}' not found",
+                }
+
+            # Get recent flow runs for this deployment
+            flow_runs = await client.read_flow_runs(
+                deployment_filter={"id": {"any_": [deployment_id]}},
+                limit=10,
+                sort="START_TIME_DESC",
+            )
+
+            # Transform recent runs to summary format
+            recent_run_summaries = []
+            for run in flow_runs:
+                recent_run_summaries.append(
+                    {
+                        "id": str(run.id),
+                        "name": run.name,
+                        "state": run.state.name if run.state else None,
+                        "created": run.created.isoformat() if run.created else None,
+                        "start_time": run.start_time.isoformat()
+                        if run.start_time
+                        else None,
+                    }
+                )
+
+            # Transform to DeploymentDetail format
+            detail: DeploymentDetail = {
+                "id": str(deployment.id),
+                "name": deployment.name,
+                "description": deployment.description,
+                "flow_id": str(deployment.flow_id) if deployment.flow_id else None,
+                "flow_name": getattr(deployment, "flow_name", None),
+                "tags": getattr(deployment, "tags", []),
+                "parameters": deployment.parameters or {},
+                "parameter_openapi_schema": deployment.parameter_openapi_schema or {},
+                "infrastructure_overrides": deployment.infra_overrides or {},
+                "work_pool_name": deployment.work_pool_name,
+                "work_queue_name": deployment.work_queue_name,
+                "schedules": [],
+                "is_schedule_active": deployment.is_schedule_active,
+                "created": deployment.created.isoformat()
+                if deployment.created
+                else None,
+                "updated": deployment.updated.isoformat()
+                if deployment.updated
+                else None,
+                "recent_runs": recent_run_summaries,
+                "paused": deployment.paused if hasattr(deployment, "paused") else False,
+                "enforce_parameter_schema": deployment.enforce_parameter_schema
+                if hasattr(deployment, "enforce_parameter_schema")
+                else False,
+            }
+
+            # Add schedule info if available
+            if hasattr(deployment, "schedules") and deployment.schedules:
+                detail["schedules"] = [
+                    {
+                        "active": getattr(schedule, "active", None),
+                        "schedule": str(schedule.schedule)
+                        if hasattr(schedule, "schedule")
+                        else None,
+                    }
+                    for schedule in deployment.schedules
+                ]
+
+            return {
+                "success": True,
+                "deployment": detail,
+                "error": None,
+            }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "deployment": None,
+            "error": f"Error fetching deployment: {str(e)}",
+        }
 
 
 async def fetch_deployments() -> DeploymentsResult:

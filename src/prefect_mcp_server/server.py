@@ -9,10 +9,13 @@ from pydantic import Field
 from prefect_mcp_server import _prefect_client
 from prefect_mcp_server.types import (
     DashboardResult,
+    DeploymentResult,
     DeploymentsResult,
     EventsResult,
     FlowRunResult,
     RunDeploymentResult,
+    TaskRunResult,
+    TaskRunsResult,
 )
 
 mcp = FastMCP("Prefect MCP Server")
@@ -191,3 +194,76 @@ async def run_deployment_by_name(
         name=name,
         tags=tags,
     )
+
+
+@mcp.tool
+async def get_deployment(
+    deployment_id: Annotated[
+        str,
+        Field(
+            description="The ID of the deployment to retrieve",
+            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
+        ),
+    ],
+) -> DeploymentResult:
+    """Get detailed information about a deployment.
+
+    Retrieves comprehensive deployment details including parameters,
+    infrastructure overrides, schedules, and recent flow run history.
+    Essential for debugging parameter mismatches and configuration issues.
+
+    Examples:
+        - Get deployment details: get_deployment("068adce4-aeec-7e9b-8000-97b7feeb70fa")
+    """
+    return await _prefect_client.get_deployment(deployment_id)
+
+
+@mcp.tool
+async def get_task_run(
+    task_run_id: Annotated[
+        str,
+        Field(
+            description="The ID of the task run to retrieve",
+            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
+        ),
+    ],
+) -> TaskRunResult:
+    """Get detailed information about a specific task run.
+
+    Retrieves comprehensive task run details including state, parameters,
+    cache information, and retry counts.
+
+    Examples:
+        - Get task run details: get_task_run("068adce4-aeec-7e9b-8000-97b7feeb70fa")
+    """
+    return await _prefect_client.get_task_run(task_run_id)
+
+
+@mcp.tool
+async def get_task_runs(
+    flow_run_id: Annotated[
+        str,
+        Field(
+            description="The ID of the flow run to get task runs for",
+            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
+        ),
+    ],
+    limit: Annotated[
+        int,
+        Field(
+            description="Maximum number of task runs to return",
+            ge=1,
+            le=500,
+        ),
+    ] = 100,
+) -> TaskRunsResult:
+    """List all task runs within a flow run.
+
+    Essential for understanding complex flow failures by examining
+    which tasks succeeded, failed, or are still running.
+
+    Examples:
+        - Get all task runs: get_task_runs("068adce4-aeec-7e9b-8000-97b7feeb70fa")
+        - Get limited task runs: get_task_runs("068adce4-aeec-7e9b-8000-97b7feeb70fa", limit=50)
+    """
+    return await _prefect_client.get_task_runs_for_flow(flow_run_id, limit)
