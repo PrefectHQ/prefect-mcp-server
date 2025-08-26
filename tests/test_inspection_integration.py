@@ -2,7 +2,7 @@
 
 from uuid import uuid4
 
-import pytest
+import pytest  # for pytest.skip
 from prefect import flow, task
 from prefect.client.orchestration import get_client
 
@@ -27,7 +27,6 @@ def sample_flow(n: int = 3):
     return "completed"
 
 
-@pytest.mark.asyncio
 async def test_deployment_operations():
     """Test deployment operations with real API."""
     async with get_client() as client:
@@ -54,7 +53,6 @@ async def test_deployment_operations():
         assert result["error"] is None
 
 
-@pytest.mark.asyncio
 async def test_get_deployment_not_found():
     """Test get_deployment with non-existent ID."""
     fake_id = str(uuid4())
@@ -66,7 +64,6 @@ async def test_get_deployment_not_found():
     assert "Error fetching deployment" in result["error"]
 
 
-@pytest.mark.asyncio
 async def test_flow_and_task_runs():
     """Test task run operations with a real flow run."""
     # Run the sample flow
@@ -101,7 +98,6 @@ async def test_flow_and_task_runs():
             assert task_result["error"] is None
 
 
-@pytest.mark.asyncio
 async def test_get_task_run_not_found():
     """Test get_task_run with non-existent ID."""
     fake_id = str(uuid4())
@@ -113,7 +109,6 @@ async def test_get_task_run_not_found():
     assert "not found" in result["error"].lower() or "Error fetching" in result["error"]
 
 
-@pytest.mark.asyncio
 async def test_task_runs_for_nonexistent_flow():
     """Test get_task_runs_for_flow with non-existent flow run ID."""
     fake_id = str(uuid4())

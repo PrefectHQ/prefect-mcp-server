@@ -3,8 +3,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
-import pytest
-
 from prefect_mcp_server._prefect_client import (
     get_deployment,
     get_task_run,
@@ -12,7 +10,6 @@ from prefect_mcp_server._prefect_client import (
 )
 
 
-@pytest.mark.asyncio
 async def test_get_deployment_success():
     """Test successful deployment retrieval."""
     mock_deployment = MagicMock()
@@ -59,7 +56,6 @@ async def test_get_deployment_success():
         assert result["error"] is None
 
 
-@pytest.mark.asyncio
 async def test_get_deployment_not_found():
     """Test deployment not found scenario."""
     with patch(
@@ -77,7 +73,6 @@ async def test_get_deployment_not_found():
         assert "Error fetching deployment" in result["error"]
 
 
-@pytest.mark.asyncio
 async def test_get_task_run_success():
     """Test successful task run retrieval."""
     mock_task_run = {
@@ -122,7 +117,6 @@ async def test_get_task_run_success():
         assert result["error"] is None
 
 
-@pytest.mark.asyncio
 async def test_get_task_runs_for_flow_success():
     """Test successful task runs retrieval for a flow."""
     mock_task_runs = [
@@ -166,7 +160,6 @@ async def test_get_task_runs_for_flow_success():
         assert result["error"] is None
 
 
-@pytest.mark.asyncio
 async def test_get_task_runs_for_flow_empty():
     """Test task runs retrieval for flow with no tasks."""
     with patch(
