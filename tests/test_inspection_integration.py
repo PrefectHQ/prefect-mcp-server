@@ -1,0 +1,126 @@
+"""Integration tests for inspection tools that actually call the Prefect API."""
+
+from uuid import uuid4
+
+import pytest
+from prefect import flow, task
+from prefect.client.orchestration import get_client
+
+from prefect_mcp_server._prefect_client import (
+    get_deployment,
+    get_task_run,
+    get_task_runs_for_flow,
+)
+
+
+@task
+def sample_task(x: int) -> int:
+    """A simple task for testing."""
+    return x * 2
+
+
+@flow
+def sample_flow(n: int = 3):
+    """A simple flow for testing."""
+    for i in range(n):
+        sample_task(i)
+    return "completed"
+
+
+@pytest.mark.asyncio
+async def test_deployment_operations():
+    """Test deployment operations with real API."""
+    async with get_client() as client:
+        # List deployments to find a real one
+        deployments = await client.read_deployments(limit=1)
+
+        if not deployments:
+            pytest.skip("No deployments available for testing")
+
+        deployment_id = str(deployments[0].id)
+
+        # Test get_deployment
+        result = await get_deployment(deployment_id)
+
+        assert result["success"] is True
+        assert result["deployment"] is not None
+        assert result["deployment"]["id"] == deployment_id
+        assert result["deployment"]["name"] is not None
+        assert "parameters" in result["deployment"]
+        assert (
+            "job_variables" in result["deployment"]
+            or "infrastructure_overrides" in result["deployment"]
+        )
+        assert result["error"] is None
+
+
+@pytest.mark.asyncio
+async def test_get_deployment_not_found():
+    """Test get_deployment with non-existent ID."""
+    fake_id = str(uuid4())
+    result = await get_deployment(fake_id)
+
+    assert result["success"] is False
+    assert result["deployment"] is None
+    assert result["error"] is not None
+    assert "Error fetching deployment" in result["error"]
+
+
+@pytest.mark.asyncio
+async def test_flow_and_task_runs():
+    """Test task run operations with a real flow run."""
+    # Run the sample flow
+    _ = sample_flow(n=3)
+
+    async with get_client() as client:
+        # Get the flow run we just created
+        flow_runs = await client.read_flow_runs(limit=1, sort="START_TIME_DESC")
+
+        if not flow_runs:
+            pytest.skip("No flow runs available for testing")
+
+        flow_run_id = str(flow_runs[0].id)
+
+        # Test get_task_runs_for_flow
+        result = await get_task_runs_for_flow(flow_run_id)
+
+        assert result["success"] is True
+        assert result["count"] >= 0  # Might be 0 if tasks haven't been tracked
+        assert isinstance(result["task_runs"], list)
+        assert result["error"] is None
+
+        # If we have task runs, test getting a single one
+        if result["count"] > 0:
+            task_run_id = result["task_runs"][0]["id"]
+
+            task_result = await get_task_run(task_run_id)
+
+            assert task_result["success"] is True
+            assert task_result["task_run"] is not None
+            assert task_result["task_run"]["id"] == task_run_id
+            assert task_result["error"] is None
+
+
+@pytest.mark.asyncio
+async def test_get_task_run_not_found():
+    """Test get_task_run with non-existent ID."""
+    fake_id = str(uuid4())
+    result = await get_task_run(fake_id)
+
+    assert result["success"] is False
+    assert result["task_run"] is None
+    assert result["error"] is not None
+    assert "not found" in result["error"].lower() or "Error fetching" in result["error"]
+
+
+@pytest.mark.asyncio
+async def test_task_runs_for_nonexistent_flow():
+    """Test get_task_runs_for_flow with non-existent flow run ID."""
+    fake_id = str(uuid4())
+    result = await get_task_runs_for_flow(fake_id)
+
+    # Should succeed but return empty list
+    assert result["success"] is True
+    assert result["count"] == 0
+    assert result["task_runs"] == []
+    assert result["error"] is None

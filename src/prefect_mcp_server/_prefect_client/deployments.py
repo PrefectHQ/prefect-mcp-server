@@ -5,6 +5,7 @@ from uuid import UUID
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from prefect.client.orchestration import get_client
+from prefect.client.schemas.filters import DeploymentFilter, DeploymentFilterId
 
 from prefect_mcp_server.settings import settings
 from prefect_mcp_server.types import (
@@ -31,8 +32,11 @@ async def get_deployment(deployment_id: str) -> DeploymentResult:
                 }
 
             # Get recent flow runs for this deployment
+            deployment_filter = DeploymentFilter(
+                id=DeploymentFilterId(any_=[UUID(deployment_id)])
+            )
             flow_runs = await client.read_flow_runs(
-                deployment_filter={"id": {"any_": [deployment_id]}},
+                deployment_filter=deployment_filter,
                 limit=10,
                 sort="START_TIME_DESC",
             )
@@ -62,11 +66,11 @@ async def get_deployment(deployment_id: str) -> DeploymentResult:
                 "tags": getattr(deployment, "tags", []),
                 "parameters": deployment.parameters or {},
                 "parameter_openapi_schema": deployment.parameter_openapi_schema or {},
-                "infrastructure_overrides": deployment.infra_overrides or {},
+                "infrastructure_overrides": deployment.job_variables or {},
                 "work_pool_name": deployment.work_pool_name,
                 "work_queue_name": deployment.work_queue_name,
                 "schedules": [],
-                "is_schedule_active": deployment.is_schedule_active,
+                "is_schedule_active": getattr(deployment, "is_schedule_active", None),
                 "created": deployment.created.isoformat()
                 if deployment.created
                 else None,

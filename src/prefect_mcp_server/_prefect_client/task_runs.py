@@ -1,9 +1,9 @@
 """Task run operations for Prefect MCP server."""
 
-from datetime import datetime
+from uuid import UUID
 
-import httpx
 from prefect.client.orchestration import get_client
+from prefect.client.schemas.filters import FlowRunFilter, FlowRunFilterId
 
 from prefect_mcp_server.types import TaskRunDetail, TaskRunResult, TaskRunsResult
 
@@ -12,46 +12,45 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
     """Get detailed information about a specific task run."""
     async with get_client() as client:
         try:
-            response = await client._client.get(f"/task_runs/{task_run_id}")
-            response.raise_for_status()
-            task_run = response.json()
+            task_run = await client.read_task_run(UUID(task_run_id))
 
             # Transform to TaskRunDetail format
             detail: TaskRunDetail = {
-                "id": task_run["id"],
-                "name": task_run.get("name"),
-                "task_key": task_run.get("task_key"),
-                "flow_run_id": task_run.get("flow_run_id"),
-                "state_type": task_run.get("state", {}).get("type"),
-                "state_name": task_run.get("state", {}).get("name"),
-                "state_message": task_run.get("state", {}).get("message"),
-                "created": task_run.get("created"),
-                "updated": task_run.get("updated"),
-                "start_time": task_run.get("start_time"),
-                "end_time": task_run.get("end_time"),
-                "duration": None,  # Will calculate below if timestamps exist
-                "task_inputs": task_run.get("task_inputs", {}),
-                "tags": task_run.get("tags", []),
-                "cache_expiration": task_run.get("cache_expiration"),
-                "cache_key": task_run.get("cache_key"),
-                "retry_count": task_run.get("run_count", 0) - 1
-                if task_run.get("run_count")
-                else 0,
-                "max_retries": task_run.get("max_retries"),
+                "id": str(task_run.id),
+                "name": task_run.name,
+                "task_key": task_run.task_key,
+                "flow_run_id": str(task_run.flow_run_id)
+                if task_run.flow_run_id
+                else None,
+                "state_type": task_run.state.type.value if task_run.state else None,
+                "state_name": task_run.state.name if task_run.state else None,
+                "state_message": task_run.state.message
+                if task_run.state and hasattr(task_run.state, "message")
+                else None,
+                "created": task_run.created.isoformat() if task_run.created else None,
+                "updated": task_run.updated.isoformat() if task_run.updated else None,
+                "start_time": task_run.start_time.isoformat()
+                if task_run.start_time
+                else None,
+                "end_time": task_run.end_time.isoformat()
+                if task_run.end_time
+                else None,
+                "duration": None,  # Will calculate below
+                "task_inputs": getattr(task_run, "task_inputs", {}),
+                "tags": task_run.tags or [],
+                "cache_expiration": task_run.cache_expiration.isoformat()
+                if task_run.cache_expiration
+                else None,
+                "cache_key": task_run.cache_key,
+                "retry_count": (task_run.run_count - 1) if task_run.run_count else 0,
+                "max_retries": getattr(task_run, "max_retries", None),
             }
 
             # Calculate duration if both timestamps exist
-            if detail["start_time"] and detail["end_time"]:
-                try:
-                    start = datetime.fromisoformat(
-                        detail["start_time"].replace("Z", "+00:00")
-                    )
-                    end = datetime.fromisoformat(
-                        detail["end_time"].replace("Z", "+00:00")
-                    )
-                    detail["duration"] = (end - start).total_seconds()
-                except (ValueError, TypeError):
-                    pass
+            if task_run.start_time and task_run.end_time:
+                detail["duration"] = (
+                    task_run.end_time - task_run.start_time
+                ).total_seconds()
 
             return {
                 "success": True,
@@ -59,8 +58,9 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
                 "error": None,
             }
 
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
+        except Exception as e:
+            error_msg = str(e)
+            if "404" in error_msg or "not found" in error_msg.lower():
                 return {
                     "success": False,
                     "task_run": None,
@@ -70,70 +70,70 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
                 return {
                     "success": False,
                     "task_run": None,
-                    "error": f"Failed to fetch task run: {e.response.text}",
+                    "error": f"Error fetching task run: {error_msg}",
                 }
-        except Exception as e:
-            return {
-                "success": False,
-                "task_run": None,
-                "error": f"Error fetching task run: {str(e)}",
-            }
 
 
 async def get_task_runs_for_flow(flow_run_id: str, limit: int = 100) -> TaskRunsResult:
     """Get all task runs for a specific flow run."""
     async with get_client() as client:
         try:
-            # Use the filter API to get task runs for this flow
-            response = await client._client.post(
-                "/task_runs/filter",
-                json={
-                    "flow_runs": {"id": {"any_": [flow_run_id]}},
-                    "limit": limit,
-                    "sort": "START_TIME_ASC",
-                },
+            # Use proper filter for flow runs
+            flow_run_filter = FlowRunFilter(
+                id=FlowRunFilterId(any_=[UUID(flow_run_id)])
             )
-            response.raise_for_status()
-            task_runs = response.json()
+
+            task_runs = await client.read_task_runs(
+                flow_run_filter=flow_run_filter,
+                limit=limit,
+                sort="EXPECTED_START_TIME_ASC",
+            )
 
             # Transform to list of TaskRunDetail
             task_run_details = []
             for task_run in task_runs:
                 detail: TaskRunDetail = {
-                    "id": task_run["id"],
-                    "name": task_run.get("name"),
-                    "task_key": task_run.get("task_key"),
-                    "flow_run_id": task_run.get("flow_run_id"),
-                    "state_type": task_run.get("state", {}).get("type"),
-                    "state_name": task_run.get("state", {}).get("name"),
-                    "state_message": task_run.get("state", {}).get("message"),
-                    "created": task_run.get("created"),
-                    "updated": task_run.get("updated"),
-                    "start_time": task_run.get("start_time"),
-                    "end_time": task_run.get("end_time"),
-                    "duration": None,  # Will calculate below if timestamps exist
-                    "task_inputs": task_run.get("task_inputs", {}),
-                    "tags": task_run.get("tags", []),
-                    "cache_expiration": task_run.get("cache_expiration"),
-                    "cache_key": task_run.get("cache_key"),
-                    "retry_count": task_run.get("run_count", 0) - 1
-                    if task_run.get("run_count")
+                    "id": str(task_run.id),
+                    "name": task_run.name,
+                    "task_key": task_run.task_key,
+                    "flow_run_id": str(task_run.flow_run_id)
+                    if task_run.flow_run_id
+                    else None,
+                    "state_type": task_run.state.type.value if task_run.state else None,
+                    "state_name": task_run.state.name if task_run.state else None,
+                    "state_message": task_run.state.message
+                    if task_run.state and hasattr(task_run.state, "message")
+                    else None,
+                    "created": task_run.created.isoformat()
+                    if task_run.created
+                    else None,
+                    "updated": task_run.updated.isoformat()
+                    if task_run.updated
+                    else None,
+                    "start_time": task_run.start_time.isoformat()
+                    if task_run.start_time
+                    else None,
+                    "end_time": task_run.end_time.isoformat()
+                    if task_run.end_time
+                    else None,
+                    "duration": None,
+                    "task_inputs": getattr(task_run, "task_inputs", {}),
+                    "tags": task_run.tags or [],
+                    "cache_expiration": task_run.cache_expiration.isoformat()
+                    if task_run.cache_expiration
+                    else None,
+                    "cache_key": task_run.cache_key,
+                    "retry_count": (task_run.run_count - 1)
+                    if task_run.run_count
                     else 0,
-                    "max_retries": task_run.get("max_retries"),
+                    "max_retries": getattr(task_run, "max_retries", None),
                 }
 
                 # Calculate duration if both timestamps exist
-                if detail["start_time"] and detail["end_time"]:
-                    try:
-                        start = datetime.fromisoformat(
-                            detail["start_time"].replace("Z", "+00:00")
-                        )
-                        end = datetime.fromisoformat(
-                            detail["end_time"].replace("Z", "+00:00")
-                        )
-                        detail["duration"] = (end - start).total_seconds()
-                    except (ValueError, TypeError):
-                        pass
+                if task_run.start_time and task_run.end_time:
+                    detail["duration"] = (
+                        task_run.end_time - task_run.start_time
+                    ).total_seconds()
 
                 task_run_details.append(detail)
 
