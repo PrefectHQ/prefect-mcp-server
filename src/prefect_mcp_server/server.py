@@ -29,7 +29,7 @@ def debug_flow_run(
     Provides structured steps for investigating flow run failures,
     deployment issues, and infrastructure problems.
     """
-    from prefect_mcp_server._prefect_client.prompts import create_debug_prompt
+    from prefect_mcp_server._prompts import create_debug_prompt
 
     return create_debug_prompt(
         flow_run_id=flow_run_id,
