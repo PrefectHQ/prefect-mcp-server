@@ -11,6 +11,7 @@ from prefect_mcp_server.types import (
     DashboardResult,
     DeploymentsResult,
     EventsResult,
+    FlowRunResult,
     RunDeploymentResult,
 )
 
@@ -105,6 +106,34 @@ async def read_events(
         occurred_after=occurred_after,
         occurred_before=occurred_before,
     )
+
+
+@mcp.tool
+async def get_flow_run(
+    flow_run_id: Annotated[
+        str,
+        Field(
+            description="The ID of the flow run to retrieve",
+            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
+        ),
+    ],
+    include_logs: Annotated[
+        bool,
+        Field(
+            description="Whether to include execution logs",
+        ),
+    ] = False,
+) -> FlowRunResult:
+    """Get detailed information about a flow run.
+
+    Retrieves comprehensive flow run details including state, parameters,
+    timestamps, and optionally the execution logs.
+
+    Examples:
+        - Get flow run details: get_flow_run("068adce4-aeec-7e9b-8000-97b7feeb70fa")
+        - With logs: get_flow_run("068adce4-aeec-7e9b-8000-97b7feeb70fa", include_logs=True)
+    """
+    return await _prefect_client.get_flow_run(flow_run_id, include_logs)
 
 
 @mcp.tool

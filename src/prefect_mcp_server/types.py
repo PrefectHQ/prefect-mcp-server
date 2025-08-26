@@ -105,3 +105,44 @@ class RunDeploymentResult(TypedDict):
     deployment: dict[str, Any] | None
     error: str | None
     error_type: str | None
+
+
+class FlowRunDetail(TypedDict):
+    """Detailed flow run information."""
+
+    id: str
+    name: str | None
+    flow_name: str | None
+    state_type: str | None
+    state_name: str | None
+    state_message: str | None
+    created: str | None
+    updated: str | None
+    start_time: str | None
+    end_time: str | None
+    duration: float | None
+    parameters: dict[str, Any] | None
+    tags: list[str] | None
+    deployment_id: str | None
+    work_queue_name: str | None
+    infrastructure_pid: str | None
+    parent_task_run_id: str | None
+
+
+class LogEntry(TypedDict):
+    """Log entry from flow run."""
+
+    timestamp: str | None
+    level: int | None
+    message: str
+    name: str | None
+
+
+class FlowRunResult(TypedDict, total=False):
+    """Result of getting flow run details."""
+
+    success: bool
+    flow_run: FlowRunDetail | None
+    logs: list[LogEntry]  # Only present if include_logs=True
+    error: str | None
+    log_error: str | None  # Only present if log fetch failed
