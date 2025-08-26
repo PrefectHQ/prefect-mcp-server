@@ -35,8 +35,8 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
                 if task_run.end_time
                 else None,
                 "duration": None,  # Will calculate below
-                "task_inputs": getattr(task_run, "task_inputs", {}),
-                "tags": task_run.tags or [],
+                "task_inputs": {},  # Will process below
+                "tags": list(task_run.tags) if task_run.tags else [],
                 "cache_expiration": task_run.cache_expiration.isoformat()
                 if task_run.cache_expiration
                 else None,
@@ -44,6 +44,27 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
                 "retry_count": (task_run.run_count - 1) if task_run.run_count else 0,
                 "max_retries": getattr(task_run, "max_retries", None),
             }
+
+            # Process task_inputs - convert Pydantic models to dicts
+            raw_inputs = getattr(task_run, "task_inputs", {})
+            if raw_inputs:
+                processed_inputs = {}
+                for key, value in raw_inputs.items():
+                    if isinstance(value, list):
+                        # Handle list of items (could be TaskRunResult objects)
+                        processed_inputs[key] = [
+                            item.model_dump(mode="json")
+                            if hasattr(item, "model_dump")
+                            else item
+                            for item in value
+                        ]
+                    elif hasattr(value, "model_dump"):
+                        # Single Pydantic model
+                        processed_inputs[key] = value.model_dump(mode="json")
+                    else:
+                        # Regular value
+                        processed_inputs[key] = value
+                detail["task_inputs"] = processed_inputs
 
             # Calculate duration if both timestamps exist
             if task_run.start_time and task_run.end_time:
