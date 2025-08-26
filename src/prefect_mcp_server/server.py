@@ -62,30 +62,31 @@ async def list_deployments() -> DeploymentsResult:
 
 # Resources - read-only operations (continued)
 @mcp.resource("prefect://flow-runs/{flow_run_id}")
-async def get_flow_run(
-    flow_run_id: str,
-    include_logs: bool = False,
-    log_limit: int = 100,
-) -> FlowRunResult:
+async def get_flow_run(flow_run_id: str) -> FlowRunResult:
     """Get detailed information about a flow run.
 
     Retrieves comprehensive flow run details including state, parameters,
-    timestamps, and optionally the execution logs with readable log levels.
-
-    Query parameters:
-        - include_logs: Whether to include execution logs (default: false)
-        - log_limit: Maximum number of log entries to return (default: 100, max: 1000)
+    timestamps, and other metadata.
 
     Examples:
         - Basic: prefect://flow-runs/068adce4-aeec-7e9b-8000-97b7feeb70fa
-        - With logs: prefect://flow-runs/068adce4-aeec-7e9b-8000-97b7feeb70fa?include_logs=true
-        - Limited logs: prefect://flow-runs/068adce4-aeec-7e9b-8000-97b7feeb70fa?include_logs=true&log_limit=50
     """
-    # Validate log_limit range
-    if log_limit < 1 or log_limit > 1000:
-        log_limit = min(max(log_limit, 1), 1000)
+    return await _prefect_client.get_flow_run(flow_run_id, include_logs=False)
 
-    return await _prefect_client.get_flow_run(flow_run_id, include_logs, log_limit)
+
+@mcp.resource("prefect://flow-runs/{flow_run_id}/logs")
+async def get_flow_run_with_logs(flow_run_id: str) -> FlowRunResult:
+    """Get detailed information about a flow run including execution logs.
+
+    Retrieves comprehensive flow run details including state, parameters,
+    timestamps, and the execution logs with readable log levels (up to 100 entries).
+
+    Examples:
+        - With logs: prefect://flow-runs/068adce4-aeec-7e9b-8000-97b7feeb70fa/logs
+    """
+    return await _prefect_client.get_flow_run(
+        flow_run_id, include_logs=True, log_limit=100
+    )
 
 
 @mcp.resource("prefect://deployments/{deployment_id}")
