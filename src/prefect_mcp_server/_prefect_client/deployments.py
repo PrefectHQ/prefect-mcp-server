@@ -120,6 +120,29 @@ async def fetch_deployments() -> DeploymentsResult:
 
             deployment_list: list[DeploymentInfo] = []
             for deployment in deployments:
+                # Extract parameter info with types from the schema for concise display
+                parameter_summary = []
+                schema = getattr(deployment, "parameter_openapi_schema", {})
+                if schema and isinstance(schema, dict):
+                    properties = schema.get("properties", {})
+                    required = schema.get("required", [])
+                    for param_name, param_info in properties.items():
+                        # Get the type directly from OpenAPI schema
+                        param_type = param_info.get("type", "any")
+
+                        # Check if required (in required list and no default)
+                        is_required = (
+                            param_name in required and "default" not in param_info
+                        )
+
+                        # Build parameter description
+                        if is_required:
+                            parameter_summary.append(
+                                f"{param_name}: {param_type} (required)"
+                            )
+                        else:
+                            parameter_summary.append(f"{param_name}: {param_type}")
+
                 deployment_info: DeploymentInfo = {
                     "id": str(deployment.id),
                     "name": deployment.name,
@@ -136,6 +159,7 @@ async def fetch_deployments() -> DeploymentsResult:
                     if hasattr(deployment, "updated") and deployment.updated
                     else None,
                     "schedules": None,
+                    "parameter_summary": parameter_summary,
                 }
 
                 # Add schedule info if available

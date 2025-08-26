@@ -17,6 +17,9 @@ class DeploymentInfo(TypedDict):
     created: str | None
     updated: str | None
     schedules: list[dict[str, Any]] | None
+    parameter_summary: list[
+        str
+    ]  # Parameter summaries like "user_id: integer (required)"
 
 
 class DeploymentsResult(TypedDict):

@@ -229,8 +229,10 @@ async def get_task_run(
 ) -> TaskRunResult:
     """Get detailed information about a specific task run.
 
-    Retrieves comprehensive task run details including state, parameters,
-    cache information, and retry counts.
+    Retrieves comprehensive task run details including state, cache information,
+    and retry counts. Note that 'task_inputs' contains dependency tracking
+    information (upstream task relationships), not the actual parameter values
+    passed to the task.
 
     Examples:
         - Get task run details: get_task_run("068adce4-aeec-7e9b-8000-97b7feeb70fa")
