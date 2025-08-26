@@ -12,11 +12,12 @@ def create_debug_prompt(
     debugging of flow runs, deployments, and infrastructure issues.
     """
     prompt_parts = ["To debug this Prefect flow run issue, follow these steps:", ""]
+    step_num = 1
 
     if flow_run_id:
         prompt_parts.extend(
             [
-                f"1. Flow Run Analysis for ID {flow_run_id}:",
+                f"{step_num}. Flow Run Analysis for ID {flow_run_id}:",
                 "   - Check the current state and any error messages",
                 "   - Review task failures in the logs",
                 "   - Look for state transition events",
@@ -24,11 +25,12 @@ def create_debug_prompt(
                 "",
             ]
         )
+        step_num += 1
 
     if deployment_name:
         prompt_parts.extend(
             [
-                f"2. Deployment Configuration for '{deployment_name}':",
+                f"{step_num}. Deployment Configuration for '{deployment_name}':",
                 "   - Verify work pool assignment and availability",
                 "   - Check infrastructure overrides and settings",
                 "   - Review environment variables and secrets",
@@ -36,11 +38,12 @@ def create_debug_prompt(
                 "",
             ]
         )
+        step_num += 1
 
     if work_pool_name:
         prompt_parts.extend(
             [
-                f"3. Work Pool Status for '{work_pool_name}':",
+                f"{step_num}. Work Pool Status for '{work_pool_name}':",
                 "   - Verify the work pool is online with available workers",
                 "   - Check for queue concurrency limits",
                 "   - Review worker health and recent activity",
