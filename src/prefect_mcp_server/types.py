@@ -242,3 +242,22 @@ class TaskRunResult(TypedDict):
     success: bool
     task_run: TaskRunDetail | None
     error: str | None
+
+
+class IdentityInfo(TypedDict, total=False):
+    """Identity and connection information."""
+
+    api_url: str
+    api_type: str  # "cloud" or "oss"
+    version: str | None
+    account_id: str | None  # Cloud only
+    workspace_id: str | None  # Cloud only
+    user: dict[str, Any] | None  # Cloud only
+
+
+class IdentityResult(TypedDict):
+    """Result of getting identity information."""
+
+    success: bool
+    identity: IdentityInfo
+    error: str | None

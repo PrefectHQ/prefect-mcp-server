@@ -13,6 +13,7 @@ from prefect_mcp_server.types import (
     DeploymentsResult,
     EventsResult,
     FlowRunResult,
+    IdentityResult,
     LogsResult,
     RunDeploymentResult,
     TaskRunResult,
@@ -43,6 +44,16 @@ def debug_flow_run(
 
 
 # Resources - read-only operations
+@mcp.resource("prefect://identity")
+async def get_identity() -> IdentityResult:
+    """Get identity and connection information for the current Prefect instance.
+
+    Returns API URL, type (cloud/oss), and user information if available.
+    Essential for understanding which Prefect instance you're connected to.
+    """
+    return await _prefect_client.get_identity()
+
+
 @mcp.resource("prefect://dashboard")
 async def get_dashboard() -> DashboardResult:
     """Get a high-level dashboard overview of the Prefect instance.
