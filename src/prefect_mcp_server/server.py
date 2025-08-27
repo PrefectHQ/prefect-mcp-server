@@ -17,6 +17,7 @@ from prefect_mcp_server.types import (
     LogsResult,
     RunDeploymentResult,
     TaskRunResult,
+    WorkPoolResult,
 )
 
 mcp = FastMCP("Prefect MCP Server")
@@ -139,6 +140,20 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
         - Get task run details: prefect://task-runs/068adce4-aeec-7e9b-8000-97b7feeb70fa
     """
     return await _prefect_client.get_task_run(task_run_id)
+
+
+@mcp.resource("prefect://work-pools/{work_pool_name}")
+async def get_work_pool_details(work_pool_name: str) -> WorkPoolResult:
+    """Get detailed information about a work pool including concurrency limits.
+
+    Essential for debugging deployment issues related to flow runs being stuck
+    or not starting. Shows work pool and queue concurrency limits, active workers,
+    and configuration details.
+
+    Examples:
+        - Get work pool details: prefect://work-pools/test-pool
+    """
+    return await _prefect_client.get_work_pool(work_pool_name)
 
 
 # Tools - actions that modify state

@@ -11,6 +11,7 @@ from prefect_mcp_server._prefect_client.events import fetch_events
 from prefect_mcp_server._prefect_client.flow_runs import get_flow_run, get_flow_run_logs
 from prefect_mcp_server._prefect_client.identity import get_identity
 from prefect_mcp_server._prefect_client.task_runs import get_task_run
+from prefect_mcp_server._prefect_client.work_pools import get_work_pool
 
 __all__ = [
     "fetch_dashboard",
@@ -21,6 +22,7 @@ __all__ = [
     "get_flow_run_logs",
     "get_identity",
     "get_task_run",
+    "get_work_pool",
     "run_deployment_by_id",
     "run_deployment_by_name",
 ]

@@ -81,17 +81,23 @@ def create_deployment_debug_prompt(deployment_id: str) -> str:
 1. Fetch deployment details: prefect://deployments/{deployment_id}
    - Check: paused, schedule active, work_pool_name, work_queue_name
 
-2. Check recent runs:
+2. If work_pool_name exists, get work pool details:
+   - Fetch: prefect://work-pools/{{work_pool_name}}
+   - Check concurrency_limit (critical for stuck runs)
+   - Review work_queues and their concurrency limits
+   - Verify active_workers > 0
+
+3. Check recent runs:
    - Use read_events to see flow run states for this deployment
    - Look for: PENDING, LATE, or FAILED patterns
 
-3. Common issues to check:
+4. Common issues to check:
    - Concurrency limits (deployment/queue/pool levels)
    - Work pool health and worker availability
    - Parameter mismatches or validation errors
    - Infrastructure/environment issues
 
-4. If runs are stuck PENDING:
-   - Count running flows vs concurrency limits
-   - Verify workers are polling the queue
-   - Check work pool isn't paused"""
+5. If runs are stuck PENDING/LATE:
+   - Compare running flow count vs work pool concurrency_limit
+   - Verify workers are polling (active_workers > 0)
+   - Check work pool/queue isn't paused"""

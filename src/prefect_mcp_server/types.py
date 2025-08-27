@@ -91,6 +91,38 @@ class WorkPoolInfo(TypedDict):
     status: str | None
 
 
+class WorkQueueInfo(TypedDict):
+    """Information about a work queue."""
+
+    id: str
+    name: str
+    concurrency_limit: int | None
+    priority: int
+    is_paused: bool
+
+
+class WorkPoolDetail(TypedDict):
+    """Detailed work pool information with concurrency limits."""
+
+    id: str
+    name: str
+    type: str
+    status: str | None
+    is_paused: bool
+    concurrency_limit: int | None
+    work_queues: list[WorkQueueInfo]
+    active_workers: int
+    description: str | None
+
+
+class WorkPoolResult(TypedDict):
+    """Result of getting work pool details."""
+
+    success: bool
+    work_pool: WorkPoolDetail | None
+    error: str | None
+
+
 class DashboardResult(TypedDict):
     """Dashboard overview of Prefect instance."""
 
