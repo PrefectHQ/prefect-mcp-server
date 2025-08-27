@@ -25,7 +25,8 @@ async def test_server_has_expected_capabilities(prefect_mcp_server: FastMCP) -> 
         assert "prefect://flow-runs/{flow_run_id}/logs" in template_uris
         assert "prefect://deployments/{deployment_id}" in template_uris
         assert "prefect://task-runs/{task_run_id}" in template_uris
-        assert len(templates) == 4
+        assert "prefect://work-pools/{work_pool_name}" in template_uris
+        assert len(templates) == 5
 
         tools = await client.list_tools()
         tool_names = [t.name for t in tools]
