@@ -14,8 +14,9 @@ async def get_identity() -> IdentityResult:
         async with get_client() as client:
             api_url = str(settings.api.url)
 
-            # Determine if we're connected to Prefect Cloud
-            is_cloud = "api.prefect.cloud" in api_url or "app.prefect.cloud" in api_url
+            # Determine if we're connected to Prefect Cloud by checking for the cloud URL pattern
+            # Cloud URLs have the format: .../accounts/{account_id}/workspaces/{workspace_id}
+            is_cloud = "/accounts/" in api_url and "/workspaces/" in api_url
 
             identity_info = {
                 "api_url": api_url,
