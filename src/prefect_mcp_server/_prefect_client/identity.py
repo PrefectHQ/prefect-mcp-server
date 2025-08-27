@@ -2,7 +2,6 @@
 
 from prefect.client.cloud import get_cloud_client
 from prefect.client.orchestration import get_client
-from prefect.settings import get_current_settings
 
 from prefect_mcp_server.types import IdentityResult
 
@@ -10,9 +9,8 @@ from prefect_mcp_server.types import IdentityResult
 async def get_identity() -> IdentityResult:
     """Get identity and connection information for the current Prefect instance."""
     try:
-        settings = get_current_settings()
         async with get_client() as client:
-            api_url = str(settings.api.url)
+            api_url = str(client.api_url)
 
             # Determine if we're connected to Prefect Cloud by checking for the cloud URL pattern
             # Cloud URLs have the format: .../accounts/{account_id}/workspaces/{workspace_id}
@@ -25,43 +23,32 @@ async def get_identity() -> IdentityResult:
 
             # If it's Prefect Cloud, try to get user/workspace info
             if is_cloud:
-                try:
-                    # Use the CloudClient to access cloud-specific endpoints
-                    cloud_client = get_cloud_client(infer_cloud_url=True)
-                    async with cloud_client:
-                        # Get user info from /me/ endpoint
-                        me_data = await cloud_client.get("/me/")
-                        identity_info["user"] = {
-                            "id": str(me_data.get("id")) if me_data.get("id") else None,
-                            "email": me_data.get("email"),
-                            "handle": me_data.get("handle"),
-                            "first_name": me_data.get("first_name"),
-                            "last_name": me_data.get("last_name"),
-                        }
-                except Exception:
-                    # /me endpoint might not be available or accessible
-                    # Could be due to permissions or API key type
-                    pass
+                # Use the CloudClient to access cloud-specific endpoints
+                cloud_client = get_cloud_client(infer_cloud_url=True)
+                async with cloud_client:
+                    # Get user info from /me/ endpoint
+                    me_data = await cloud_client.get("/me/")
+                    identity_info["user"] = {
+                        "id": str(me_data.get("id")) if me_data.get("id") else None,
+                        "email": me_data.get("email"),
+                        "handle": me_data.get("handle"),
+                        "first_name": me_data.get("first_name"),
+                        "last_name": me_data.get("last_name"),
+                    }
 
-                # Extract workspace info from URL if possible
+                # Extract workspace info from URL
                 # Format: https://api.prefect.cloud/api/accounts/{account_id}/workspaces/{workspace_id}
-                if "/accounts/" in api_url and "/workspaces/" in api_url:
-                    parts = api_url.split("/")
-                    try:
-                        account_idx = parts.index("accounts") + 1
-                        workspace_idx = parts.index("workspaces") + 1
-                        identity_info["account_id"] = parts[account_idx]
-                        identity_info["workspace_id"] = parts[workspace_idx]
-                    except (IndexError, ValueError):
-                        pass
+                parts = api_url.split("/")
+                account_idx = parts.index("accounts") + 1
+                workspace_idx = parts.index("workspaces") + 1
+                identity_info["account_id"] = parts[account_idx]
+                identity_info["workspace_id"] = parts[workspace_idx]
 
-            # Get server version if available
-            try:
+            # Get server version (only available on OSS, not cloud)
+            if not is_cloud:
                 version_response = await client._client.get("/version")
                 if version_response.status_code == 200:
                     identity_info["version"] = version_response.text.strip('"')
-            except Exception:
-                pass
 
             return {
                 "success": True,
@@ -69,11 +56,10 @@ async def get_identity() -> IdentityResult:
                 "error": None,
             }
     except Exception as e:
-        settings = get_current_settings()
         return {
             "success": False,
             "identity": {
-                "api_url": str(settings.api.url),
+                "api_url": "unknown",
                 "api_type": "unknown",
             },
             "error": f"Failed to fetch identity: {str(e)}",
