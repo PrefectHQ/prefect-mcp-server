@@ -26,21 +26,18 @@ mcp = FastMCP("Prefect MCP Server")
 @mcp.prompt
 def debug_flow_run(
     flow_run_id: str | None = None,
-    deployment_name: str | None = None,
-    work_pool_name: str | None = None,
 ) -> str:
     """Generate debugging guidance for troubleshooting Prefect flow runs.
 
-    Provides structured steps for investigating flow run failures,
-    deployment issues, and infrastructure problems.
+    Provides structured steps for investigating a specific flow run failure
+    or general debugging guidance if no flow run ID is provided.
+
+    Args:
+        flow_run_id: UUID of a specific flow run to debug (optional)
     """
     from prefect_mcp_server._prompts import create_debug_prompt
 
-    return create_debug_prompt(
-        flow_run_id=flow_run_id,
-        deployment_name=deployment_name,
-        work_pool_name=work_pool_name,
-    )
+    return create_debug_prompt(flow_run_id=flow_run_id)
 
 
 # Resources - read-only operations
