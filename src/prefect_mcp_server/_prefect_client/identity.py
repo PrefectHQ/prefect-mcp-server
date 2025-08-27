@@ -1,5 +1,6 @@
 """Identity and connection information for Prefect MCP server."""
 
+from prefect.client.cloud import get_cloud_client
 from prefect.client.orchestration import get_client
 from prefect.settings import get_current_settings
 
@@ -24,17 +25,22 @@ async def get_identity() -> IdentityResult:
             # If it's Prefect Cloud, try to get user/workspace info
             if is_cloud:
                 try:
-                    # Try to get the /me endpoint if available
-                    me_response = await client._client.get("/me")
-                    if me_response.status_code == 200:
-                        me_data = me_response.json()
-                        identity_info["user"] = {
-                            "email": me_data.get("email"),
-                            "username": me_data.get("username"),
-                            "id": me_data.get("id"),
-                        }
+                    # Use the CloudClient to access cloud-specific endpoints
+                    cloud_client = get_cloud_client(infer_cloud_url=True)
+                    async with cloud_client:
+                        # Get user info from /me endpoint
+                        me_response = await cloud_client._client.get("/api/me")
+                        if me_response.status_code == 200:
+                            me_data = me_response.json()
+                            identity_info["user"] = {
+                                "email": me_data.get("email"),
+                                "username": me_data.get("username"),
+                                "id": me_data.get("id"),
+                                "name": me_data.get("name"),
+                            }
                 except Exception:
-                    # /me endpoint might not be available
+                    # /me endpoint might not be available or accessible
+                    # Could be due to permissions or API key type
                     pass
 
                 # Extract workspace info from URL if possible
