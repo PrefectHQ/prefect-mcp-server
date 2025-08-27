@@ -65,17 +65,11 @@ this server exposes prefect's general functionality to MCP clients like Claude C
 # clone the repo
 gh repo clone prefecthq/prefect-mcp-server && cd prefect-mcp-server
 
-# install with dev dependencies
-uv sync --dev
+# install dev deps and pre-commit hooks
+just setup
 
 # run tests (uses ephemeral prefect database via prefect_test_harness)
-uv run pytest
-
-# run with coverage
-uv run pytest --cov=src --cov-report=html
-
-# run with debug logging
-uv run fastmcp dev src/prefect_mcp_server/server.py
+just test
 ```
 
 </details>
@@ -83,4 +77,6 @@ uv run fastmcp dev src/prefect_mcp_server/server.py
 ## links
 
 - [FastMCP](https://github.com/jlowin/fastmcp) - the easiest way to build an mcp server
-- [Prefect](https://prefect.io) - the easiest way to build workflows
+- [FastMCP Cloud](https://fastmcp.cloud) - deploy your MCP server to the cloud
+- [Prefect](https://github.com/prefecthq/prefect) - the easiest way to build workflows
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) - one of the best MCP clients
