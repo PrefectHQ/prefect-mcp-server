@@ -1,18 +1,21 @@
 # prefect-mcp-server
 
-a [FastMCP](https://github.com/jlowin/fastmcp) server for interacting with [`prefect`](https://github.com/prefecthq/prefect) resources.
+a [`fastmcp`](https://github.com/jlowin/fastmcp) server for interacting with [`prefect`](https://github.com/prefecthq/prefect) resources.
 
 ## quick start
 
-### deploy on fastmcp.cloud
+### deploy on FastMCP Cloud
 
-1. fork this repository on github
+1. fork this repository on github (`gh repo fork prefecthq/prefect-mcp-server`)
 2. go to [fastmcp.cloud](https://fastmcp.cloud) and sign in
 3. create a new server pointing to your fork:
    - server path: `src/prefect_mcp_server/server.py`
    - requirements: `pyproject.toml` (or leave blank)
+   - (optional) default environment variables:
+     - `PREFECT_API_URL` - url of your prefect server or cloud workspace
+     - `PREFECT_API_KEY` - api key for prefect cloud (not required for open source server)
 4. get your server URL (e.g., `https://your-server-name.fastmcp.app/mcp`)
-5. add to claude code:
+5. add to your favorite MCP client. e.g. claude code:
 
 ```bash
 # add to claude code with http transport
@@ -41,7 +44,7 @@ claude mcp add prefect \
 > [!NOTE]
 > for prefect cloud, find your api url at: `https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID]`
 > 
-> for oss servers with basic auth, [use `PREFECT_API_AUTH_STRING`](https://docs.prefect.io/v3/advanced/security-settings#basic-authentication) instead of `PREFECT_API_KEY`
+> for open-source servers with basic auth, [use `PREFECT_API_AUTH_STRING`](https://docs.prefect.io/v3/advanced/security-settings#basic-authentication) instead of `PREFECT_API_KEY`
 
 ## features
 
