@@ -4,86 +4,54 @@ a [FastMCP](https://github.com/jlowin/fastmcp) server for interacting with [`pre
 
 ## quick start
 
+### deploy on fastmcp.cloud
+
+1. fork this repository on github
+2. go to [fastmcp.cloud](https://fastmcp.cloud) and sign in
+3. create a new server pointing to your fork:
+   - server path: `src/prefect_mcp_server/server.py`
+   - requirements: `pyproject.toml` (or leave blank)
+4. get your server URL (e.g., `https://your-server-name.fastmcp.app/mcp`)
+5. add to claude code:
+
 ```bash
-# add to claude code
+# add to claude code with http transport
+claude mcp add prefect \
+  -e PREFECT_API_URL=your-url \
+  -e PREFECT_API_KEY=your-key \
+  --transport http https://your-server-name.fastmcp.app/mcp
+```
+
+### run locally
+
+```bash
+# add to claude code running locally
 claude mcp add prefect \
   -e PREFECT_API_URL=your-url \
   -e PREFECT_API_KEY=your-key \
   -- uvx prefect-mcp-server@git+https://github.com/prefecthq/prefect-mcp-server.git
 ```
 
-> [!NOTE]
-> `PREFECT_API_KEY` is only relevant when using Prefect Cloud. You may want `PREFECT_API_AUTH_STRING` for an open source server with [basic auth configured](https://docs.prefect.io/v3/advanced/security-settings#basic-authentication).
-
-## features
-
-**resources** - read-only data snapshots
-- `prefect://dashboard` - get dashboard overview with flow run stats and work pool status
-- `prefect://deployments/list` - list all deployments with their details
-
-**tools** - actions and queries
-- `read_events` - query and filter events with time ranges and type prefixes
-- `run_deployment_by_name` - run a deployment by flow/deployment name
-
-## installation
-
-```bash
-# from github
-uv add prefect-mcp-server@git+https://github.com/prefecthq/prefect-mcp-server.git
-```
-
-## configuration
-
-the prefect sdk reads these directly from your environment:
+### environment variables
 
 **required:**
 - `PREFECT_API_URL` - url of your prefect server or cloud workspace
-- `PREFECT_API_KEY` - api key for prefect cloud (not required for open source server)
+- `PREFECT_API_KEY` - api key for prefect cloud (not needed for oss server)
 
-**optional:**
-- `DEPLOYMENTS_DEFAULT_LIMIT` - default limit for deployments list (default: 100)
-- `EVENTS_DEFAULT_LIMIT` - default limit for events list (default: 50)
+> [!NOTE]
+> for prefect cloud, find your api url at: `https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID]`
+> 
+> for oss servers with basic auth, [use `PREFECT_API_AUTH_STRING`](https://docs.prefect.io/v3/advanced/security-settings#basic-authentication) instead of `PREFECT_API_KEY`
 
-```bash
-# prefect cloud
-export PREFECT_API_URL="https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID]"
-export PREFECT_API_KEY="your-api-key"
+## features
 
-# local prefect server
-export PREFECT_API_URL="http://localhost:4200/api"
-```
+this server exposes prefect's general functionality to MCP clients like Claude Code:
 
-## sample client usage
+**resources** - read-only snapshots of prefect state like dashboards, deployments, flow runs, task runs, and logs. these provide structured views of your workflows and their execution history.
 
-```python
-# list deployments
-deployments = await client.read_resource("prefect://deployments/list")
-# returns: {"success": true, "count": 3, "deployments": [...]}
+**tools** - actions for interacting with prefect, including querying events and triggering deployment runs. designed for both monitoring and orchestration use cases.
 
-# run deployment by name
-result = await client.call_tool(
-    "run_deployment_by_name",
-    {
-        "flow_name": "my-flow",
-        "deployment_name": "production",
-        "parameters": {"key": "value"}
-    }
-)
-
-# get dashboard overview
-dashboard = await client.read_resource("prefect://dashboard")
-# returns: {"success": true, "flow_runs": {...}, "active_work_pools": [...]}
-
-# query events with filtering
-events = await client.call_tool(
-    "read_events",
-    {
-        "event_type_prefix": "prefect.flow-run",
-        "limit": 10
-    }
-)
-# returns: {"success": true, "count": 10, "events": [...], "total": 50}
-```
+**prompts** - contextual debugging guidance for troubleshooting flow runs and deployment issues, helping diagnose common problems.
 
 ## development
 
@@ -104,12 +72,12 @@ uv run pytest
 uv run pytest --cov=src --cov-report=html
 
 # run with debug logging
-DEPLOYMENTS_DEFAULT_LIMIT=10 uv run fastmcp dev src/prefect_mcp_server/server.py
+uv run fastmcp dev src/prefect_mcp_server/server.py
 ```
 
 </details>
 
 ## links
 
-- [FastMCP](https://github.com/jlowin/fastmcp) - the easiest way to build an MCP server
+- [FastMCP](https://github.com/jlowin/fastmcp) - the easiest way to build an mcp server
 - [Prefect](https://prefect.io) - the easiest way to build workflows
