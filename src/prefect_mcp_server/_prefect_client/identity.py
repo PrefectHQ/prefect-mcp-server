@@ -28,16 +28,15 @@ async def get_identity() -> IdentityResult:
                     # Use the CloudClient to access cloud-specific endpoints
                     cloud_client = get_cloud_client(infer_cloud_url=True)
                     async with cloud_client:
-                        # Get user info from /me endpoint
-                        me_response = await cloud_client._client.get("/api/me")
-                        if me_response.status_code == 200:
-                            me_data = me_response.json()
-                            identity_info["user"] = {
-                                "email": me_data.get("email"),
-                                "username": me_data.get("username"),
-                                "id": me_data.get("id"),
-                                "name": me_data.get("name"),
-                            }
+                        # Get user info from /me/ endpoint
+                        me_data = await cloud_client.get("/me/")
+                        identity_info["user"] = {
+                            "id": str(me_data.get("id")) if me_data.get("id") else None,
+                            "email": me_data.get("email"),
+                            "handle": me_data.get("handle"),
+                            "first_name": me_data.get("first_name"),
+                            "last_name": me_data.get("last_name"),
+                        }
                 except Exception:
                     # /me endpoint might not be available or accessible
                     # Could be due to permissions or API key type
