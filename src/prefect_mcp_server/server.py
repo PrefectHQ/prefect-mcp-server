@@ -40,6 +40,22 @@ def debug_flow_run(
     return create_debug_prompt(flow_run_id=flow_run_id)
 
 
+@mcp.prompt
+def debug_deployment(
+    deployment_id: str,
+) -> str:
+    """Debug deployment issues, especially concurrency-related problems.
+
+    Provides systematic checks for why deployments might have stuck or pending runs.
+
+    Args:
+        deployment_id: UUID of the deployment to debug
+    """
+    from prefect_mcp_server._prompts import create_deployment_debug_prompt
+
+    return create_deployment_debug_prompt(deployment_id=deployment_id)
+
+
 # Resources - read-only operations
 @mcp.resource("prefect://identity")
 async def get_identity() -> IdentityResult:

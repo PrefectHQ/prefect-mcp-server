@@ -72,3 +72,26 @@ def create_debug_prompt(
         ]
 
     return "\n".join(prompt_parts)
+
+
+def create_deployment_debug_prompt(deployment_id: str) -> str:
+    """Create a debugging prompt for deployment issues."""
+    return f"""To debug deployment {deployment_id}:
+
+1. Fetch deployment details: prefect://deployments/{deployment_id}
+   - Check: paused, schedule active, work_pool_name, work_queue_name
+
+2. Check recent runs:
+   - Use read_events to see flow run states for this deployment
+   - Look for: PENDING, LATE, or FAILED patterns
+
+3. Common issues to check:
+   - Concurrency limits (deployment/queue/pool levels)
+   - Work pool health and worker availability
+   - Parameter mismatches or validation errors
+   - Infrastructure/environment issues
+
+4. If runs are stuck PENDING:
+   - Count running flows vs concurrency limits
+   - Verify workers are polling the queue
+   - Check work pool isn't paused"""
