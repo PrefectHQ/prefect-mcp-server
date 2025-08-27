@@ -13,9 +13,10 @@ async def test_server_has_expected_capabilities(prefect_mcp_server: FastMCP) -> 
     async with Client(prefect_mcp_server) as client:
         resources = await client.list_resources()
         resource_uris = [str(r.uri) for r in resources]
-        assert "prefect://deployments/list" in resource_uris
+        assert "prefect://identity" in resource_uris
         assert "prefect://dashboard" in resource_uris
-        assert len(resources) == 2
+        assert "prefect://deployments/list" in resource_uris
+        assert len(resources) == 3
 
         # Check resource templates separately
         templates = await client.list_resource_templates()
@@ -112,6 +113,35 @@ async def test_run_nonexistent_deployment_by_name(prefect_mcp_server: FastMCP) -
         assert data["success"] is False
         assert "error" in data
         assert data["error"] is not None
+
+
+async def test_identity_resource(prefect_mcp_server: FastMCP) -> None:
+    """Test the identity resource exists and works correctly."""
+    async with Client(prefect_mcp_server) as client:
+        resources = await client.list_resources()
+        identity_resource = next(
+            (r for r in resources if str(r.uri) == "prefect://identity"), None
+        )
+
+        assert identity_resource is not None
+        assert identity_resource.name == "get_identity"
+        assert identity_resource.description
+
+        # Test reading the resource
+        result = await client.read_resource("prefect://identity")
+
+        assert isinstance(result, list)
+        assert len(result) == 1
+        content = result[0]
+        data = json.loads(content.text)
+
+        # Should return the expected structure
+        assert "success" in data
+        assert "identity" in data
+        assert isinstance(data["identity"], dict)
+        assert "api_url" in data["identity"]
+        assert "api_type" in data["identity"]
+        assert data["identity"]["api_type"] in ["cloud", "oss", "unknown"]
 
 
 async def test_dashboard_resource(prefect_mcp_server: FastMCP) -> None:
