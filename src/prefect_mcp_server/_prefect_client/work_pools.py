@@ -1,6 +1,8 @@
 """Work pool functionality for Prefect MCP server."""
 
+from httpx import HTTPStatusError
 from prefect.client.orchestration import get_client
+from prefect.exceptions import ObjectNotFound
 
 from prefect_mcp_server.types import WorkPoolDetail, WorkPoolResult, WorkQueueInfo
 
@@ -51,9 +53,21 @@ async def get_work_pool(work_pool_name: str) -> WorkPoolResult:
                 "work_pool": work_pool_detail,
                 "error": None,
             }
+    except ObjectNotFound:
+        return {
+            "success": False,
+            "work_pool": None,
+            "error": f"Work pool '{work_pool_name}' not found",
+        }
+    except HTTPStatusError as e:
+        return {
+            "success": False,
+            "work_pool": None,
+            "error": f"API error fetching work pool '{work_pool_name}': {e.response.status_code} - {e.response.text}",
+        }
     except Exception as e:
         return {
             "success": False,
             "work_pool": None,
-            "error": f"Failed to fetch work pool '{work_pool_name}': {str(e)}",
+            "error": f"Unexpected error fetching work pool '{work_pool_name}': {str(e)}",
         }
