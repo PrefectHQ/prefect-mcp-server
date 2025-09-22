@@ -4,6 +4,7 @@ from typing import Annotated, Any
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from fastmcp import FastMCP
+from fastmcp.server.proxy import ProxyClient
 from pydantic import Field
 
 from prefect_mcp_server import _prefect_client
@@ -21,6 +22,12 @@ from prefect_mcp_server.types import (
 )
 
 mcp = FastMCP("Prefect MCP Server")
+
+# Mount the Prefect docs MCP server to expose its tools
+docs_proxy = FastMCP.as_proxy(
+    ProxyClient("https://docs.prefect.io/mcp"), name="Prefect Docs Proxy"
+)
+mcp.mount(docs_proxy, prefix="docs")
 
 
 # Prompts - guidance for LLM interactions
