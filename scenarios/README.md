@@ -1,3 +1,4 @@
+
 # scenarios
 
 Utilities and repeatable setups for Prefect MCP scenario experiments.
@@ -16,3 +17,14 @@ Utilities and repeatable setups for Prefect MCP scenario experiments.
 
 You can also `cd scenarios` and run `uv run pytest` manually if preferred. The fixtures will spin up
 Prefect containers as needed and tear them down automatically once each scenario finishes.
+
+## Claude Code integration
+
+The optional Claude Code SDK scenario requires:
+
+- `claude` CLI installed (or `CLAUDE_CODE_BIN` pointing to it)
+- `ANTHROPIC_API_KEY` configured
+- `PREFECT_SCENARIOS_RUN_CLAUDE=1` set to opt in
+
+When these prerequisites are met, rerun `just scenarios run` to execute the Claude-backed
+evaluation test.
