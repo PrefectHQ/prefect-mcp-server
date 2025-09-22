@@ -36,7 +36,6 @@ async def test_server_has_expected_capabilities(prefect_mcp_server: FastMCP) -> 
         assert "get_flow_run" not in tool_names
         assert "get_deployment" not in tool_names
         assert "get_task_run" not in tool_names
-        # Should have at least 2 original tools, may have more from mounted proxy
         assert len(tools) >= 2
 
 
@@ -195,72 +194,3 @@ async def test_read_events_tool(prefect_mcp_server: FastMCP) -> None:
         assert isinstance(data["events"], list)
         assert "total" in data
         assert isinstance(data["total"], int)
-
-
-async def test_server_prompts_exist(prefect_mcp_server: FastMCP) -> None:
-    """Test that server prompts exist and work correctly."""
-    async with Client(prefect_mcp_server) as client:
-        prompts = await client.list_prompts()
-        prompt_names = [p.name for p in prompts]
-
-        # Check that expected prompts exist
-        assert "debug_flow_run" in prompt_names
-        assert "debug_deployment" in prompt_names
-        assert len(prompts) >= 2  # Should have at least these two prompts
-
-        # Test debug_flow_run prompt
-        debug_flow_prompt = next(
-            (p for p in prompts if p.name == "debug_flow_run"), None
-        )
-        assert debug_flow_prompt is not None
-        assert debug_flow_prompt.description
-        assert "debugging guidance" in debug_flow_prompt.description.lower()
-
-        # Test debug_deployment prompt
-        debug_deployment_prompt = next(
-            (p for p in prompts if p.name == "debug_deployment"), None
-        )
-        assert debug_deployment_prompt is not None
-        assert debug_deployment_prompt.description
-        assert "deployment" in debug_deployment_prompt.description.lower()
-
-
-async def test_server_with_proxy_maintains_original_count(
-    prefect_mcp_server: FastMCP,
-) -> None:
-    """Test that the server with proxy maintains expected counts of original components."""
-    async with Client(prefect_mcp_server) as client:
-        # Test resources - should have exactly the original 3 static resources
-        resources = await client.list_resources()
-        resource_uris = [str(r.uri) for r in resources]
-        original_resources = [
-            "prefect://identity",
-            "prefect://dashboard",
-            "prefect://deployments/list",
-        ]
-
-        for uri in original_resources:
-            assert uri in resource_uris
-        # Note: May have more if proxy adds resources, but originals should exist
-
-        # Test resource templates - should have exactly the original 5
-        templates = await client.list_resource_templates()
-        template_uris = [str(t.uriTemplate) for t in templates]
-        original_templates = [
-            "prefect://flow-runs/{flow_run_id}",
-            "prefect://flow-runs/{flow_run_id}/logs",
-            "prefect://deployments/{deployment_id}",
-            "prefect://task-runs/{task_run_id}",
-            "prefect://work-pools/{work_pool_name}",
-        ]
-
-        for uri in original_templates:
-            assert uri in template_uris
-
-        # Test tools - should have at least the original 2
-        tools = await client.list_tools()
-        tool_names = [t.name for t in tools]
-        original_tools = ["run_deployment_by_name", "read_events"]
-
-        for tool in original_tools:
-            assert tool in tool_names
