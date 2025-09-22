@@ -1,3 +1,5 @@
+mod scenarios
+
 # Check for uv installation
 check-uv:
     #!/usr/bin/env sh
