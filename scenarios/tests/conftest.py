@@ -5,7 +5,6 @@ from collections.abc import AsyncGenerator, Iterator
 from contextlib import ExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TypeAlias
 
 import pytest
 from prefect import get_client
@@ -13,9 +12,11 @@ from prefect.client.orchestration import PrefectClient
 from prefect.settings import PREFECT_API_URL
 from prefect.testing.utilities import prefect_test_harness
 from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServerStdio
+from pydantic_ai.mcp import MCPServer, MCPServerStdio
 
-MCPServer: TypeAlias = MCPServerStdio
+
+class AssertingMCPServer(MCPServer):
+    pass
 
 
 @dataclass(slots=True)

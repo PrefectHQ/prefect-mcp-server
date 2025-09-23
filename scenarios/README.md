@@ -1,5 +1,10 @@
 # scenarios
 
+from root of the repo, run:
+```bash
+just scenarios
+```
+
 Scenario-focused tests for the Prefect MCP server.
 
 ## Running the suite
