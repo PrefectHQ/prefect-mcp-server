@@ -1,7 +1,7 @@
 [project]
 name = "scenarios"
 version = "0.1.0"
-description = "Add your description here"
+description = "Evaluation scenarios for testing AI agent interactions with Prefect MCP server"
 readme = "README.md"
 authors = [{ name = "Prefect Technologies", email = "help@prefect.io" }]
 requires-python = ">=3.10"
