@@ -8,8 +8,9 @@ authors = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "claude-code-sdk>=0.0.23",
-    "docker>=7.1.0",
+    "prefect>=3.0.0",
+    "pydantic-ai>=1.0.10",
+    "mcp>=1.1.0",
 ]
 
 [build-system]

@@ -1,47 +1,98 @@
 import os
-from collections.abc import Iterator
-from contextlib import contextmanager
+import shutil
+import tempfile
+from collections.abc import AsyncGenerator, Iterator
+from contextlib import ExitStack
+from dataclasses import dataclass
+from pathlib import Path
+from typing import TypeAlias
 
 import pytest
-from docker.errors import DockerException
+from prefect import get_client
+from prefect.client.orchestration import PrefectClient
+from prefect.settings import PREFECT_API_URL
+from prefect.testing.utilities import prefect_test_harness
+from pydantic_ai import Agent
+from pydantic_ai.mcp import MCPServerStdio
 
-from scenarios import PrefectServerHandle, prefect_server
+MCPServer: TypeAlias = MCPServerStdio
 
 
-@contextmanager
-def _temporary_env(**values: str) -> Iterator[None]:
-    previous = {key: os.environ.get(key) for key in values}
+@dataclass(slots=True)
+class PrefectTestContext:
+    api_url: str
+    env: dict[str, str]
+
+
+@dataclass(slots=True)
+class PrefectMCPServerHarness:
+    server: MCPServer
+    tool_calls: list[str]
+
+
+@dataclass(slots=True)
+class PrefectAgentHarness:
+    agent: Agent
+    server: PrefectMCPServerHarness
+
+
+@pytest.fixture
+def ai_model() -> str:
+    return "openai:gpt-4o"
+
+
+@pytest.fixture()
+def prefect_test_context() -> Iterator[PrefectTestContext]:
+    stack = ExitStack()
+    temp_home = Path(tempfile.mkdtemp(prefix="prefect-scenarios-"))
+    stack.callback(lambda: shutil.rmtree(temp_home, ignore_errors=True))
+
+    stack.enter_context(prefect_test_harness())
+
+    api_url = PREFECT_API_URL.value()
+    env = {
+        "PREFECT_API_URL": api_url,
+        "PREFECT_API_KEY": "",
+        "PREFECT_HOME": str(temp_home),
+    }
+
+    previous = {key: os.environ.get(key) for key in env}
+    os.environ.update(env)
+
     try:
-        os.environ.update(values)
-        yield
+        yield PrefectTestContext(api_url=api_url, env=env)
     finally:
-        for key, old in previous.items():
-            if old is None:
+        for key, value in previous.items():
+            if value is None:
                 os.environ.pop(key, None)
             else:
-                os.environ[key] = old
+                os.environ[key] = value
+        stack.close()
 
 
-@pytest.fixture(scope="session")
-def prefect_server_handle() -> Iterator[PrefectServerHandle]:
-    try:
-        with prefect_server() as handle:
-            yield handle
-    except (RuntimeError, DockerException) as exc:
-        pytest.skip(f"Prefect server unavailable: {exc}")
+@pytest.fixture
+def prefect_mcp_server(
+    prefect_test_context: PrefectTestContext,
+) -> MCPServer:
+    return MCPServerStdio(
+        command="uv",
+        args=["run", "-m", "prefect_mcp_server"],
+        env=prefect_test_context.env,
+    )
 
 
-@pytest.fixture(scope="session", autouse=True)
-def prefect_api_environment(
-    prefect_server_handle: PrefectServerHandle,
-) -> Iterator[None]:
-    with _temporary_env(
-        PREFECT_API_URL=prefect_server_handle.api_url,
-        PREFECT_API_KEY="",
-    ):
-        yield
+@pytest.fixture
+def agent_with_prefect_mcp_server(
+    prefect_mcp_server: MCPServer, ai_model: str
+) -> Agent:
+    return Agent(
+        name="Prefect Eval Agent",
+        toolsets=[prefect_mcp_server],
+        model=ai_model,
+    )
 
 
-@pytest.fixture(scope="session")
-def prefect_api_url(prefect_server_handle: PrefectServerHandle) -> str:
-    return prefect_server_handle.api_url
+@pytest.fixture
+async def prefect_client() -> AsyncGenerator[PrefectClient, None]:
+    async with get_client() as client:
+        yield client
