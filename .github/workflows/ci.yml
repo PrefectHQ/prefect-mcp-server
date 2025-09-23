@@ -75,6 +75,8 @@ jobs:
 
       - name: Run evals
         run: just scenarios
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
   lint:
     timeout-minutes: 2
