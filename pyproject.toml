@@ -59,8 +59,6 @@ extend-select = ["I", "UP"]
 [tool.ruff.lint.per-file-ignores]
 
 [tool.uv.workspace]
-members = [
-    "scenarios",
-]
+members = ["scenarios"]
 # "__init__.py" = ["F401", "I001", "RUF013"]
 # "src/prefect_mcp_server/__init__.py" = ["E402"]

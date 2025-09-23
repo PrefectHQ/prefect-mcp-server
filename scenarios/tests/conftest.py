@@ -3,6 +3,7 @@ from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
+from dotenv import load_dotenv
 from prefect import get_client
 from prefect.client.orchestration import PrefectClient
 from prefect.settings import get_current_settings
@@ -13,6 +14,12 @@ from pydantic_ai.mcp import CallToolFunc, MCPServer, MCPServerStdio, ToolResult
 
 @pytest.fixture
 def ai_model() -> str:
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        try:
+            load_dotenv()
+            assert os.getenv("ANTHROPIC_API_KEY")
+        except AssertionError:
+            raise ValueError("ANTHROPIC_API_KEY is not set")
     return "anthropic:claude-3-5-sonnet-latest"
 
 
@@ -30,6 +37,7 @@ def tool_call_spy() -> AsyncMock:
 
     spy.side_effect = side_effect
     return spy
+
 
 
 @pytest.fixture(autouse=True)

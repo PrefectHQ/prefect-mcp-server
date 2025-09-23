@@ -8,6 +8,7 @@ on:
   push:
     branches: ["main"]
     paths:
+      - "scenarios/**"
       - "src/**"
       - "tests/**"
       - "uv.lock"
@@ -16,6 +17,7 @@ on:
 
   pull_request:
     paths:
+      - "scenarios/**"
       - "src/**"
       - "tests/**"
       - "uv.lock"
@@ -33,8 +35,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ["3.10", "3.13"]
+        os: [ubuntu-latest]
+        python-version: ["3.13"]
       fail-fast: false
     timeout-minutes: 10
 
@@ -48,8 +50,33 @@ jobs:
           cache-dependency-glob: "uv.lock"
           python-version: ${{ matrix.python-version }}
 
+      - uses: extractions/setup-just@v3
+
       - name: Run tests
-        run: uv run pytest tests -v
+        run: just test
+
+  evals:
+    name: "Evals"
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: "3.12"
+
+      - uses: extractions/setup-just@v3
+
+      - name: Run evals
+        run: just scenarios
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
   lint:
     timeout-minutes: 2

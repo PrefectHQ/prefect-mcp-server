@@ -3,21 +3,19 @@ name = "scenarios"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-authors = [
-    { name = "zzstoatzz", email = "thrast36@gmail.com" }
-]
+authors = [{ name = "Prefect Technologies", email = "help@prefect.io" }]
 requires-python = ">=3.10"
-dependencies = [
-    "prefect>=3.0.0",
-    "pydantic-ai>=1.0.10",
-    "mcp>=1.1.0",
-]
+dependencies = ["prefect-mcp-server", "pydantic-ai>=1.0.10", "mcp>=1.1.0"]
 
 [build-system]
 requires = ["uv_build>=0.8.12,<0.9.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
-dev = [
-    "pytest>=8.4.1",
-]
+dev = ["pytest-asyncio>=1.2.0"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.uv.sources]
+prefect-mcp-server = { workspace = true }
