@@ -7,9 +7,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 from prefect import get_client
 from prefect.client.orchestration import PrefectClient
-from prefect.settings import PREFECT_API_URL
+from prefect.settings import get_current_settings
 from prefect.testing.utilities import prefect_test_harness
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServer, MCPServerStdio
@@ -39,7 +40,13 @@ class PrefectAgentHarness:
 
 @pytest.fixture
 def ai_model() -> str:
-    return "openai:gpt-4o"
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        try:
+            load_dotenv()
+            assert os.getenv("ANTHROPIC_API_KEY")
+        except AssertionError:
+            raise ValueError("ANTHROPIC_API_KEY is not set")
+    return "anthropic:claude-3-5-sonnet-latest"
 
 
 @pytest.fixture()
@@ -50,7 +57,7 @@ def prefect_test_context() -> Iterator[PrefectTestContext]:
 
     stack.enter_context(prefect_test_harness())
 
-    api_url = PREFECT_API_URL.value()
+    api_url = get_current_settings().api.url
     env = {
         "PREFECT_API_URL": api_url,
         "PREFECT_API_KEY": "",
