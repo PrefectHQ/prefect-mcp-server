@@ -50,7 +50,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
           python-version: ${{ matrix.python-version }}
 
-      - uses: extractions/setup-just
+      - uses: extractions/setup-just@v3
 
       - name: Run tests
         run: just test
@@ -71,7 +71,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
           python-version: "3.12"
 
-      - uses: extractions/setup-just
+      - uses: extractions/setup-just@v3
 
       - name: Run evals
         run: just scenarios
