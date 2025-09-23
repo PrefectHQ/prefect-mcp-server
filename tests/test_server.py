@@ -3,9 +3,14 @@
 import json
 from uuid import UUID
 
+import pytest
 from fastmcp import FastMCP
 from fastmcp.client import Client
 from prefect.client.orchestration import PrefectClient
+
+# Apply timeout to all tests in this module
+# CI can hang when interacting with the server, especially the docs proxy
+pytestmark = pytest.mark.timeout(30)
 
 
 async def test_server_has_expected_capabilities(prefect_mcp_server: FastMCP) -> None:

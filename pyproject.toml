@@ -24,6 +24,7 @@ dev = [
     "pre-commit>=4.3.0",
     "ipython",
     "pytest-rerunfailures>=16.0.1",
+    "pytest-timeout>=2.4.0",
 ]
 
 [tool.hatch.version]
