@@ -8,6 +8,7 @@ on:
   push:
     branches: ["main"]
     paths:
+      - "scenarios/**"
       - "src/**"
       - "tests/**"
       - "uv.lock"
@@ -16,6 +17,7 @@ on:
 
   pull_request:
     paths:
+      - "scenarios/**"
       - "src/**"
       - "tests/**"
       - "uv.lock"
