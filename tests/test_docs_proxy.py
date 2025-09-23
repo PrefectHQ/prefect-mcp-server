@@ -1,11 +1,17 @@
 """Tests for Prefect docs MCP server proxy functionality."""
 
+import pytest
 from fastmcp import FastMCP
 from fastmcp.client import Client
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=2)
 async def test_docs_proxy_tools_available(prefect_mcp_server: FastMCP) -> None:
-    """Test that tools from the docs proxy are available with prefix."""
+    """Test that tools from the docs proxy are available with prefix.
+
+    This test can be flaky due to the external docs.prefect.io/mcp endpoint
+    occasionally returning 500 errors.
+    """
     async with Client(prefect_mcp_server) as client:
         tools = await client.list_tools()
         tool_names = [t.name for t in tools]
