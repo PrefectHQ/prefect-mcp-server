@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncGenerator, Generator
 from typing import Any
 from unittest.mock import AsyncMock
@@ -37,7 +38,6 @@ def tool_call_spy() -> AsyncMock:
 
     spy.side_effect = side_effect
     return spy
-
 
 
 @pytest.fixture(autouse=True)
