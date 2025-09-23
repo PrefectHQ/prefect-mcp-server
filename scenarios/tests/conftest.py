@@ -1,91 +1,56 @@
-import os
-import shutil
-import tempfile
-from collections.abc import AsyncGenerator, Iterator
-from contextlib import ExitStack
-from dataclasses import dataclass
-from pathlib import Path
+from collections.abc import AsyncGenerator, Generator
+from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
 from prefect import get_client
 from prefect.client.orchestration import PrefectClient
-from prefect.settings import PREFECT_API_URL
+from prefect.settings import get_current_settings
 from prefect.testing.utilities import prefect_test_harness
-from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServer, MCPServerStdio
-
-
-class AssertingMCPServer(MCPServer):
-    pass
-
-
-@dataclass(slots=True)
-class PrefectTestContext:
-    api_url: str
-    env: dict[str, str]
-
-
-@dataclass(slots=True)
-class PrefectMCPServerHarness:
-    server: MCPServer
-    tool_calls: list[str]
-
-
-@dataclass(slots=True)
-class PrefectAgentHarness:
-    agent: Agent
-    server: PrefectMCPServerHarness
+from pydantic_ai import Agent, RunContext
+from pydantic_ai.mcp import CallToolFunc, MCPServer, MCPServerStdio, ToolResult
 
 
 @pytest.fixture
 def ai_model() -> str:
-    return "openai:gpt-4o"
+    return "anthropic:claude-3-5-sonnet-latest"
 
 
-@pytest.fixture()
-def prefect_test_context() -> Iterator[PrefectTestContext]:
-    stack = ExitStack()
-    temp_home = Path(tempfile.mkdtemp(prefix="prefect-scenarios-"))
-    stack.callback(lambda: shutil.rmtree(temp_home, ignore_errors=True))
+@pytest.fixture(scope="session")
+def tool_call_spy() -> AsyncMock:
+    spy = AsyncMock()
 
-    stack.enter_context(prefect_test_harness())
+    async def side_effect(
+        ctx: RunContext[Any],
+        call_tool_func: CallToolFunc,
+        name: str,
+        tool_args: dict[str, Any],
+    ) -> ToolResult:
+        return await call_tool_func(name, tool_args, None)
 
-    api_url = PREFECT_API_URL.value()
-    env = {
-        "PREFECT_API_URL": api_url,
-        "PREFECT_API_KEY": "",
-        "PREFECT_HOME": str(temp_home),
-    }
-
-    previous = {key: os.environ.get(key) for key in env}
-    os.environ.update(env)
-
-    try:
-        yield PrefectTestContext(api_url=api_url, env=env)
-    finally:
-        for key, value in previous.items():
-            if value is None:
-                os.environ.pop(key, None)
-            else:
-                os.environ[key] = value
-        stack.close()
+    spy.side_effect = side_effect
+    return spy
 
 
-@pytest.fixture
-def prefect_mcp_server(
-    prefect_test_context: PrefectTestContext,
-) -> MCPServer:
-    return MCPServerStdio(
-        command="uv",
-        args=["run", "-m", "prefect_mcp_server"],
-        env=prefect_test_context.env,
-    )
+@pytest.fixture(autouse=True)
+def reset_tool_call_spy(tool_call_spy: AsyncMock) -> None:
+    tool_call_spy.reset_mock()
+
+
+@pytest.fixture(scope="session")
+def prefect_mcp_server(tool_call_spy: AsyncMock) -> Generator[MCPServer, None, None]:
+    with prefect_test_harness():
+        api_url = get_current_settings().api.url
+        yield MCPServerStdio(
+            command="uv",
+            args=["run", "-m", "prefect_mcp_server"],
+            env={"PREFECT_API_URL": api_url} if api_url else None,
+            process_tool_call=tool_call_spy,
+        )
 
 
 @pytest.fixture
-def agent_with_prefect_mcp_server(
-    prefect_mcp_server: MCPServer, ai_model: str
-) -> Agent:
+def eval_agent(prefect_mcp_server: MCPServer, ai_model: str) -> Agent:
     return Agent(
         name="Prefect Eval Agent",
         toolsets=[prefect_mcp_server],
