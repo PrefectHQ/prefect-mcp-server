@@ -74,7 +74,7 @@ jobs:
       - uses: extractions/setup-just@v3
 
       - name: Run evals
-        run: just scenarios
+        run: just evals
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 

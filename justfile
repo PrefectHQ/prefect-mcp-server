@@ -1,5 +1,3 @@
-mod scenarios
-
 # Check for uv installation
 check-uv:
     #!/usr/bin/env sh
@@ -37,6 +35,9 @@ lint:
 # Run ty type checker on all files
 typecheck:
     uv run --frozen ty check
+
+evals:
+    uv run --frozen pytest -xvs evals
 
 # Copy context to clipboard
 copy-context:
