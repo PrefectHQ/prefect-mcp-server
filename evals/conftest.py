@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.mcp import CallToolFunc, MCPServer, MCPServerStdio, ToolResult
 
+load_dotenv(".env.local")
 logfire.configure(
     send_to_logfire="if-token-present", environment=os.getenv("ENVIRONMENT") or "local"
 )
