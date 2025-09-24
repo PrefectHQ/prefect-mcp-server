@@ -36,9 +36,9 @@ lint:
 typecheck:
     uv run --frozen ty check
 
-# Run evals, optionally filtering by test name pattern
-evals FILTER="":
-    uv run --frozen pytest -xvs evals{{ if FILTER != "" { " -k '" + FILTER + "'" } else { "" } }}
+# Run evals with optional pytest arguments
+evals *args:
+    uv run --frozen pytest -xvs evals {{args}}
 
 # Copy context to clipboard
 copy-context:
