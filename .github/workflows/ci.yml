@@ -31,7 +31,7 @@ permissions:
 
 jobs:
   test:
-    name: "Test: Python ${{ matrix.python-version }} on ${{ matrix.os }}"
+    name: "test: python ${{ matrix.python-version }} on ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -56,7 +56,6 @@ jobs:
         run: just test
 
   evals:
-    name: "Evals"
     runs-on: ubuntu-latest
 
     timeout-minutes: 10
