@@ -38,18 +38,11 @@ async def test_agent_reports_503_failure_reason(
 
     tool_names = [call.args[2] for call in tool_call_spy.call_args_list]
 
-    # Agent should use either read_events or get_flow_run_logs to investigate the failure
-    assert any(tool in tool_names for tool in ["read_events", "get_flow_run_logs"]), (
-        f"Expected 'read_events' or 'get_flow_run_logs' in {tool_names}"
+    # Agent must use get_flow_run_logs to get the actual error details
+    assert "get_flow_run_logs" in tool_names, (
+        f"Expected 'get_flow_run_logs' in {tool_names} - "
+        "agent must retrieve actual logs to identify failure reason"
     )
-
-    # If using read_events, it should filter for flow-run events
-    if "read_events" in tool_names:
-        for i, tool_name in enumerate(tool_names):
-            if tool_name == "read_events":
-                tool_args = tool_call_spy.call_args_list[i].args[3]
-                assert tool_args.get("event_type_prefix") == "prefect.flow-run"
-                break
 
 
 @pytest.fixture
@@ -80,3 +73,11 @@ async def test_agent_reports_exception_failure(
     assert "ZeroDivisionError" in result.output or "division by zero" in result.output
 
     assert tool_call_spy.call_count >= 1
+
+    tool_names = [call.args[2] for call in tool_call_spy.call_args_list]
+
+    # Agent must use get_flow_run_logs to get the actual error details
+    assert "get_flow_run_logs" in tool_names, (
+        f"Expected 'get_flow_run_logs' in {tool_names} - "
+        "agent must retrieve actual logs to identify failure reason"
+    )
