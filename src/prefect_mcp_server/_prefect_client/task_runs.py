@@ -1,5 +1,6 @@
 """Task run operations for Prefect MCP server."""
 
+from typing import Any
 from uuid import UUID
 
 from prefect.client.orchestration import get_client
@@ -92,3 +93,105 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
                     "task_run": None,
                     "error": f"Error fetching task run: {error_msg}",
                 }
+
+
+async def get_task_runs(
+    task_run_id: str | None = None,
+    flow_run_id: str | None = None,
+    task_name: str | None = None,
+    state_type: str | None = None,
+    limit: int = 50,
+) -> TaskRunResult | dict[str, Any]:
+    """Get task runs with optional filters.
+
+    If task_run_id is provided, returns a single task run with full details.
+    Otherwise returns a list of task runs matching the filters.
+    """
+    # If we have a specific task run ID, get detailed info for that one
+    if task_run_id:
+        return await get_task_run(task_run_id)
+
+    # Otherwise, list task runs with filters
+    async with get_client() as client:
+        try:
+            from prefect.client.schemas.filters import (
+                TaskRunFilter,
+                TaskRunFilterFlowRunId,
+            )
+
+            # Build filters
+            filters = {}
+            if flow_run_id:
+                filters["task_run_filter"] = TaskRunFilter(
+                    flow_run_id=TaskRunFilterFlowRunId(any_=[UUID(flow_run_id)])
+                )
+
+            # Fetch task runs
+            task_runs = await client.read_task_runs(
+                **filters,
+                limit=limit,
+                sort="START_TIME_DESC",
+            )
+
+            # Apply additional client-side filters
+            if task_name:
+                task_runs = [tr for tr in task_runs if tr.name == task_name]
+
+            if state_type:
+                task_runs = [
+                    tr
+                    for tr in task_runs
+                    if tr.state and tr.state.type.value == state_type
+                ]
+
+            # Format the task runs
+            task_run_list = []
+            for task_run in task_runs:
+                # Calculate duration
+                duration = None
+                if task_run.start_time and task_run.end_time:
+                    duration = (task_run.end_time - task_run.start_time).total_seconds()
+
+                task_run_list.append(
+                    {
+                        "id": str(task_run.id),
+                        "name": task_run.name,
+                        "task_key": task_run.task_key,
+                        "flow_run_id": str(task_run.flow_run_id)
+                        if task_run.flow_run_id
+                        else None,
+                        "state_type": task_run.state.type.value
+                        if task_run.state
+                        else None,
+                        "state_name": task_run.state.name if task_run.state else None,
+                        "created": task_run.created.isoformat()
+                        if task_run.created
+                        else None,
+                        "start_time": task_run.start_time.isoformat()
+                        if task_run.start_time
+                        else None,
+                        "end_time": task_run.end_time.isoformat()
+                        if task_run.end_time
+                        else None,
+                        "duration": duration,
+                        "retry_count": (task_run.run_count - 1)
+                        if task_run.run_count
+                        else 0,
+                        "tags": list(task_run.tags) if task_run.tags else [],
+                    }
+                )
+
+            return {
+                "success": True,
+                "count": len(task_run_list),
+                "task_runs": task_run_list,
+                "error": None,
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "count": 0,
+                "task_runs": [],
+                "error": f"Failed to fetch task runs: {str(e)}",
+            }

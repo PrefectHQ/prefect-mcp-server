@@ -164,6 +164,118 @@ async def get_flow_run(
             }
 
 
+async def get_flow_runs(
+    flow_run_id: str | None = None,
+    deployment_id: str | None = None,
+    flow_name: str | None = None,
+    state_type: str | None = None,
+    state_name: str | None = None,
+    limit: int = 50,
+) -> dict[str, Any]:
+    """Get flow runs with optional filters.
+
+    If flow_run_id is provided, returns a single flow run with full details.
+    Otherwise returns a list of flow runs matching the filters.
+    """
+    # If we have a specific flow run ID, get detailed info for that one
+    if flow_run_id:
+        return await get_flow_run(flow_run_id, include_logs=False)
+
+    # Otherwise, list flow runs with filters
+    async with get_client() as client:
+        try:
+            from prefect.client.schemas.filters import (
+                DeploymentFilter,
+                DeploymentFilterId,
+            )
+
+            # Build filters
+            filters = {}
+            if deployment_id:
+                filters["deployment_filter"] = DeploymentFilter(
+                    id=DeploymentFilterId(any_=[UUID(deployment_id)])
+                )
+
+            # Fetch flow runs
+            flow_runs = await client.read_flow_runs(
+                **filters,
+                limit=limit,
+                sort="START_TIME_DESC",
+            )
+
+            # Apply additional client-side filters
+            if flow_name:
+                flow_runs = [
+                    fr
+                    for fr in flow_runs
+                    if fr.labels and fr.labels.get("prefect.flow.name") == flow_name
+                ]
+
+            if state_type:
+                flow_runs = [
+                    fr
+                    for fr in flow_runs
+                    if fr.state_type and fr.state_type.value == state_type
+                ]
+
+            if state_name:
+                flow_runs = [fr for fr in flow_runs if fr.state_name == state_name]
+
+            # Format the flow runs
+            flow_run_list = []
+            for flow_run in flow_runs:
+                # Get flow name from labels
+                flow_name_from_labels = None
+                if flow_run.labels:
+                    flow_name_from_labels = flow_run.labels.get("prefect.flow.name")
+
+                # Calculate duration
+                duration = None
+                if flow_run.start_time and flow_run.end_time:
+                    duration = (flow_run.end_time - flow_run.start_time).total_seconds()
+
+                flow_run_list.append(
+                    {
+                        "id": str(flow_run.id),
+                        "name": flow_run.name,
+                        "flow_name": flow_name_from_labels,
+                        "state_type": flow_run.state_type.value
+                        if flow_run.state_type
+                        else None,
+                        "state_name": flow_run.state_name,
+                        "created": flow_run.created.isoformat()
+                        if flow_run.created
+                        else None,
+                        "start_time": flow_run.start_time.isoformat()
+                        if flow_run.start_time
+                        else None,
+                        "end_time": flow_run.end_time.isoformat()
+                        if flow_run.end_time
+                        else None,
+                        "duration": duration,
+                        "deployment_id": str(flow_run.deployment_id)
+                        if flow_run.deployment_id
+                        else None,
+                        "tags": flow_run.tags,
+                    }
+                )
+
+            return {
+                "success": True,
+                "count": len(flow_run_list),
+                "flow_runs": flow_run_list,
+                "error": None,
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "count": 0,
+                "flow_runs": [],
+                "error": f"Failed to fetch flow runs: {str(e)}",
+            }
+
+
 async def get_flow_run_logs(flow_run_id: str, limit: int = 100) -> LogsResult:
     """Get only the logs for a flow run.
 

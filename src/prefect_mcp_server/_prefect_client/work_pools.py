@@ -1,5 +1,7 @@
 """Work pool functionality for Prefect MCP server."""
 
+from typing import Any
+
 from httpx import HTTPStatusError
 from prefect.client.orchestration import get_client
 from prefect.exceptions import ObjectNotFound
@@ -70,4 +72,72 @@ async def get_work_pool(work_pool_name: str) -> WorkPoolResult:
             "success": False,
             "work_pool": None,
             "error": f"Unexpected error fetching work pool '{work_pool_name}': {str(e)}",
+        }
+
+
+async def get_work_pools(
+    work_pool_name: str | None = None,
+    work_pool_type: str | None = None,
+    status: str | None = None,
+    limit: int = 50,
+) -> WorkPoolResult | dict[str, Any]:
+    """Get work pools with optional filters.
+
+    If work_pool_name is provided, returns a single work pool with full details.
+    Otherwise returns a list of work pools matching the filters.
+    """
+    # If we have a specific work pool name, get detailed info for that one
+    if work_pool_name:
+        return await get_work_pool(work_pool_name)
+
+    # Otherwise, list work pools with filters
+    try:
+        async with get_client() as client:
+            # Fetch all work pools
+            work_pools = await client.read_work_pools(limit=limit)
+
+            # Apply client-side filters
+            if work_pool_type:
+                work_pools = [wp for wp in work_pools if wp.type == work_pool_type]
+
+            if status:
+                work_pools = [
+                    wp for wp in work_pools if getattr(wp, "status", None) == status
+                ]
+
+            # Format the work pools
+            work_pool_list = []
+            for work_pool in work_pools:
+                # Get worker count for this pool
+                workers = await client.read_workers_for_work_pool(
+                    work_pool_name=work_pool.name
+                )
+                active_worker_count = len([w for w in workers if w.status == "ONLINE"])
+
+                work_pool_list.append(
+                    {
+                        "id": str(work_pool.id),
+                        "name": work_pool.name,
+                        "type": work_pool.type,
+                        "status": getattr(work_pool, "status", None),
+                        "is_paused": work_pool.is_paused,
+                        "concurrency_limit": work_pool.concurrency_limit,
+                        "active_workers": active_worker_count,
+                        "description": work_pool.description,
+                    }
+                )
+
+            return {
+                "success": True,
+                "count": len(work_pool_list),
+                "work_pools": work_pool_list,
+                "error": None,
+            }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "count": 0,
+            "work_pools": [],
+            "error": f"Failed to fetch work pools: {str(e)}",
         }

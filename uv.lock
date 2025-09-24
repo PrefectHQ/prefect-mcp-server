@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -2435,7 +2435,6 @@ dependencies = [
 dev = [
     { name = "ipython", version = "8.37.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "ipython", version = "9.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "mcp" },
     { name = "pre-commit" },
     { name = "pydantic-ai" },
     { name = "pytest-asyncio" },
@@ -2455,7 +2454,6 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "ipython" },
-    { name = "mcp", specifier = ">=1.1.0" },
     { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "pydantic-ai", specifier = ">=1.0.10" },
     { name = "pytest-asyncio", specifier = ">=0.21.0" },

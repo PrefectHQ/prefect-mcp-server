@@ -245,6 +245,126 @@ async def run_deployment_by_id(
         }
 
 
+async def get_deployments(
+    deployment_id: str | None = None,
+    deployment_name: str | None = None,
+    flow_name: str | None = None,
+    tags: list[str] | None = None,
+    limit: int = 50,
+) -> DeploymentsResult | DeploymentResult:
+    """Get deployments with optional filters.
+
+    If deployment_id is provided, returns a single deployment with full details.
+    Otherwise returns a list of deployments matching the filters.
+    """
+    # If we have a specific deployment ID, get detailed info for that one
+    if deployment_id:
+        return await get_deployment(deployment_id)
+
+    # Otherwise, list deployments with filters
+    try:
+        async with get_client() as client:
+            # Build filters based on provided parameters
+            deployments = await client.read_deployments(limit=limit, offset=0)
+
+            # Filter by flow_name if provided
+            if flow_name:
+                deployments = [
+                    d for d in deployments if getattr(d, "flow_name", None) == flow_name
+                ]
+
+            # Filter by deployment_name if provided
+            if deployment_name:
+                deployments = [d for d in deployments if d.name == deployment_name]
+
+            # Filter by tags if provided
+            if tags:
+                deployments = [
+                    d
+                    for d in deployments
+                    if hasattr(d, "tags")
+                    and any(tag in getattr(d, "tags", []) for tag in tags)
+                ]
+
+            # If exactly one deployment matches and user specified name/flow, return detailed view
+            if len(deployments) == 1 and (deployment_name or flow_name):
+                deployment = deployments[0]
+                return await get_deployment(str(deployment.id))
+
+            # Otherwise return list view
+            deployment_list: list[DeploymentInfo] = []
+            for deployment in deployments:
+                # Extract parameter info with types from the schema for concise display
+                parameter_summary = []
+                schema = getattr(deployment, "parameter_openapi_schema", {})
+                if schema and isinstance(schema, dict):
+                    properties = schema.get("properties", {})
+                    required = schema.get("required", [])
+                    for param_name, param_info in properties.items():
+                        # Get the type directly from OpenAPI schema
+                        param_type = param_info.get("type", "any")
+
+                        # Check if required (in required list and no default)
+                        is_required = (
+                            param_name in required and "default" not in param_info
+                        )
+
+                        # Build parameter description
+                        if is_required:
+                            parameter_summary.append(
+                                f"{param_name}: {param_type} (required)"
+                            )
+                        else:
+                            parameter_summary.append(f"{param_name}: {param_type}")
+
+                deployment_info: DeploymentInfo = {
+                    "id": str(deployment.id),
+                    "name": deployment.name,
+                    "description": deployment.description,
+                    "tags": getattr(deployment, "tags", []),
+                    "flow_name": getattr(deployment, "flow_name", None),
+                    "is_schedule_active": getattr(
+                        deployment, "is_schedule_active", None
+                    ),
+                    "created": deployment.created.isoformat()
+                    if hasattr(deployment, "created") and deployment.created
+                    else None,
+                    "updated": deployment.updated.isoformat()
+                    if hasattr(deployment, "updated") and deployment.updated
+                    else None,
+                    "schedules": None,
+                    "parameter_summary": parameter_summary,
+                }
+
+                # Add schedule info if available
+                if hasattr(deployment, "schedules") and deployment.schedules:
+                    deployment_info["schedules"] = [
+                        {
+                            "active": getattr(schedule, "active", None),
+                            "schedule": str(schedule.schedule)
+                            if hasattr(schedule, "schedule")
+                            else None,
+                        }
+                        for schedule in deployment.schedules
+                    ]
+
+                deployment_list.append(deployment_info)
+
+            return {
+                "success": True,
+                "count": len(deployment_list),
+                "deployments": deployment_list,
+                "error": None,
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "count": 0,
+            "deployments": [],
+            "error": f"Failed to fetch deployments: {str(e)}",
+        }
+
+
 async def run_deployment_by_name(
     flow_name: str,
     deployment_name: str,
