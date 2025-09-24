@@ -27,7 +27,8 @@ def ai_model() -> str:
             assert os.getenv("ANTHROPIC_API_KEY")
         except AssertionError:
             raise ValueError("ANTHROPIC_API_KEY is not set")
-    return "anthropic:claude-3-5-sonnet-latest"
+    # return "anthropic:claude-3-5-sonnet-latest"
+    return "anthropic:claude-sonnet-4-20250514"
 
 
 @pytest.fixture(scope="session")

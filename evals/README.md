@@ -28,7 +28,11 @@ required state, and drives the `prefect_mcp_server` through Pydantic AI.
 |------|-------------|--------|-------|
 | **test_last_failing_flow_run** | verifies agent can identify and describe the last failing flow run | ✅ implemented | - |
 | **test_flow_run_failure_reason** | verifies agent can identify why a flow run failed | ✅ implemented | [#38](https://github.com/PrefectHQ/prefect-mcp-server/issues/38) |
-| **determining cause of late runs** | agent should analyze why runs are delayed or stuck | 🔄 planned | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
+| **test_diagnoses_unhealthy_work_pool** | verifies agent can diagnose late runs caused by unhealthy work pools (no workers) | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
+| **test_diagnoses_work_pool_concurrency** | verifies agent can diagnose late runs caused by work pool concurrency limits | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
+| **test_diagnoses_work_queue_concurrency** | verifies agent can diagnose late runs caused by work queue concurrency limits | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
+| **test_diagnoses_deployment_concurrency** | verifies agent can diagnose late runs caused by deployment concurrency limits | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
+| **test_diagnoses_tag_concurrency** | verifies agent can diagnose late runs caused by tag-based concurrency limits | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
 
 ## adding new evals
 
