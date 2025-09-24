@@ -1,11 +1,9 @@
 """Tests for Prefect docs MCP server proxy functionality."""
 
-import pytest
 from fastmcp import FastMCP
 from fastmcp.client import Client
 
 
-@pytest.mark.flaky(reruns=3, reruns_delay=2)
 async def test_docs_proxy_tools_available(prefect_mcp_server: FastMCP) -> None:
     """Test that tools from the docs proxy are available with prefix.
 
@@ -27,5 +25,5 @@ async def test_docs_proxy_tools_available(prefect_mcp_server: FastMCP) -> None:
         )
         assert docs_search_tool is not None
         assert docs_search_tool.description is not None
-        assert "Prefect knowledge base" in docs_search_tool.description
+        assert "Search the Prefect documentation" in docs_search_tool.description
         assert "search" in docs_search_tool.description.lower()
