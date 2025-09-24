@@ -93,25 +93,15 @@ async def get_deployments(
             examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
         ),
     ] = None,
-    deployment_name: Annotated[
-        str | None,
+    filter: Annotated[
+        dict[str, Any] | None,
         Field(
-            description="Filter by deployment name",
-            examples=["production", "daily-etl"],
-        ),
-    ] = None,
-    flow_name: Annotated[
-        str | None,
-        Field(
-            description="Filter by flow name",
-            examples=["my-flow", "etl-flow"],
-        ),
-    ] = None,
-    tags: Annotated[
-        list[str] | None,
-        Field(
-            description="Filter by tags",
-            examples=[["production"], ["daily", "etl"]],
+            description="JSON filter object for advanced querying. Supports all Prefect DeploymentFilter fields.",
+            examples=[
+                {"name": {"like_": "prod-%"}},
+                {"tags": {"all_": ["production"]}, "is_schedule_active": {"eq_": True}},
+                {"work_queue_name": {"any_": ["critical", "default"]}},
+            ],
         ),
     ] = None,
     limit: Annotated[
@@ -123,17 +113,23 @@ async def get_deployments(
     Returns a single deployment with full details if deployment_id is provided,
     or a list of deployments matching the filters otherwise.
 
+    Filter operators:
+    - any_: Match any value in list
+    - all_: Match all values
+    - like_: SQL LIKE pattern matching
+    - not_any_: Exclude values
+    - is_null_: Check for null/not null
+    - eq_/ne_: Equality comparisons
+
     Examples:
         - Get specific deployment: get_deployments(deployment_id="...")
         - List all deployments: get_deployments()
-        - Filter by flow: get_deployments(flow_name="my-flow")
-        - Filter by tags: get_deployments(tags=["production"])
+        - Active deployments: get_deployments(filter={"is_schedule_active": {"eq_": True}})
+        - Production deployments: get_deployments(filter={"tags": {"all_": ["production"]}})
     """
     return await _prefect_client.get_deployments(
         deployment_id=deployment_id,
-        deployment_name=deployment_name,
-        flow_name=flow_name,
-        tags=tags,
+        filter=filter,
         limit=limit,
     )
 
@@ -147,32 +143,21 @@ async def get_flow_runs(
             examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
         ),
     ] = None,
-    deployment_id: Annotated[
-        str | None,
+    filter: Annotated[
+        dict[str, Any] | None,
         Field(
-            description="Filter by deployment ID",
-            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
-        ),
-    ] = None,
-    flow_name: Annotated[
-        str | None,
-        Field(
-            description="Filter by flow name",
-            examples=["my-flow", "etl-flow"],
-        ),
-    ] = None,
-    state_type: Annotated[
-        str | None,
-        Field(
-            description="Filter by state type",
-            examples=["COMPLETED", "FAILED", "RUNNING"],
-        ),
-    ] = None,
-    state_name: Annotated[
-        str | None,
-        Field(
-            description="Filter by state name",
-            examples=["Completed", "Failed", "Running"],
+            description="JSON filter object for advanced querying. Supports all Prefect FlowRunFilter fields.",
+            examples=[
+                {"state": {"type": {"any_": ["FAILED", "CRASHED"]}}},
+                {
+                    "tags": {"all_": ["production"]},
+                    "deployment_id": {"is_null_": False},
+                },
+                {
+                    "name": {"like_": "etl-%"},
+                    "start_time": {"after_": "2024-01-01T00:00:00Z"},
+                },
+            ],
         ),
     ] = None,
     limit: Annotated[
@@ -184,18 +169,24 @@ async def get_flow_runs(
     Returns a single flow run with full details if flow_run_id is provided,
     or a list of flow runs matching the filters otherwise.
 
+    Filter operators:
+    - any_: Match any value in list
+    - all_: Match all values
+    - like_: SQL LIKE pattern matching
+    - not_any_: Exclude values
+    - is_null_: Check for null/not null
+    - after_/before_: Time comparisons
+    - gt_/gte_/lt_/lte_: Numeric comparisons
+
     Examples:
         - Get specific run: get_flow_runs(flow_run_id="...")
         - List recent runs: get_flow_runs()
-        - Filter by deployment: get_flow_runs(deployment_id="...")
-        - Filter by state: get_flow_runs(state_type="FAILED")
+        - Failed runs: get_flow_runs(filter={"state": {"type": {"any_": ["FAILED"]}}})
+        - Production runs: get_flow_runs(filter={"tags": {"all_": ["production"]}})
     """
     return await _prefect_client.get_flow_runs(
         flow_run_id=flow_run_id,
-        deployment_id=deployment_id,
-        flow_name=flow_name,
-        state_type=state_type,
-        state_name=state_name,
+        filter=filter,
         limit=limit,
     )
 
@@ -234,25 +225,15 @@ async def get_task_runs(
             examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
         ),
     ] = None,
-    flow_run_id: Annotated[
-        str | None,
+    filter: Annotated[
+        dict[str, Any] | None,
         Field(
-            description="Filter by flow run ID",
-            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
-        ),
-    ] = None,
-    task_name: Annotated[
-        str | None,
-        Field(
-            description="Filter by task name",
-            examples=["process-data", "send-notification"],
-        ),
-    ] = None,
-    state_type: Annotated[
-        str | None,
-        Field(
-            description="Filter by state type",
-            examples=["COMPLETED", "FAILED", "RUNNING"],
+            description="JSON filter object for advanced querying. Supports all Prefect TaskRunFilter fields.",
+            examples=[
+                {"state": {"type": {"any_": ["FAILED", "CRASHED"]}}},
+                {"name": {"like_": "%process%"}},
+                {"flow_run_id": {"any_": ["<uuid1>", "<uuid2>"]}},
+            ],
         ),
     ] = None,
     limit: Annotated[
@@ -267,16 +248,20 @@ async def get_task_runs(
     information (upstream task relationships), not the actual parameter values
     passed to the task.
 
+    Filter operators:
+    - any_: Match any value in list
+    - like_: SQL LIKE pattern matching
+    - not_any_: Exclude values
+    - is_null_: Check for null/not null
+
     Examples:
         - Get specific task: get_task_runs(task_run_id="...")
-        - List tasks for flow: get_task_runs(flow_run_id="...")
-        - Filter by state: get_task_runs(state_type="FAILED")
+        - Failed tasks: get_task_runs(filter={"state": {"type": {"any_": ["FAILED"]}}})
+        - Tasks by pattern: get_task_runs(filter={"name": {"like_": "%process%"}})
     """
     return await _prefect_client.get_task_runs(
         task_run_id=task_run_id,
-        flow_run_id=flow_run_id,
-        task_name=task_name,
-        state_type=state_type,
+        filter=filter,
         limit=limit,
     )
 
@@ -290,18 +275,14 @@ async def get_work_pools(
             examples=["test-pool", "kubernetes-pool"],
         ),
     ] = None,
-    work_pool_type: Annotated[
-        str | None,
+    filter: Annotated[
+        dict[str, Any] | None,
         Field(
-            description="Filter by work pool type",
-            examples=["process", "kubernetes", "docker"],
-        ),
-    ] = None,
-    status: Annotated[
-        str | None,
-        Field(
-            description="Filter by work pool status",
-            examples=["ONLINE", "PAUSED"],
+            description="JSON filter object for advanced querying. Supports all Prefect WorkPoolFilter fields.",
+            examples=[
+                {"type": {"any_": ["kubernetes", "process"]}},
+                {"name": {"like_": "prod-%"}},
+            ],
         ),
     ] = None,
     limit: Annotated[
@@ -316,15 +297,18 @@ async def get_work_pools(
     or not starting. Shows work pool and queue concurrency limits, active workers,
     and configuration details.
 
+    Filter operators:
+    - any_: Match any value in list
+    - like_: SQL LIKE pattern matching
+
     Examples:
         - Get specific pool: get_work_pools(work_pool_name="test-pool")
         - List all pools: get_work_pools()
-        - Filter by type: get_work_pools(work_pool_type="kubernetes")
+        - Kubernetes pools: get_work_pools(filter={"type": {"any_": ["kubernetes"]}})
     """
     return await _prefect_client.get_work_pools(
         work_pool_name=work_pool_name,
-        work_pool_type=work_pool_type,
-        status=status,
+        filter=filter,
         limit=limit,
     )
 

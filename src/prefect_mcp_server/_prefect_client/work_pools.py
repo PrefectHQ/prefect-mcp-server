@@ -77,8 +77,7 @@ async def get_work_pool(work_pool_name: str) -> WorkPoolResult:
 
 async def get_work_pools(
     work_pool_name: str | None = None,
-    work_pool_type: str | None = None,
-    status: str | None = None,
+    filter: dict[str, Any] | None = None,
     limit: int = 50,
 ) -> WorkPoolResult | dict[str, Any]:
     """Get work pools with optional filters.
@@ -93,17 +92,18 @@ async def get_work_pools(
     # Otherwise, list work pools with filters
     try:
         async with get_client() as client:
-            # Fetch all work pools
-            work_pools = await client.read_work_pools(limit=limit)
+            from prefect.client.schemas.filters import WorkPoolFilter
 
-            # Apply client-side filters
-            if work_pool_type:
-                work_pools = [wp for wp in work_pools if wp.type == work_pool_type]
+            # Build filter from JSON if provided
+            work_pool_filter = None
+            if filter:
+                work_pool_filter = WorkPoolFilter.model_validate(filter)
 
-            if status:
-                work_pools = [
-                    wp for wp in work_pools if getattr(wp, "status", None) == status
-                ]
+            # Fetch work pools
+            work_pools = await client.read_work_pools(
+                work_pool_filter=work_pool_filter,
+                limit=limit,
+            )
 
             # Format the work pools
             work_pool_list = []

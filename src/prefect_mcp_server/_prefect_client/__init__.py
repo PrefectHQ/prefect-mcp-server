@@ -2,7 +2,6 @@
 
 from prefect_mcp_server._prefect_client.dashboard import fetch_dashboard
 from prefect_mcp_server._prefect_client.deployments import (
-    fetch_deployments,
     get_deployment,
     get_deployments,
     run_deployment_by_id,
@@ -20,7 +19,6 @@ from prefect_mcp_server._prefect_client.work_pools import get_work_pool, get_wor
 
 __all__ = [
     "fetch_dashboard",
-    "fetch_deployments",
     "fetch_events",
     "get_deployment",
     "get_deployments",

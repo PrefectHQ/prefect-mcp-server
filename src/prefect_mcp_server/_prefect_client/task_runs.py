@@ -97,9 +97,7 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
 
 async def get_task_runs(
     task_run_id: str | None = None,
-    flow_run_id: str | None = None,
-    task_name: str | None = None,
-    state_type: str | None = None,
+    filter: dict[str, Any] | None = None,
     limit: int = 50,
 ) -> TaskRunResult | dict[str, Any]:
     """Get task runs with optional filters.
@@ -114,35 +112,19 @@ async def get_task_runs(
     # Otherwise, list task runs with filters
     async with get_client() as client:
         try:
-            from prefect.client.schemas.filters import (
-                TaskRunFilter,
-                TaskRunFilterFlowRunId,
-            )
+            from prefect.client.schemas.filters import TaskRunFilter
 
-            # Build filters
-            filters = {}
-            if flow_run_id:
-                filters["task_run_filter"] = TaskRunFilter(
-                    flow_run_id=TaskRunFilterFlowRunId(any_=[UUID(flow_run_id)])
-                )
+            # Build filter from JSON if provided
+            task_run_filter = None
+            if filter:
+                task_run_filter = TaskRunFilter.model_validate(filter)
 
             # Fetch task runs
             task_runs = await client.read_task_runs(
-                **filters,
+                task_run_filter=task_run_filter,
                 limit=limit,
                 sort="START_TIME_DESC",
             )
-
-            # Apply additional client-side filters
-            if task_name:
-                task_runs = [tr for tr in task_runs if tr.name == task_name]
-
-            if state_type:
-                task_runs = [
-                    tr
-                    for tr in task_runs
-                    if tr.state and tr.state.type.value == state_type
-                ]
 
             # Format the task runs
             task_run_list = []

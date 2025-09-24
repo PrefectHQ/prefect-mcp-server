@@ -166,16 +166,18 @@ async def get_flow_run(
 
 async def get_flow_runs(
     flow_run_id: str | None = None,
-    deployment_id: str | None = None,
-    flow_name: str | None = None,
-    state_type: str | None = None,
-    state_name: str | None = None,
+    filter: dict[str, Any] | None = None,
     limit: int = 50,
 ) -> dict[str, Any]:
     """Get flow runs with optional filters.
 
     If flow_run_id is provided, returns a single flow run with full details.
     Otherwise returns a list of flow runs matching the filters.
+
+    Args:
+        flow_run_id: UUID of a specific flow run to retrieve
+        filter: JSON-like dict that gets converted to FlowRunFilter
+        limit: Maximum number of flow runs to return
     """
     # If we have a specific flow run ID, get detailed info for that one
     if flow_run_id:
@@ -184,42 +186,19 @@ async def get_flow_runs(
     # Otherwise, list flow runs with filters
     async with get_client() as client:
         try:
-            from prefect.client.schemas.filters import (
-                DeploymentFilter,
-                DeploymentFilterId,
-            )
+            from prefect.client.schemas.filters import FlowRunFilter
 
-            # Build filters
-            filters = {}
-            if deployment_id:
-                filters["deployment_filter"] = DeploymentFilter(
-                    id=DeploymentFilterId(any_=[UUID(deployment_id)])
-                )
+            # Build filter from JSON if provided
+            flow_run_filter = None
+            if filter:
+                flow_run_filter = FlowRunFilter.model_validate(filter)
 
             # Fetch flow runs
             flow_runs = await client.read_flow_runs(
-                **filters,
+                flow_run_filter=flow_run_filter,
                 limit=limit,
                 sort="START_TIME_DESC",
             )
-
-            # Apply additional client-side filters
-            if flow_name:
-                flow_runs = [
-                    fr
-                    for fr in flow_runs
-                    if fr.labels and fr.labels.get("prefect.flow.name") == flow_name
-                ]
-
-            if state_type:
-                flow_runs = [
-                    fr
-                    for fr in flow_runs
-                    if fr.state_type and fr.state_type.value == state_type
-                ]
-
-            if state_name:
-                flow_runs = [fr for fr in flow_runs if fr.state_name == state_name]
 
             # Format the flow runs
             flow_run_list = []
