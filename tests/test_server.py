@@ -33,11 +33,10 @@ async def test_server_has_expected_capabilities(prefect_mcp_server: FastMCP) -> 
         assert "get_flow_run_logs" in tool_names
         assert "get_task_runs" in tool_names
         assert "get_work_pools" in tool_names
-        # Existing tools
         assert "run_deployment_by_name" in tool_names
         assert "read_events" in tool_names
-        # We have at least 9 tools now (plus any from docs proxy)
-        assert len(tools) >= 9
+        assert "get_object_schema" in tool_names
+        assert len(tools) >= 10
 
 
 async def test_get_deployments_with_test_data(
@@ -203,3 +202,32 @@ async def test_read_events_tool(prefect_mcp_server: FastMCP) -> None:
         assert isinstance(data["events"], list)
         assert "total" in data
         assert isinstance(data["total"], int)
+
+
+async def test_get_object_schema_tool(prefect_mcp_server: FastMCP) -> None:
+    """Test the get_object_schema tool exists and works correctly."""
+    async with Client(prefect_mcp_server) as client:
+        tools = await client.list_tools()
+        schema_tool = next((t for t in tools if t.name == "get_object_schema"), None)
+
+        assert schema_tool is not None
+        assert schema_tool.description
+
+        # Test calling the tool with automation type
+        result = await client.call_tool(
+            "get_object_schema", {"object_type": "automation"}
+        )
+
+        assert hasattr(result, "structured_content")
+        # FastMCP wraps the result in a 'result' key
+        data = result.structured_content.get("result") or result.structured_content
+
+        # Should return the expected schema structure
+        assert isinstance(data, dict)
+        assert "$defs" in data or "definitions" in data or "properties" in data
+        # Automation schema should have these core properties
+        assert "properties" in data
+        properties = data["properties"]
+        assert "name" in properties
+        assert "trigger" in properties
+        assert "actions" in properties

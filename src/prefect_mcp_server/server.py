@@ -1,6 +1,6 @@
 """Prefect MCP Server - Clean implementation following FastMCP patterns."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from fastmcp import FastMCP
@@ -408,3 +408,22 @@ async def run_deployment_by_name(
         name=name,
         tags=tags,
     )
+
+
+@mcp.tool
+async def get_object_schema(
+    object_type: Annotated[
+        Literal["automation"],
+        Field(
+            description="Name of the object type to get a schema for",
+            examples=["automation"],
+        ),
+    ],
+) -> dict[str, Any]:
+    """Get a schema for an object type."""
+    if object_type == "automation":
+        from prefect.events.schemas.automations import AutomationCore
+
+        return AutomationCore.model_json_schema()
+    else:
+        raise ValueError(f"Unknown object type: {object_type}")

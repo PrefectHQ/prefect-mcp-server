@@ -31,6 +31,11 @@ async def test_deployment(
     return deployment
 
 
+@pytest.fixture
+async def ai_model():
+    return "anthropic:claude-sonnet-4-0"
+
+
 class AutomationIDOutput(BaseModel):
     automation_id: uuid.UUID
 
@@ -40,7 +45,7 @@ def eval_agent(
     prefect_mcp_server: MCPServer, ai_model: str
 ) -> Agent[None, AutomationIDOutput]:
     return Agent(
-        name="Prefect Eval Agent",
+        name="Reactive Automation Eval Agent",
         toolsets=[prefect_mcp_server],
         tools=[read_file, run_shell_command, write_file],
         model=ai_model,
