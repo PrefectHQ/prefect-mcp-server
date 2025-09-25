@@ -73,7 +73,7 @@ jobs:
       - uses: extractions/setup-just@v3
 
       - name: Run evals
-        run: just evals
+        run: just evals "-n 2"
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
