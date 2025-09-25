@@ -26,7 +26,7 @@ class LateRunsScenario(NamedTuple):
 @pytest.fixture
 async def tag_concurrency_scenario(prefect_client: PrefectClient) -> LateRunsScenario:
     """Create scenario with tag-based concurrency limit exhausted."""
-    work_pool_name = f"tag-pool-{uuid4().hex[:8]}"
+    work_pool_name = f"work-pool-{uuid4().hex[:8]}"
     concurrency_tag = f"database-{uuid4().hex[:8]}"
 
     # Create work pool
@@ -142,6 +142,6 @@ async def test_diagnoses_tag_concurrency(
         concurrency limit of 1 that is contributing to late flow runs? The
         response should mention a specific tag name and note that it has a
         concurrency limit of 1. It's acceptable if the response also mentions
-        other potential causes, as good diagnosis considers multiple factors.""",
+        other potential causes, as a good diagnosis considers multiple factors.""",
         result.output,
     )
