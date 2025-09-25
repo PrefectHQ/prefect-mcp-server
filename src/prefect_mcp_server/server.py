@@ -313,7 +313,6 @@ async def get_work_pools(
     )
 
 
-# Tools - actions that modify state
 @mcp.tool
 async def read_events(
     event_type_prefix: Annotated[

@@ -15,12 +15,7 @@ class GlobalConcurrencyLimitInfo(TypedDict):
     active: bool
     active_slots: int
     slot_decay_per_second: float
-    over_limit: Annotated[
-        bool,
-        Field(
-            description="True if active_slots >= limit, indicating this concurrency limit is exhausted and blocking new runs from starting"
-        ),
-    ]
+    over_limit: bool
 
 
 class GlobalConcurrencyLimitsResult(TypedDict):
@@ -122,19 +117,9 @@ class WorkQueueInfo(TypedDict):
 
     id: str
     name: str
-    concurrency_limit: Annotated[
-        int | None,
-        Field(
-            description="Maximum concurrent runs allowed in this work queue. If set and exhausted, can cause late runs."
-        ),
-    ]
+    concurrency_limit: int | None
     priority: int
-    is_paused: Annotated[
-        bool,
-        Field(
-            description="Whether this work queue is paused. Paused queues cause late runs."
-        ),
-    ]
+    is_paused: bool
 
 
 class WorkPoolDetail(TypedDict):
@@ -143,36 +128,11 @@ class WorkPoolDetail(TypedDict):
     id: str
     name: str
     type: str
-    status: Annotated[
-        str | None,
-        Field(
-            description="Work pool status: READY (has active workers), NOT_READY (no workers), or PAUSED. NOT_READY pools cause late runs."
-        ),
-    ]
-    is_paused: Annotated[
-        bool,
-        Field(
-            description="Whether this work pool is paused. Paused pools cause late runs."
-        ),
-    ]
-    concurrency_limit: Annotated[
-        int | None,
-        Field(
-            description="Maximum concurrent runs allowed across this work pool. If set and exhausted, can cause late runs."
-        ),
-    ]
-    work_queues: Annotated[
-        list[WorkQueueInfo],
-        Field(
-            description="Work queues in this pool. Check each queue's concurrency_limit and is_paused status for bottlenecks."
-        ),
-    ]
-    active_workers: Annotated[
-        int,
-        Field(
-            description="Number of active workers polling this pool. 0 active workers will cause late runs."
-        ),
-    ]
+    status: str | None
+    is_paused: bool
+    concurrency_limit: int | None
+    work_queues: list[WorkQueueInfo]
+    active_workers: int
     description: str | None
 
 
@@ -225,13 +185,16 @@ class LogsResult(TypedDict):
 
 
 class FlowRunDetail(TypedDict):
-    """Detailed flow run information."""
+    """Detailed flow run information with inlined relationships."""
 
     id: str
     name: str | None
     flow_name: str | None
     state_type: str | None
-    state_name: str | None
+    state_name: Annotated[
+        str | None,
+        Field(description="Current state name. 'Late' means scheduled but not started"),
+    ]
     state_message: str | None
     created: str | None
     updated: str | None
@@ -244,6 +207,8 @@ class FlowRunDetail(TypedDict):
     work_queue_name: str | None
     infrastructure_pid: str | None
     parent_task_run_id: str | None
+    deployment: "DeploymentDetail | None"  # Inlined deployment details
+    work_pool: "WorkPoolDetail | None"  # Inlined work pool details
 
 
 class LogEntry(TypedDict):
@@ -300,9 +265,10 @@ class DeploymentDetail(TypedDict):
     applicable_concurrency_limits: Annotated[
         list[GlobalConcurrencyLimitInfo],
         Field(
-            description="Concurrency limits that could cause late/delayed runs for this deployment. Names with 'deployment:' prefix apply to this specific deployment. Names with 'tag:' prefix apply to flows/tasks with matching tags. Check if active_slots >= limit to identify bottlenecks."
+            description="Concurrency limits affecting this deployment. 'deployment:' prefix = this deployment, 'tag:' prefix = flows with matching tags. over_limit=true indicates exhaustion causing delays."
         ),
     ]
+    work_pool: "WorkPoolDetail | None"  # Inlined work pool details
 
 
 class DeploymentResult(TypedDict):

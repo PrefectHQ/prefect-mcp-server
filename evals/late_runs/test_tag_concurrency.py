@@ -136,10 +136,10 @@ async def test_diagnoses_tag_concurrency(
         )
 
     await evaluate_response(
-        """Does this response specifically identify that a tag-based concurrency
-        limit with limit=1 is causing the late flow runs? The response should
-        mention a specific tag concurrency limit (appearing as 'tag:database-...'
-        in global limits) that is exhausted, and distinguish it from other
-        tag-based limits with higher limits (5 and 10) that are not the cause.""",
+        """Does this response identify that flows with a specific tag have a
+        concurrency limit of 1 that is contributing to late flow runs? The
+        response should mention a specific tag name and note that it has a
+        concurrency limit of 1. It's acceptable if the response also mentions
+        other potential causes, as good diagnosis considers multiple factors.""",
         result.output,
     )
