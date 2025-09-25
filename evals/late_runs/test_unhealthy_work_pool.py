@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import NamedTuple
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -79,6 +80,7 @@ async def test_diagnoses_unhealthy_work_pool(
     eval_agent: Agent,
     unhealthy_work_pool_scenario: LateRunsScenario,
     tool_call_spy: AsyncMock,
+    evaluate_response: Callable[[str, str], bool],
 ) -> None:
     """Test agent diagnoses late runs caused by unhealthy work pool."""
     work_pool_name = unhealthy_work_pool_scenario.work_pool.name
@@ -88,14 +90,12 @@ async def test_diagnoses_unhealthy_work_pool(
             "Why are my recent flow runs taking so long to start? Some have been scheduled for a while but haven't begun execution."
         )
 
-    # Must identify the specific work pool name and its unhealthy status
-    assert work_pool_name in result.output, (
-        f"Agent must mention the work pool name '{work_pool_name}'"
+    # Use LLM evaluator for precise diagnosis assessment
+    evaluation_passed = await evaluate_response(
+        f"Does this response specifically identify that work pool '{work_pool_name}' is NOT_READY or has no active workers as the root cause of late flow runs? The response should mention the specific work pool name and its unhealthy status, not just give generic advice about checking work pools.",
+        result.output,
     )
-    assert any(
-        term in result.output.lower()
-        for term in ["not ready", "not_ready", "no workers"]
-    ), "Agent must identify that the work pool is not ready or has no workers"
+    assert evaluation_passed, f"LLM evaluation failed. Agent response: {result.output}"
 
     # Must have called get_work_pools to investigate work pool health
     tool_names = [call[0][2] for call in tool_call_spy.call_args_list]

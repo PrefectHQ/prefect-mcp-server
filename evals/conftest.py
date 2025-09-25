@@ -1,5 +1,5 @@
 import os
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Callable, Generator
 from typing import Any
 from unittest.mock import AsyncMock
 
@@ -77,3 +77,40 @@ def eval_agent(prefect_mcp_server: MCPServer, ai_model: str) -> Agent:
 async def prefect_client() -> AsyncGenerator[PrefectClient, None]:
     async with get_client() as client:
         yield client
+
+
+@pytest.fixture
+def evaluate_response() -> Callable[[str, str], bool]:
+    """Create an evaluator that uses Claude Opus to judge agent responses."""
+
+    async def _evaluate(evaluation_prompt: str, agent_response: str) -> bool:
+        """Evaluate an agent response using Claude Opus.
+
+        Args:
+            evaluation_prompt: Question/criteria for evaluation
+            agent_response: The agent's response to evaluate
+
+        Returns:
+            True if response meets criteria, False otherwise
+        """
+        evaluator = Agent(
+            name="Response Evaluator",
+            model="anthropic:claude-opus-4-1-20250805",
+            system_prompt=f"""You are evaluating AI agent responses for technical accuracy and specificity.
+
+Your job is to answer the evaluation question with only "YES" or "NO" based on the agent's response.
+
+Evaluation Question: {evaluation_prompt}
+
+Agent Response to Evaluate:
+{agent_response}
+
+Answer only "YES" or "NO" - no explanation needed.""",
+        )
+
+        async with evaluator:
+            result = await evaluator.run("Evaluate this response.")
+
+        return result.output.strip().upper() == "YES"
+
+    return _evaluate
