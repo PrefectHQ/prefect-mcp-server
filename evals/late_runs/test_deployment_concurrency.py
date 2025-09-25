@@ -122,4 +122,6 @@ async def test_diagnoses_deployment_concurrency(
 
     # Should call deployment or events tools
     tool_names = [call[0][2] for call in tool_call_spy.call_args_list]
-    assert any("deployment" in name or "read_events" in name for name in tool_names)
+    assert any("deployment" in name or "read_events" in name for name in tool_names), (
+        f"Agent must call deployment/events tools. Tools called in order: {tool_names}"
+    )

@@ -134,4 +134,6 @@ async def test_diagnoses_tag_concurrency(
     assert any(
         name in ["read_events", "get_deployments", "get_work_pools"]
         for name in tool_names
+    ), (
+        f"Agent must call diagnostic tools (read_events, get_deployments, or get_work_pools). Tools called in order: {tool_names}"
     )

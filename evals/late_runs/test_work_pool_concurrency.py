@@ -119,5 +119,5 @@ async def test_diagnoses_work_pool_concurrency(
     # Must have called get_work_pools to investigate work pool limits
     tool_names = [call[0][2] for call in tool_call_spy.call_args_list]
     assert "get_work_pools" in tool_names, (
-        f"Agent must call get_work_pools, called: {tool_names}"
+        f"Agent must call get_work_pools. Tools called in order: {tool_names}"
     )
