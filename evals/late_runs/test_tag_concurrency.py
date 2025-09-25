@@ -129,11 +129,12 @@ async def test_diagnoses_tag_concurrency(
         for term in ["tag", "concurrency", "global", "limit"]
     )
 
-    # Should call relevant diagnostic tools
+    # Should call read_events, get_deployments, or get_work_pools for diagnosis
     tool_names = [call[0][2] for call in tool_call_spy.call_args_list]
-    assert any(
-        name in ["read_events", "get_deployments", "get_work_pools"]
-        for name in tool_names
+    assert (
+        "read_events" in tool_names
+        or "get_deployments" in tool_names
+        or "get_work_pools" in tool_names
     ), (
-        f"Agent must call diagnostic tools (read_events, get_deployments, or get_work_pools). Tools called in order: {tool_names}"
+        f"Agent must call read_events, get_deployments, or get_work_pools. Tools called in order: {tool_names}"
     )

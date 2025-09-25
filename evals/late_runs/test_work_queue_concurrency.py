@@ -123,8 +123,8 @@ async def test_diagnoses_work_queue_concurrency(
         for term in ["queue", "work queue", "limit", "full", "occupied"]
     )
 
-    # Should call work pool resource (which includes queue info)
+    # Should call get_work_pools to investigate queue info
     tool_names = [call[0][2] for call in tool_call_spy.call_args_list]
-    assert any("work_pool" in name for name in tool_names), (
-        f"Agent must call work pool tools. Tools called in order: {tool_names}"
+    assert "get_work_pools" in tool_names, (
+        f"Agent must call get_work_pools. Tools called in order: {tool_names}"
     )
