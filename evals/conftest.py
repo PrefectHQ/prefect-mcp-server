@@ -1,7 +1,6 @@
 import os
+import textwrap
 from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
-from typing import Any
-from unittest.mock import AsyncMock
 
 import logfire
 import pytest
@@ -11,8 +10,10 @@ from prefect.client.orchestration import PrefectClient
 from prefect.settings import get_current_settings
 from prefect.testing.utilities import prefect_test_harness
 from pydantic import BaseModel
-from pydantic_ai import Agent, RunContext
-from pydantic_ai.mcp import CallToolFunc, MCPServer, MCPServerStdio, ToolResult
+from pydantic_ai import Agent
+from pydantic_ai.mcp import MCPServer, MCPServerStdio
+
+from evals.tools.spy import ToolCallSpy
 
 load_dotenv(".env.local")
 logfire.configure(
@@ -50,28 +51,17 @@ def reasoning_model() -> str:
 
 
 @pytest.fixture(scope="session")
-def tool_call_spy() -> AsyncMock:
-    spy = AsyncMock()
-
-    async def side_effect(
-        ctx: RunContext[Any],
-        call_tool_func: CallToolFunc,
-        name: str,
-        tool_args: dict[str, Any],
-    ) -> ToolResult:
-        return await call_tool_func(name, tool_args, None)
-
-    spy.side_effect = side_effect
-    return spy
+def tool_call_spy() -> ToolCallSpy:
+    return ToolCallSpy()
 
 
 @pytest.fixture(autouse=True)
-def reset_tool_call_spy(tool_call_spy: AsyncMock) -> None:
-    tool_call_spy.reset_mock()
+def reset_tool_call_spy(tool_call_spy: ToolCallSpy) -> None:
+    tool_call_spy.reset()
 
 
 @pytest.fixture(scope="session")
-def prefect_mcp_server(tool_call_spy: AsyncMock) -> Generator[MCPServer, None, None]:
+def prefect_mcp_server(tool_call_spy: ToolCallSpy) -> Generator[MCPServer, None, None]:
     with prefect_test_harness():
         api_url = get_current_settings().api.url
         yield MCPServerStdio(
@@ -146,20 +136,22 @@ def evaluate_response() -> Callable[[str, str], Awaitable[None]]:
         evaluator_model = os.getenv(
             "EVALUATOR_MODEL", "anthropic:claude-opus-4-1-20250805"
         )
-        evaluator = Agent[EvaluationResult](
+        evaluator = Agent(
             name="Response Evaluator",
             model=evaluator_model,
             output_type=EvaluationResult,
-            system_prompt=f"""You are evaluating AI agent responses for technical accuracy and specificity.
+            system_prompt=textwrap.dedent("""\
+                You are evaluating AI agent responses for technical accuracy and specificity.
 
-Evaluation Question: {evaluation_prompt}
+                Evaluation Question: {evaluation_prompt}
 
-Agent Response to Evaluate:
-{agent_response}
+                Agent Response to Evaluate:
+                {agent_response}
 
-Respond with a structured evaluation containing:
-- passed: true if the response meets the criteria, false otherwise
-- explanation: brief explanation of your evaluation""",
+                Respond with a structured evaluation containing:
+                - passed: true if the response meets the criteria, false otherwise
+                - explanation: brief explanation of your evaluation
+                """),
         )
 
         async with evaluator:

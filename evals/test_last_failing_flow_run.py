@@ -1,10 +1,12 @@
-from unittest.mock import AsyncMock
+from unittest.mock import ANY
 
 import pytest
 from prefect import flow
 from prefect.client.orchestration import PrefectClient
 from prefect.client.schemas.objects import FlowRun
 from pydantic_ai import Agent
+
+from evals.tools.spy import ToolCallSpy
 
 
 @pytest.fixture
@@ -25,7 +27,7 @@ async def failing_flow_run(prefect_client: PrefectClient) -> FlowRun:
 
 
 async def test_agent_reports_last_failing_flow(
-    simple_agent: Agent, failing_flow_run: FlowRun, tool_call_spy: AsyncMock
+    simple_agent: Agent, failing_flow_run: FlowRun, tool_call_spy: ToolCallSpy
 ) -> None:
     async with simple_agent:
         result = await simple_agent.run(
@@ -34,12 +36,9 @@ async def test_agent_reports_last_failing_flow(
 
     assert failing_flow_run.name in result.output
 
-    # Should have called get_flow_runs tool to find failing flow runs
-    assert tool_call_spy.call_count == 1
-    assert tool_call_spy.call_args[0][2] == "get_flow_runs"
-    # Check that it's filtering for failed states
-    call_args = tool_call_spy.call_args[0][3]
-    if "filter" in call_args and call_args["filter"]:
-        # Using the new JSON filter approach
-        assert "state" in call_args["filter"]
-    # Or it might just get recent runs and check them
+    # Should have called get_flow_runs tool with a filter to find failing flow runs
+    tool_call_spy.assert_tool_was_called_with(
+        "get_flow_runs",
+        filter={"state": {"type": {"any_": ["FAILED", ...]}}},
+        limit=ANY,
+    )

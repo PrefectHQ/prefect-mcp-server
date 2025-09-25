@@ -41,12 +41,5 @@ async def test_agent_identifies_flow_failure_reason(
         result.output,
     )
 
-    assert tool_call_spy.call_count >= 1
-
-    tool_names = [call.args[2] for call in tool_call_spy.call_args_list]
-
     # Agent must use get_flow_run_logs to get the actual error details
-    assert "get_flow_run_logs" in tool_names, (
-        f"Expected 'get_flow_run_logs' in {tool_names} - "
-        "agent must retrieve actual logs to identify failure reason"
-    )
+    tool_call_spy.assert_tool_was_called("get_flow_run_logs")
