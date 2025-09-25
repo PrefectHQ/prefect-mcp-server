@@ -40,6 +40,16 @@ async def deployment_concurrency_scenario(
     def test_flow():
         return "completed"
 
+    # Create some non-exhausted tag concurrency limits as noise
+    await prefect_client.create_concurrency_limit(
+        tag=f"api-{uuid4().hex[:8]}",
+        concurrency_limit=5,  # Higher limit, not exhausted
+    )
+    await prefect_client.create_concurrency_limit(
+        tag=f"database-{uuid4().hex[:8]}",
+        concurrency_limit=10,  # Higher limit, not exhausted
+    )
+
     # Create deployment with concurrency limit
     flow_id = await prefect_client.create_flow(test_flow)
     deployment_id = await prefect_client.create_deployment(
@@ -116,9 +126,10 @@ async def test_diagnoses_deployment_concurrency(
         )
     await evaluate_response(
         f"""Does this response specifically identify that deployment
-        '{deployment_name}' has a concurrency limit of 1 that is causing late
-        flow runs? The response should mention the specific deployment name and
-        that its concurrency limit is exhausted/reached, not just give generic
-        advice about deployment concurrency.""",
+        '{deployment_name}' has a deployment-level concurrency limit of 1 that is
+        causing the late flow runs? The response should identify this specific
+        deployment by name and mention that its deployment concurrency limit
+        (not tag limits) is exhausted. There are other tag-based concurrency
+        limits with higher limits that should be ignored.""",
         result.output,
     )

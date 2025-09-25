@@ -35,10 +35,20 @@ async def tag_concurrency_scenario(prefect_client: PrefectClient) -> LateRunsSce
     )
     await prefect_client.create_work_pool(work_pool=work_pool_create)
 
-    # Create global concurrency limit for the tag
+    # Create some non-exhausted tag concurrency limits as noise
+    await prefect_client.create_concurrency_limit(
+        tag=f"api-{uuid4().hex[:8]}",
+        concurrency_limit=5,  # Higher limit, not exhausted
+    )
+    await prefect_client.create_concurrency_limit(
+        tag=f"etl-{uuid4().hex[:8]}",
+        concurrency_limit=10,  # Higher limit, not exhausted
+    )
+
+    # Create the exhausted global concurrency limit for our specific tag
     await prefect_client.create_concurrency_limit(
         tag=concurrency_tag,
-        concurrency_limit=1,  # Only 1 concurrent task with this tag
+        concurrency_limit=1,  # Only 1 concurrent task with this tag - will be exhausted
     )
 
     @task(tags=[concurrency_tag])
@@ -49,12 +59,13 @@ async def tag_concurrency_scenario(prefect_client: PrefectClient) -> LateRunsSce
     def tag_flow():
         return database_task()
 
-    # Create deployment
+    # Create deployment with the tag so it's affected by the tag concurrency limit
     flow_id = await prefect_client.create_flow(tag_flow)
     deployment_id = await prefect_client.create_deployment(
         flow_id=flow_id,
         name=f"tag-deployment-{uuid4().hex[:8]}",
         work_pool_name=work_pool_name,
+        tags=[concurrency_tag],  # Add the tag to the deployment
     )
     deployment = await prefect_client.read_deployment(deployment_id)
 
@@ -126,8 +137,9 @@ async def test_diagnoses_tag_concurrency(
 
     await evaluate_response(
         """Does this response specifically identify that a tag-based concurrency
-        limit is causing late flow runs? The response should mention specific
-        tags, global concurrency limits, or task-level concurrency restrictions,
-        not just give generic advice about concurrency.""",
+        limit with limit=1 is causing the late flow runs? The response should
+        mention a specific tag concurrency limit (appearing as 'tag:database-...'
+        in global limits) that is exhausted, and distinguish it from other
+        tag-based limits with higher limits (5 and 10) that are not the cause.""",
         result.output,
     )

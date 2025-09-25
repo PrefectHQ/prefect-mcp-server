@@ -82,18 +82,55 @@ async def get_deployment(deployment_id: str) -> DeploymentResult:
                 if hasattr(deployment, "enforce_parameter_schema")
                 else False,
                 "concurrency_limit": deployment.concurrency_limit,
-                "global_concurrency_limit": {
-                    "id": str(deployment.global_concurrency_limit.id),
-                    "name": deployment.global_concurrency_limit.name,
-                    "limit": deployment.global_concurrency_limit.limit,
-                    "active": deployment.global_concurrency_limit.active,
-                    "active_slots": deployment.global_concurrency_limit.active_slots,
-                    "slot_decay_per_second": deployment.global_concurrency_limit.slot_decay_per_second,
-                }
-                if hasattr(deployment, "global_concurrency_limit")
-                and deployment.global_concurrency_limit
-                else None,
+                "applicable_concurrency_limits": [],
             }
+
+            # Collect all applicable concurrency limits (deployment + tag-based)
+            applicable_limits = []
+
+            # Add deployment-specific global concurrency limit if present
+            if (
+                hasattr(deployment, "global_concurrency_limit")
+                and deployment.global_concurrency_limit
+            ):
+                applicable_limits.append(
+                    {
+                        "id": str(deployment.global_concurrency_limit.id),
+                        "name": deployment.global_concurrency_limit.name,
+                        "limit": deployment.global_concurrency_limit.limit,
+                        "active": deployment.global_concurrency_limit.active,
+                        "active_slots": deployment.global_concurrency_limit.active_slots,
+                        "slot_decay_per_second": deployment.global_concurrency_limit.slot_decay_per_second,
+                    }
+                )
+
+            # Get tag-based concurrency limits
+            try:
+                all_gcls = await client.read_global_concurrency_limits(
+                    limit=100, offset=0
+                )
+                deployment_tags = getattr(deployment, "tags", [])
+
+                # Find GCLs that match deployment tags
+                for gcl in all_gcls:
+                    if gcl.name.startswith("tag:"):
+                        tag_name = gcl.name.removeprefix("tag:")
+                        if tag_name in deployment_tags:
+                            applicable_limits.append(
+                                {
+                                    "id": str(gcl.id),
+                                    "name": gcl.name,
+                                    "limit": gcl.limit,
+                                    "active": gcl.active,
+                                    "active_slots": gcl.active_slots,
+                                    "slot_decay_per_second": gcl.slot_decay_per_second,
+                                }
+                            )
+            except Exception:
+                # If we can't get GCLs, just continue without them
+                pass
+
+            detail["applicable_concurrency_limits"] = applicable_limits
 
             # Add schedule info if available
             if hasattr(deployment, "schedules") and deployment.schedules:

@@ -16,6 +16,14 @@ class GlobalConcurrencyLimitInfo(TypedDict):
     slot_decay_per_second: float
 
 
+class GlobalConcurrencyLimitsResult(TypedDict):
+    """Result of listing global concurrency limits."""
+
+    success: bool
+    limits: list[GlobalConcurrencyLimitInfo]
+    error: str | None
+
+
 class DeploymentInfo(TypedDict):
     """Information about a single deployment."""
 
@@ -247,7 +255,7 @@ class DeploymentDetail(TypedDict):
     paused: bool
     enforce_parameter_schema: bool
     concurrency_limit: int | None
-    global_concurrency_limit: GlobalConcurrencyLimitInfo | None
+    applicable_concurrency_limits: list[GlobalConcurrencyLimitInfo]
 
 
 class DeploymentResult(TypedDict):
