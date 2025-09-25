@@ -93,14 +93,16 @@ async def get_deployment(deployment_id: str) -> DeploymentResult:
                 hasattr(deployment, "global_concurrency_limit")
                 and deployment.global_concurrency_limit
             ):
+                gcl = deployment.global_concurrency_limit
                 applicable_limits.append(
                     {
-                        "id": str(deployment.global_concurrency_limit.id),
-                        "name": deployment.global_concurrency_limit.name,
-                        "limit": deployment.global_concurrency_limit.limit,
-                        "active": deployment.global_concurrency_limit.active,
-                        "active_slots": deployment.global_concurrency_limit.active_slots,
-                        "slot_decay_per_second": deployment.global_concurrency_limit.slot_decay_per_second,
+                        "id": str(gcl.id),
+                        "name": gcl.name,
+                        "limit": gcl.limit,
+                        "active": gcl.active,
+                        "active_slots": gcl.active_slots,
+                        "slot_decay_per_second": gcl.slot_decay_per_second,
+                        "over_limit": gcl.active_slots >= gcl.limit,
                     }
                 )
 
@@ -124,6 +126,7 @@ async def get_deployment(deployment_id: str) -> DeploymentResult:
                                     "active": gcl.active,
                                     "active_slots": gcl.active_slots,
                                     "slot_decay_per_second": gcl.slot_decay_per_second,
+                                    "over_limit": gcl.active_slots >= gcl.limit,
                                 }
                             )
             except Exception:
