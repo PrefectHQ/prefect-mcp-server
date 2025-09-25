@@ -121,7 +121,7 @@ async def test_diagnoses_deployment_concurrency(
 
     async with reasoning_agent:
         result = await reasoning_agent.run(
-            """Why are my recent flow runs taking so long to start? Some have
+            """Why recent flow runs of my deployment taking so long to start? Some have
             been scheduled for a while but haven't begun execution."""
         )
     await evaluate_response(
