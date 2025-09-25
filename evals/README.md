@@ -33,6 +33,7 @@ required state, and drives the `prefect_mcp_server` through Pydantic AI.
 | **late_runs/test_work_queue_concurrency** | verifies agent can diagnose late runs caused by work queue concurrency limits | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
 | **late_runs/test_deployment_concurrency** | verifies agent can diagnose late runs caused by deployment concurrency limits | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
 | **late_runs/test_tag_concurrency** | verifies agent can diagnose late runs caused by tag-based concurrency limits | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
+| **create a reactive automation** | verifies agent can create reactive automations | ✅ implemented | [#47](https://github.com/PrefectHQ/prefect-mcp-server/pull/47) |
 
 ## adding new evals
 
