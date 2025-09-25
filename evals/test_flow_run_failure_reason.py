@@ -1,3 +1,4 @@
+from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock
 
 import pytest
@@ -21,7 +22,10 @@ async def failed_flow_run(prefect_client: PrefectClient) -> FlowRun:
 
 
 async def test_agent_identifies_flow_failure_reason(
-    simple_agent: Agent, failed_flow_run: FlowRun, tool_call_spy: AsyncMock
+    simple_agent: Agent,
+    failed_flow_run: FlowRun,
+    tool_call_spy: AsyncMock,
+    evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
     prompt = (
         "The Prefect flow run named "
@@ -32,7 +36,10 @@ async def test_agent_identifies_flow_failure_reason(
     async with simple_agent:
         result = await simple_agent.run(prompt)
 
-    assert "503 Service Unavailable" in result.output
+    await evaluate_response(
+        "Does the agent identify the direct cause of the failure as 'Upstream API responded with 503 Service Unavailable'?",
+        result.output,
+    )
 
     assert tool_call_spy.call_count >= 1
 
