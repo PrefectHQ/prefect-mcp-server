@@ -38,7 +38,7 @@ def ai_model() -> str:
             assert os.getenv("ANTHROPIC_API_KEY")
         except AssertionError:
             raise ValueError("ANTHROPIC_API_KEY is not set")
-    return "anthropic:claude-sonnet-4-20250514"
+    return os.getenv("AGENT_MODEL", "anthropic:claude-3-5-sonnet-latest")
 
 
 @pytest.fixture(scope="session")
@@ -104,9 +104,12 @@ def evaluate_response() -> Callable[[str, str], Awaitable[None]]:
         Raises:
             AssertionError: If evaluation fails, with explanation
         """
+        evaluator_model = os.getenv(
+            "EVALUATOR_MODEL", "anthropic:claude-opus-4-1-20250805"
+        )
         evaluator = Agent[EvaluationResult](
             name="Response Evaluator",
-            model="anthropic:claude-opus-4-1-20250805",
+            model=evaluator_model,
             output_type=EvaluationResult,
             system_prompt=f"""You are evaluating AI agent responses for technical accuracy and specificity.
 
