@@ -1,0 +1,137 @@
+from typing import NamedTuple
+from unittest.mock import AsyncMock
+from uuid import uuid4
+
+import pytest
+from prefect import flow, task
+from prefect.client.orchestration import PrefectClient
+from prefect.client.schemas.actions import WorkPoolCreate
+from prefect.client.schemas.objects import FlowRun, WorkPool
+from prefect.client.schemas.responses import DeploymentResponse
+from prefect.states import Late
+from pydantic_ai import Agent
+
+
+class LateRunsScenario(NamedTuple):
+    """Container for late runs scenario data."""
+
+    work_pool: WorkPool | None
+    deployment: DeploymentResponse | None
+    flow_runs: list[FlowRun]
+    scenario_type: str
+
+
+@pytest.fixture
+async def tag_concurrency_scenario(prefect_client: PrefectClient) -> LateRunsScenario:
+    """Create scenario with tag-based concurrency limit exhausted."""
+    work_pool_name = f"tag-pool-{uuid4().hex[:8]}"
+    concurrency_tag = f"database-{uuid4().hex[:8]}"
+
+    # Create work pool
+    work_pool_create = WorkPoolCreate(
+        name=work_pool_name,
+        type="process",
+        description="Work pool for tag concurrency testing",
+    )
+    await prefect_client.create_work_pool(work_pool=work_pool_create)
+
+    # Create global concurrency limit for the tag
+    await prefect_client.create_concurrency_limit(
+        tag=concurrency_tag,
+        concurrency_limit=1,  # Only 1 concurrent task with this tag
+    )
+
+    @task(tags=[concurrency_tag])
+    def database_task():
+        return "database work done"
+
+    @flow(name=f"tag-flow-{uuid4().hex[:8]}")
+    def tag_flow():
+        return database_task()
+
+    # Create deployment
+    flow_id = await prefect_client.create_flow(tag_flow)
+    deployment_id = await prefect_client.create_deployment(
+        flow_id=flow_id,
+        name=f"tag-deployment-{uuid4().hex[:8]}",
+        work_pool_name=work_pool_name,
+    )
+    deployment = await prefect_client.read_deployment(deployment_id)
+
+    # Send worker heartbeat to make the work pool READY
+    worker_name = f"test-worker-{uuid4().hex[:8]}"
+    await prefect_client.send_worker_heartbeat(
+        work_pool_name=work_pool_name,
+        worker_name=worker_name,
+        heartbeat_interval_seconds=30,
+    )
+
+    # Create flow runs and force to Late state
+    flow_runs = []
+    for i in range(3):
+        flow_run = await prefect_client.create_flow_run_from_deployment(
+            deployment_id=deployment.id,
+            name=f"tag-run-{i}",
+        )
+        flow_runs.append(flow_run)
+        await prefect_client.set_flow_run_state(
+            flow_run_id=flow_run.id, state=Late(), force=True
+        )
+
+    # Verify scenario setup
+    updated_work_pool = await prefect_client.read_work_pool(
+        work_pool_name=work_pool_name
+    )
+
+    # Check that tag concurrency limit exists
+    concurrency_limits = await prefect_client.read_concurrency_limits(
+        limit=100, offset=0
+    )
+    tag_limit = next(
+        (limit for limit in concurrency_limits if limit.tag == concurrency_tag), None
+    )
+    assert tag_limit is not None
+    assert tag_limit.concurrency_limit == 1
+
+    workers = await prefect_client.read_workers_for_work_pool(
+        work_pool_name=work_pool_name
+    )
+    assert len(workers) > 0
+
+    # Verify flow runs are in Late state
+    for flow_run in flow_runs:
+        updated_run = await prefect_client.read_flow_run(flow_run.id)
+        assert updated_run.state.type.value == "SCHEDULED"
+        assert updated_run.state.name == "Late"
+
+    return LateRunsScenario(
+        work_pool=updated_work_pool,
+        deployment=deployment,
+        flow_runs=flow_runs,
+        scenario_type="tag_concurrency",
+    )
+
+
+async def test_diagnoses_tag_concurrency(
+    eval_agent: Agent,
+    tag_concurrency_scenario: LateRunsScenario,
+    tool_call_spy: AsyncMock,
+) -> None:
+    """Test agent diagnoses late runs caused by tag-based concurrency limit."""
+    async with eval_agent:
+        result = await eval_agent.run(
+            "Why are my recent flow runs taking so long to start? Some have been scheduled for a while but haven't begun execution."
+        )
+
+    # Should identify tag concurrency issue
+    assert any(
+        term in result.output.lower()
+        for term in ["tag", "concurrency", "global", "limit"]
+    )
+
+    # Should call relevant diagnostic tools
+    tool_names = [call[0][2] for call in tool_call_spy.call_args_list]
+    assert any(
+        name in ["read_events", "get_deployments", "get_work_pools"]
+        for name in tool_names
+    )
