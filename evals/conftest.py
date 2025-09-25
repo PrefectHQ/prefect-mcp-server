@@ -10,6 +10,7 @@ from prefect import get_client
 from prefect.client.orchestration import PrefectClient
 from prefect.settings import get_current_settings
 from prefect.testing.utilities import prefect_test_harness
+from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.mcp import CallToolFunc, MCPServer, MCPServerStdio, ToolResult
 
@@ -17,6 +18,13 @@ logfire.configure(
     send_to_logfire="if-token-present", environment=os.getenv("ENVIRONMENT") or "local"
 )
 logfire.instrument_pydantic_ai()
+
+
+class EvaluationResult(BaseModel):
+    """Structured evaluation result from Claude Opus."""
+
+    passed: bool
+    explanation: str
 
 
 @pytest.fixture
@@ -93,34 +101,31 @@ def evaluate_response() -> Callable[[str, str], Awaitable[None]]:
         Raises:
             AssertionError: If evaluation fails, with explanation
         """
-        evaluator = Agent(
+        evaluator = Agent[EvaluationResult](
             name="Response Evaluator",
             model="anthropic:claude-opus-4-1-20250805",
+            output_type=EvaluationResult,
             system_prompt=f"""You are evaluating AI agent responses for technical accuracy and specificity.
-
-Format your response as:
-First line: "YES" or "NO"
-Remaining lines: Brief explanation of why you gave that answer
 
 Evaluation Question: {evaluation_prompt}
 
 Agent Response to Evaluate:
-{agent_response}""",
+{agent_response}
+
+Respond with a structured evaluation containing:
+- passed: true if the response meets the criteria, false otherwise
+- explanation: brief explanation of your evaluation""",
         )
 
         async with evaluator:
             result = await evaluator.run("Evaluate this response.")
 
-        lines = result.output.strip().split("\n", 1)
-        verdict = lines[0].strip().upper() == "YES"
-        explanation = lines[1].strip() if len(lines) > 1 else "No explanation provided"
+        print(f"Evaluation passed: {result.output.passed}")
+        print(f"Explanation: {result.output.explanation}")
 
-        print(f"Did the response meet the criteria?: {lines[0].strip()}")
-        print(explanation)
-
-        if not verdict:
+        if not result.output.passed:
             raise AssertionError(
-                f"LLM evaluation failed: {explanation}\n\nAgent response: {agent_response}"
+                f"LLM evaluation failed: {result.output.explanation}\n\nAgent response: {agent_response}"
             )
 
     return _evaluate
