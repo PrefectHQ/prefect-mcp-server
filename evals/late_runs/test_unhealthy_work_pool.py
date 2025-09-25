@@ -75,7 +75,6 @@ async def unhealthy_work_pool_scenario(
     )
 
 
-@pytest.mark.flaky(reruns=3, reruns_delay=2, only_rerun=["ModelHTTPError"])
 async def test_diagnoses_unhealthy_work_pool(
     eval_agent: Agent,
     unhealthy_work_pool_scenario: LateRunsScenario,
