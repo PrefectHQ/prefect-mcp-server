@@ -1,5 +1,5 @@
 [project]
-name = "prefect-mcp-server"
+name = "prefect-mcp"
 description = "MCP server for interacting with Prefect"
 readme = "README.md"
 dynamic = ["version"]
