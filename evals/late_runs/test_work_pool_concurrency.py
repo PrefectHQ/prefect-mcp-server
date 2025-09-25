@@ -97,6 +97,7 @@ async def work_pool_concurrency_scenario(
     )
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=2, only_rerun=["ModelHTTPError"])
 async def test_diagnoses_work_pool_concurrency(
     eval_agent: Agent,
     work_pool_concurrency_scenario: LateRunsScenario,

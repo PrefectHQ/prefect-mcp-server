@@ -123,6 +123,7 @@ async def tag_concurrency_scenario(prefect_client: PrefectClient) -> LateRunsSce
     )
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=2, only_rerun=["ModelHTTPError"])
 async def test_diagnoses_tag_concurrency(
     eval_agent: Agent,
     tag_concurrency_scenario: LateRunsScenario,
