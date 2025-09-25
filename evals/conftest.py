@@ -1,6 +1,6 @@
 import os
 from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
-from typing import Any
+from typing import Any, TypeAlias
 from unittest.mock import AsyncMock
 
 import logfire
@@ -21,6 +21,8 @@ logfire.instrument_pydantic_ai()
 
 # Retry all eval tests on Anthropic API rate limiting or overload errors
 pytestmark = pytest.mark.flaky(reruns=3, reruns_delay=2, only_rerun=["ModelHTTPError"])
+
+EvaluateResponse: TypeAlias = Callable[[str, str], Awaitable[None]]
 
 
 class EvaluationResult(BaseModel):
@@ -135,7 +137,7 @@ async def prefect_client() -> AsyncGenerator[PrefectClient, None]:
 
 
 @pytest.fixture
-def evaluate_response() -> Callable[[str, str], Awaitable[None]]:
+def evaluate_response() -> EvaluateResponse:
     """Create an evaluator that uses Claude Opus to judge agent responses."""
 
     async def _evaluate(evaluation_prompt: str, agent_response: str) -> None:

@@ -1,5 +1,4 @@
-from collections.abc import Awaitable, Callable
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 from uuid import uuid4
 
 import pytest
@@ -10,6 +9,9 @@ from prefect.client.schemas.objects import FlowRun, WorkPool
 from prefect.client.schemas.responses import DeploymentResponse
 from prefect.states import Late
 from pydantic_ai import Agent
+
+if TYPE_CHECKING:
+    from ..conftest import EvaluateResponse
 
 
 class LateRunsScenario(NamedTuple):
@@ -114,7 +116,7 @@ async def deployment_concurrency_scenario(
 async def test_diagnoses_deployment_concurrency(
     reasoning_agent: Agent,
     deployment_concurrency_scenario: LateRunsScenario,
-    evaluate_response: Callable[[str, str], Awaitable[None]],
+    evaluate_response: "EvaluateResponse",
 ) -> None:
     """Test agent diagnoses late runs caused by deployment concurrency limit."""
     deployment_name = deployment_concurrency_scenario.deployment.name
