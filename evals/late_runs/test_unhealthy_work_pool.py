@@ -76,15 +76,15 @@ async def unhealthy_work_pool_scenario(
 
 
 async def test_diagnoses_unhealthy_work_pool(
-    eval_agent: Agent,
+    simple_agent: Agent,
     unhealthy_work_pool_scenario: LateRunsScenario,
     evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
     """Test agent diagnoses late runs caused by unhealthy work pool."""
     work_pool_name = unhealthy_work_pool_scenario.work_pool.name
 
-    async with eval_agent:
-        result = await eval_agent.run(
+    async with simple_agent:
+        result = await simple_agent.run(
             """Why are my recent flow runs taking so long to start? Some have
             been scheduled for a while but haven't begun execution."""
         )

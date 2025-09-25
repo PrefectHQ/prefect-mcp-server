@@ -25,10 +25,12 @@ async def failing_flow_run(prefect_client: PrefectClient) -> FlowRun:
 
 
 async def test_agent_reports_last_failing_flow(
-    eval_agent: Agent, failing_flow_run: FlowRun, tool_call_spy: AsyncMock
+    simple_agent: Agent, failing_flow_run: FlowRun, tool_call_spy: AsyncMock
 ) -> None:
-    async with eval_agent:
-        result = await eval_agent.run("What is the name of the last failing flow run?")
+    async with simple_agent:
+        result = await simple_agent.run(
+            "What is the name of the last failing flow run?"
+        )
 
     assert failing_flow_run.name in result.output
 

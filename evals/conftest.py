@@ -31,14 +31,27 @@ class EvaluationResult(BaseModel):
 
 
 @pytest.fixture
-def ai_model() -> str:
+def simple_model() -> str:
+    """Model for straightforward diagnostic tasks."""
     if not os.getenv("ANTHROPIC_API_KEY"):
         try:
             load_dotenv()
             assert os.getenv("ANTHROPIC_API_KEY")
         except AssertionError:
             raise ValueError("ANTHROPIC_API_KEY is not set")
-    return os.getenv("AGENT_MODEL", "anthropic:claude-3-5-sonnet-latest")
+    return os.getenv("SIMPLE_AGENT_MODEL", "anthropic:claude-3-5-sonnet-latest")
+
+
+@pytest.fixture
+def reasoning_model() -> str:
+    """Model for tasks requiring complex reasoning and conceptual relationship navigation."""
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        try:
+            load_dotenv()
+            assert os.getenv("ANTHROPIC_API_KEY")
+        except AssertionError:
+            raise ValueError("ANTHROPIC_API_KEY is not set")
+    return os.getenv("REASONING_AGENT_MODEL", "anthropic:claude-sonnet-4-20250514")
 
 
 @pytest.fixture(scope="session")
@@ -76,11 +89,42 @@ def prefect_mcp_server(tool_call_spy: AsyncMock) -> Generator[MCPServer, None, N
 
 
 @pytest.fixture
-def eval_agent(prefect_mcp_server: MCPServer, ai_model: str) -> Agent:
+def simple_agent(prefect_mcp_server: MCPServer, simple_model: str) -> Agent:
+    """Simple evaluation agent for straightforward diagnostic tasks.
+
+    Use this agent for tasks that require basic information gathering and
+    pattern recognition, such as:
+    - Identifying unhealthy work pools (0 workers = late runs)
+    - Finding failed flows by status
+    - Basic infrastructure health checks
+
+    This agent uses the simple model (default: claude-3-5-sonnet-latest)
+    which is efficient for direct diagnostic tasks.
+    """
     return Agent(
-        name="Prefect Eval Agent",
+        name="Prefect Simple Agent",
         toolsets=[prefect_mcp_server],
-        model=ai_model,
+        model=simple_model,
+    )
+
+
+@pytest.fixture
+def reasoning_agent(prefect_mcp_server: MCPServer, reasoning_model: str) -> Agent:
+    """Reasoning evaluation agent for complex diagnostic tasks requiring conceptual connections.
+
+    Use this agent for tasks that require:
+    - Understanding relationships between concurrency limits and late runs
+    - Connecting deployment configuration to flow run delays
+    - Analyzing multiple factors to identify root causes
+    - Making conceptual leaps about infrastructure bottlenecks
+
+    This agent uses a more capable model (default: claude-sonnet-4) that can
+    handle complex reasoning and multi-step diagnostic processes.
+    """
+    return Agent(
+        name="Prefect Reasoning Agent",
+        toolsets=[prefect_mcp_server],
+        model=reasoning_model,
     )
 
 

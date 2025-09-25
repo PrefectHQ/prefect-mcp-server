@@ -124,13 +124,13 @@ async def tag_concurrency_scenario(prefect_client: PrefectClient) -> LateRunsSce
 
 
 async def test_diagnoses_tag_concurrency(
-    eval_agent: Agent,
+    reasoning_agent: Agent,
     tag_concurrency_scenario: LateRunsScenario,
     evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
     """Test agent diagnoses late runs caused by tag-based concurrency limit."""
-    async with eval_agent:
-        result = await eval_agent.run(
+    async with reasoning_agent:
+        result = await reasoning_agent.run(
             """Why are my recent flow runs taking so long to start? Some have
             been scheduled for a while but haven't begun execution."""
         )
