@@ -31,24 +31,25 @@ async def test_deployment(
     return deployment
 
 
-@pytest.fixture
-async def ai_model():
-    return "anthropic:claude-sonnet-4-0"
-
-
 class AutomationIDOutput(BaseModel):
     automation_id: uuid.UUID
 
 
 @pytest.fixture
 def eval_agent(
-    prefect_mcp_server: MCPServer, ai_model: str
+    prefect_mcp_server: MCPServer, reasoning_model: str
 ) -> Agent[None, AutomationIDOutput]:
+    """
+    Reasoning agent for creating reactive automations.
+
+    Equipped with tools to read and write files, run shell commands, and read and write files.
+    Is configured to return the ID of the created automation so that we can verify it was created correctly.
+    """
     return Agent(
         name="Reactive Automation Eval Agent",
         toolsets=[prefect_mcp_server],
         tools=[read_file, run_shell_command, write_file],
-        model=ai_model,
+        model=reasoning_model,
         output_type=AutomationIDOutput,
     )
 

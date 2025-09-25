@@ -31,27 +31,21 @@ class EvaluationResult(BaseModel):
     explanation: str
 
 
+@pytest.fixture(scope="session", autouse=True)
+def ensure_anthropic_api_key() -> None:
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        raise ValueError("ANTHROPIC_API_KEY is not set")
+
+
 @pytest.fixture
 def simple_model() -> str:
     """Model for straightforward diagnostic tasks."""
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        try:
-            load_dotenv()
-            assert os.getenv("ANTHROPIC_API_KEY")
-        except AssertionError:
-            raise ValueError("ANTHROPIC_API_KEY is not set")
     return os.getenv("SIMPLE_AGENT_MODEL", "anthropic:claude-3-5-sonnet-latest")
 
 
 @pytest.fixture
 def reasoning_model() -> str:
     """Model for tasks requiring complex reasoning and conceptual relationship navigation."""
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        try:
-            load_dotenv()
-            assert os.getenv("ANTHROPIC_API_KEY")
-        except AssertionError:
-            raise ValueError("ANTHROPIC_API_KEY is not set")
     return os.getenv("REASONING_AGENT_MODEL", "anthropic:claude-sonnet-4-20250514")
 
 
