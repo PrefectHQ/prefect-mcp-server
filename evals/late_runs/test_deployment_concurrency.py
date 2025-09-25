@@ -11,6 +11,9 @@ from prefect.client.schemas.responses import DeploymentResponse
 from prefect.states import Late
 from pydantic_ai import Agent
 
+# Retry tests on Anthropic API rate limiting or overload errors
+pytestmark = pytest.mark.flaky(reruns=3, reruns_delay=2, only_rerun=["ModelHTTPError"])
+
 
 class LateRunsScenario(NamedTuple):
     """Container for late runs scenario data."""
@@ -111,7 +114,6 @@ async def deployment_concurrency_scenario(
     )
 
 
-@pytest.mark.flaky(reruns=3, reruns_delay=2, only_rerun=["ModelHTTPError"])
 async def test_diagnoses_deployment_concurrency(
     eval_agent: Agent,
     deployment_concurrency_scenario: LateRunsScenario,
