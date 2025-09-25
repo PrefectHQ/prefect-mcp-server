@@ -140,7 +140,7 @@ def evaluate_response() -> Callable[[str, str], Awaitable[None]]:
             name="Response Evaluator",
             model=evaluator_model,
             output_type=EvaluationResult,
-            system_prompt=textwrap.dedent("""\
+            system_prompt=textwrap.dedent(f"""\
                 You are evaluating AI agent responses for technical accuracy and specificity.
 
                 Evaluation Question: {evaluation_prompt}
