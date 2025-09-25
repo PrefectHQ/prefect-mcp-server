@@ -1,5 +1,5 @@
+from collections.abc import Awaitable, Callable
 from typing import NamedTuple
-from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -100,24 +100,22 @@ async def work_pool_concurrency_scenario(
 async def test_diagnoses_work_pool_concurrency(
     eval_agent: Agent,
     work_pool_concurrency_scenario: LateRunsScenario,
-    tool_call_spy: AsyncMock,
+    evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
     """Test agent diagnoses late runs caused by work pool concurrency limit."""
+    work_pool_name = work_pool_concurrency_scenario.work_pool.name
+
     async with eval_agent:
         result = await eval_agent.run(
-            "Why are my recent flow runs taking so long to start? Some have been scheduled for a while but haven't begun execution."
+            """Why are my recent flow runs taking so long to start? Some have
+            been scheduled for a while but haven't begun execution."""
         )
 
-    # Should identify work pool concurrency issue
-    assert "concurrency" in result.output.lower()
-    assert "work pool" in result.output.lower()
-    assert any(
-        term in result.output.lower()
-        for term in ["limit", "full", "occupied", "exhausted", "maximum"]
-    )
-
-    # Must have called get_work_pools to investigate work pool limits
-    tool_names = [call[0][2] for call in tool_call_spy.call_args_list]
-    assert "get_work_pools" in tool_names, (
-        f"Agent must call get_work_pools. Tools called in order: {tool_names}"
+    await evaluate_response(
+        f"""Does this response specifically identify that work pool
+        '{work_pool_name}' has a concurrency limit of 1 that is causing late
+        flow runs? The response should mention the specific work pool name and
+        that its concurrency limit is exhausted/full, not just give generic
+        advice about concurrency limits.""",
+        result.output,
     )

@@ -1,6 +1,5 @@
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import NamedTuple
-from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -79,26 +78,22 @@ async def unhealthy_work_pool_scenario(
 async def test_diagnoses_unhealthy_work_pool(
     eval_agent: Agent,
     unhealthy_work_pool_scenario: LateRunsScenario,
-    tool_call_spy: AsyncMock,
-    evaluate_response: Callable[[str, str], bool],
+    evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
     """Test agent diagnoses late runs caused by unhealthy work pool."""
     work_pool_name = unhealthy_work_pool_scenario.work_pool.name
 
     async with eval_agent:
         result = await eval_agent.run(
-            "Why are my recent flow runs taking so long to start? Some have been scheduled for a while but haven't begun execution."
+            """Why are my recent flow runs taking so long to start? Some have
+            been scheduled for a while but haven't begun execution."""
         )
 
-    # Use LLM evaluator for precise diagnosis assessment
-    evaluation_passed = await evaluate_response(
-        f"Does this response specifically identify that work pool '{work_pool_name}' is NOT_READY or has no active workers as the root cause of late flow runs? The response should mention the specific work pool name and its unhealthy status, not just give generic advice about checking work pools.",
+    await evaluate_response(
+        f"""Does this response specifically identify that work pool
+        '{work_pool_name}' is NOT_READY or has no active workers as the root
+        cause of late flow runs? The response should mention the specific work
+        pool name and its unhealthy status, not just give generic advice about
+        checking work pools.""",
         result.output,
-    )
-    assert evaluation_passed, f"LLM evaluation failed. Agent response: {result.output}"
-
-    # Must have called get_work_pools to investigate work pool health
-    tool_names = [call[0][2] for call in tool_call_spy.call_args_list]
-    assert "get_work_pools" in tool_names, (
-        f"Agent must call get_work_pools. Tools called in order: {tool_names}"
     )

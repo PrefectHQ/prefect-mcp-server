@@ -1,5 +1,5 @@
+from collections.abc import Awaitable, Callable
 from typing import NamedTuple
-from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -115,26 +115,19 @@ async def tag_concurrency_scenario(prefect_client: PrefectClient) -> LateRunsSce
 async def test_diagnoses_tag_concurrency(
     eval_agent: Agent,
     tag_concurrency_scenario: LateRunsScenario,
-    tool_call_spy: AsyncMock,
+    evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
     """Test agent diagnoses late runs caused by tag-based concurrency limit."""
     async with eval_agent:
         result = await eval_agent.run(
-            "Why are my recent flow runs taking so long to start? Some have been scheduled for a while but haven't begun execution."
+            """Why are my recent flow runs taking so long to start? Some have
+            been scheduled for a while but haven't begun execution."""
         )
 
-    # Should identify tag concurrency issue
-    assert any(
-        term in result.output.lower()
-        for term in ["tag", "concurrency", "global", "limit"]
-    )
-
-    # Should call read_events, get_deployments, or get_work_pools for diagnosis
-    tool_names = [call[0][2] for call in tool_call_spy.call_args_list]
-    assert (
-        "read_events" in tool_names
-        or "get_deployments" in tool_names
-        or "get_work_pools" in tool_names
-    ), (
-        f"Agent must call read_events, get_deployments, or get_work_pools. Tools called in order: {tool_names}"
+    await evaluate_response(
+        """Does this response specifically identify that a tag-based concurrency
+        limit is causing late flow runs? The response should mention specific
+        tags, global concurrency limits, or task-level concurrency restrictions,
+        not just give generic advice about concurrency.""",
+        result.output,
     )

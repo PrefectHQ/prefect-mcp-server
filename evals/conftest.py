@@ -1,5 +1,5 @@
 import os
-from collections.abc import AsyncGenerator, Callable, Generator
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
 from typing import Any
 from unittest.mock import AsyncMock
 
@@ -27,7 +27,7 @@ def ai_model() -> str:
             assert os.getenv("ANTHROPIC_API_KEY")
         except AssertionError:
             raise ValueError("ANTHROPIC_API_KEY is not set")
-    return "anthropic:claude-3-5-sonnet-latest"
+    return "anthropic:claude-sonnet-4-20250514"
 
 
 @pytest.fixture(scope="session")
@@ -80,37 +80,47 @@ async def prefect_client() -> AsyncGenerator[PrefectClient, None]:
 
 
 @pytest.fixture
-def evaluate_response() -> Callable[[str, str], bool]:
+def evaluate_response() -> Callable[[str, str], Awaitable[None]]:
     """Create an evaluator that uses Claude Opus to judge agent responses."""
 
-    async def _evaluate(evaluation_prompt: str, agent_response: str) -> bool:
-        """Evaluate an agent response using Claude Opus.
+    async def _evaluate(evaluation_prompt: str, agent_response: str) -> None:
+        """Evaluate an agent response using Claude Opus and assert if it fails.
 
         Args:
             evaluation_prompt: Question/criteria for evaluation
             agent_response: The agent's response to evaluate
 
-        Returns:
-            True if response meets criteria, False otherwise
+        Raises:
+            AssertionError: If evaluation fails, with explanation
         """
         evaluator = Agent(
             name="Response Evaluator",
             model="anthropic:claude-opus-4-1-20250805",
             system_prompt=f"""You are evaluating AI agent responses for technical accuracy and specificity.
 
-Your job is to answer the evaluation question with only "YES" or "NO" based on the agent's response.
+Format your response as:
+First line: "YES" or "NO"
+Remaining lines: Brief explanation of why you gave that answer
 
 Evaluation Question: {evaluation_prompt}
 
 Agent Response to Evaluate:
-{agent_response}
-
-Answer only "YES" or "NO" - no explanation needed.""",
+{agent_response}""",
         )
 
         async with evaluator:
             result = await evaluator.run("Evaluate this response.")
 
-        return result.output.strip().upper() == "YES"
+        lines = result.output.strip().split("\n", 1)
+        verdict = lines[0].strip().upper() == "YES"
+        explanation = lines[1].strip() if len(lines) > 1 else "No explanation provided"
+
+        print(f"Did the response meet the criteria?: {lines[0].strip()}")
+        print(explanation)
+
+        if not verdict:
+            raise AssertionError(
+                f"LLM evaluation failed: {explanation}\n\nAgent response: {agent_response}"
+            )
 
     return _evaluate

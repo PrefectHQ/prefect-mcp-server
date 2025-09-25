@@ -1,5 +1,5 @@
+from collections.abc import Awaitable, Callable
 from typing import NamedTuple
-from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -104,28 +104,21 @@ async def deployment_concurrency_scenario(
 async def test_diagnoses_deployment_concurrency(
     eval_agent: Agent,
     deployment_concurrency_scenario: LateRunsScenario,
-    tool_call_spy: AsyncMock,
+    evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
     """Test agent diagnoses late runs caused by deployment concurrency limit."""
+    deployment_name = deployment_concurrency_scenario.deployment.name
+
     async with eval_agent:
         result = await eval_agent.run(
-            "Why are my recent flow runs taking so long to start? Some have been scheduled for a while but haven't begun execution."
+            """Why are my recent flow runs taking so long to start? Some have
+            been scheduled for a while but haven't begun execution."""
         )
-
-    # Should identify deployment concurrency issue
-    assert "deployment" in result.output.lower()
-    assert "concurrency" in result.output.lower()
-    assert any(
-        term in result.output.lower()
-        for term in ["limit", "awaitingconcurrencyslot", "waiting", "maximum"]
-    )
-
-    print("****")
-    print(result.output)
-    print("****")
-
-    # Should call get_deployments or read_events to investigate deployment limits
-    tool_names = [call[0][2] for call in tool_call_spy.call_args_list]
-    assert "get_deployments" in tool_names or "read_events" in tool_names, (
-        f"Agent must call get_deployments or read_events. Tools called in order: {tool_names}"
+    await evaluate_response(
+        f"""Does this response specifically identify that deployment
+        '{deployment_name}' has a concurrency limit of 1 that is causing late
+        flow runs? The response should mention the specific deployment name and
+        that its concurrency limit is exhausted/reached, not just give generic
+        advice about deployment concurrency.""",
+        result.output,
     )

@@ -81,6 +81,18 @@ async def get_deployment(deployment_id: str) -> DeploymentResult:
                 "enforce_parameter_schema": deployment.enforce_parameter_schema
                 if hasattr(deployment, "enforce_parameter_schema")
                 else False,
+                "concurrency_limit": deployment.concurrency_limit,
+                "global_concurrency_limit": {
+                    "id": str(deployment.global_concurrency_limit.id),
+                    "name": deployment.global_concurrency_limit.name,
+                    "limit": deployment.global_concurrency_limit.limit,
+                    "active": deployment.global_concurrency_limit.active,
+                    "active_slots": deployment.global_concurrency_limit.active_slots,
+                    "slot_decay_per_second": deployment.global_concurrency_limit.slot_decay_per_second,
+                }
+                if hasattr(deployment, "global_concurrency_limit")
+                and deployment.global_concurrency_limit
+                else None,
             }
 
             # Add schedule info if available

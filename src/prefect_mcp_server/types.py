@@ -5,6 +5,17 @@ from typing import Any
 from typing_extensions import TypedDict
 
 
+class GlobalConcurrencyLimitInfo(TypedDict):
+    """Global concurrency limit information."""
+
+    id: str
+    name: str
+    limit: int
+    active: bool
+    active_slots: int
+    slot_decay_per_second: float
+
+
 class DeploymentInfo(TypedDict):
     """Information about a single deployment."""
 
@@ -235,6 +246,8 @@ class DeploymentDetail(TypedDict):
     recent_runs: list[dict[str, Any]]
     paused: bool
     enforce_parameter_schema: bool
+    concurrency_limit: int | None
+    global_concurrency_limit: GlobalConcurrencyLimitInfo | None
 
 
 class DeploymentResult(TypedDict):
