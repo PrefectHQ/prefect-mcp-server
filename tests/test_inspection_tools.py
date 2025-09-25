@@ -30,6 +30,8 @@ async def test_get_deployment_success():
     mock_deployment.paused = False
     mock_deployment.enforce_parameter_schema = True
     mock_deployment.schedules = []
+    mock_deployment.concurrency_limit = None
+    mock_deployment.global_concurrency_limit = None
 
     mock_flow_run = MagicMock()
     mock_flow_run.id = UUID("99999999-9999-9999-9999-999999999999")
@@ -44,16 +46,29 @@ async def test_get_deployment_success():
         mock_client = AsyncMock()
         mock_client.read_deployment = AsyncMock(return_value=mock_deployment)
         mock_client.read_flow_runs = AsyncMock(return_value=[mock_flow_run])
+        mock_client.read_global_concurrency_limits = AsyncMock(return_value=[])
         mock_get_client.return_value.__aenter__.return_value = mock_client
 
-        result = await get_deployment("12345678-1234-5678-1234-567812345678")
+        # Mock the work pool function that get_deployment now calls
+        with patch(
+            "prefect_mcp_server._prefect_client.work_pools.get_work_pool"
+        ) as mock_get_work_pool:
+            mock_get_work_pool.return_value = {"success": False, "work_pool": None}
 
-        assert result["success"] is True
-        assert result["deployment"] is not None
-        assert result["deployment"]["name"] == "test-deployment"
-        assert result["deployment"]["flow_name"] == "test-flow"
-        assert len(result["deployment"]["recent_runs"]) == 1
-        assert result["error"] is None
+            result = await get_deployment("12345678-1234-5678-1234-567812345678")
+
+            assert result["success"] is True
+            assert result["deployment"] is not None
+            assert result["deployment"]["name"] == "test-deployment"
+            assert result["deployment"]["flow_name"] == "test-flow"
+            assert len(result["deployment"]["recent_runs"]) == 1
+            assert (
+                result["deployment"]["work_pool"] is None
+            )  # New field should be None when work pool fetch fails
+            assert (
+                result["deployment"]["applicable_concurrency_limits"] == []
+            )  # New field should be empty list
+            assert result["error"] is None
 
 
 async def test_get_deployment_not_found():
