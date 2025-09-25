@@ -1,7 +1,8 @@
 """Type definitions for Prefect MCP server."""
 
-from typing import Any
+from typing import Annotated, Any
 
+from pydantic import Field
 from typing_extensions import TypedDict
 
 
@@ -255,7 +256,12 @@ class DeploymentDetail(TypedDict):
     paused: bool
     enforce_parameter_schema: bool
     concurrency_limit: int | None
-    applicable_concurrency_limits: list[GlobalConcurrencyLimitInfo]
+    applicable_concurrency_limits: Annotated[
+        list[GlobalConcurrencyLimitInfo],
+        Field(
+            description="Concurrency limits that could cause late/delayed runs for this deployment. Check if active_slots >= limit to identify bottlenecks."
+        ),
+    ]
 
 
 class DeploymentResult(TypedDict):
