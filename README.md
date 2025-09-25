@@ -51,15 +51,24 @@ claude mcp add prefect \
 > 
 > for open-source servers with basic auth, [use `PREFECT_API_AUTH_STRING`](https://docs.prefect.io/v3/advanced/security-settings#basic-authentication) instead of `PREFECT_API_KEY`
 
-## features
+## capabilities
 
-this server exposes prefect's general functionality to MCP clients like Claude Code:
+this server enables MCP clients like Claude Code to interact with your Prefect instance:
 
-**resources** - read-only snapshots of prefect state like dashboards, deployments, flow runs, task runs, and logs. these provide structured views of your workflows and their execution history.
+**monitoring & inspection**
+- view dashboard overviews with flow run statistics and work pool status
+- query deployments, flow runs, task runs, and work pools with advanced filtering
+- retrieve detailed execution logs from flow runs
+- track events across your workflow ecosystem
 
-**tools** - actions for interacting with prefect, including querying events and triggering deployment runs. designed for both monitoring and orchestration use cases.
+**orchestration & actions**
+- trigger deployment runs with custom parameters and tags
+- pass dynamic configurations to workflows at runtime
 
-**prompts** - contextual debugging guidance for troubleshooting flow runs and deployment issues, helping diagnose common problems.
+**intelligent debugging**
+- get contextual guidance for troubleshooting failed flow runs
+- diagnose deployment issues including concurrency problems
+- identify root causes of workflow failures
 
 ## development
 
