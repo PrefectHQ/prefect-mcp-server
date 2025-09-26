@@ -81,11 +81,13 @@ jobs:
         id: run_evals
         continue-on-error: true
         run: |
-          just evals --junit-xml=evals-results.xml --tb=short -v
+          uv run --frozen pytest evals --junit-xml=evals-results.xml --tb=short
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
           ENVIRONMENT: ci
+          LOGFIRE_SERVICE_NAME: prefect-mcp-server-evals
+          LOGFIRE_SERVICE_VERSION: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Upload eval results
         if: always()
@@ -103,6 +105,53 @@ jobs:
           check_name: Evaluation Results
           comment_mode: always
           fail_on: nothing
+
+      - name: Post Logfire Link
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.payload.pull_request.head.sha;
+            const serviceName = 'prefect-mcp-server-evals';
+            const logfireUrl = `https://logfire.pydantic.dev/${context.repo.owner}/prefect-mcp-server?service=${serviceName}&version=${sha}`;
+
+            const comment = `## 📊 Observability
+
+            View eval run traces in Logfire: [${serviceName} @ ${sha.substring(0, 7)}](${logfireUrl})
+
+            Filter by:
+            - Service: \`${serviceName}\`
+            - Version: \`${sha}\``;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Observability')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
 
   lint:
     timeout-minutes: 2
