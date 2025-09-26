@@ -1,13 +1,30 @@
 """Flow run operations for the Prefect MCP server."""
 
-from typing import Any
+from typing import TypedDict
 from uuid import UUID
 
 import prefect.main  # noqa: F401
 from prefect import get_client
-from prefect.client.schemas.filters import LogFilter, LogFilterFlowRunId
+from prefect.client.schemas.filters import (
+    FlowRunFilterDeploymentId,
+    FlowRunFilterName,
+    FlowRunFilterStartTime,
+    FlowRunFilterState,
+    FlowRunFilterTags,
+    LogFilter,
+    LogFilterFlowRunId,
+)
+from prefect.client.schemas.sorting import FlowRunSort, LogSort
+from pydantic import BaseModel, Field
 
-from prefect_mcp_server.types import LogEntry, LogsResult
+from prefect_mcp_server.types import (
+    DeploymentDetail,
+    FlowRunDetail,
+    FlowRunResult,
+    LogEntry,
+    LogsResult,
+    WorkPoolDetail,
+)
 
 # Log level mapping from Python logging levels to readable names
 LOG_LEVEL_NAMES = {
@@ -27,8 +44,8 @@ def get_log_level_name(level: int | None) -> str | None:
 
 
 async def get_flow_run(
-    flow_run_id: str, include_logs: bool = False, log_limit: int = 100
-) -> dict[str, Any]:
+    flow_run_id: UUID, include_logs: bool = False, log_limit: int = 100
+) -> FlowRunResult:
     """Get detailed information about a flow run.
 
     Args:
@@ -60,42 +77,42 @@ async def get_flow_run(
             if flow_run.start_time and flow_run.end_time:
                 duration = (flow_run.end_time - flow_run.start_time).total_seconds()
 
-            result = {
+            flow_run_detail: FlowRunDetail = {
+                "id": str(flow_run.id),
+                "name": flow_run.name,
+                "flow_name": str(flow_name),
+                "state_type": flow_run.state_type.value
+                if flow_run.state_type
+                else None,
+                "state_name": flow_run.state_name,
+                "state_message": flow_run.state.message if flow_run.state else None,
+                "created": flow_run.created.isoformat() if flow_run.created else None,
+                "updated": flow_run.updated.isoformat() if flow_run.updated else None,
+                "start_time": flow_run.start_time.isoformat()
+                if flow_run.start_time
+                else None,
+                "end_time": flow_run.end_time.isoformat()
+                if flow_run.end_time
+                else None,
+                "duration": duration,
+                "parameters": flow_run.parameters,
+                "tags": flow_run.tags,
+                "deployment_id": str(flow_run.deployment_id)
+                if flow_run.deployment_id
+                else None,
+                "work_queue_name": flow_run.work_queue_name,
+                "work_pool_name": flow_run.work_pool_name,
+                "infrastructure_pid": flow_run.infrastructure_pid,
+                "parent_task_run_id": str(flow_run.parent_task_run_id)
+                if flow_run.parent_task_run_id
+                else None,
+                "deployment": None,  # TODO: fetch deployment if needed
+                "work_pool": None,  # TODO: fetch work pool if needed
+            }
+
+            result: FlowRunResult = {
                 "success": True,
-                "flow_run": {
-                    "id": str(flow_run.id),
-                    "name": flow_run.name,
-                    "flow_name": flow_name,
-                    "state_type": flow_run.state_type.value
-                    if flow_run.state_type
-                    else None,
-                    "state_name": flow_run.state_name,
-                    "state_message": flow_run.state.message if flow_run.state else None,
-                    "created": flow_run.created.isoformat()
-                    if flow_run.created
-                    else None,
-                    "updated": flow_run.updated.isoformat()
-                    if flow_run.updated
-                    else None,
-                    "start_time": flow_run.start_time.isoformat()
-                    if flow_run.start_time
-                    else None,
-                    "end_time": flow_run.end_time.isoformat()
-                    if flow_run.end_time
-                    else None,
-                    "duration": duration,
-                    "parameters": flow_run.parameters,
-                    "tags": flow_run.tags,
-                    "deployment_id": str(flow_run.deployment_id)
-                    if flow_run.deployment_id
-                    else None,
-                    "work_queue_name": flow_run.work_queue_name,
-                    "work_pool_name": flow_run.work_pool_name,
-                    "infrastructure_pid": flow_run.infrastructure_pid,
-                    "parent_task_run_id": str(flow_run.parent_task_run_id)
-                    if flow_run.parent_task_run_id
-                    else None,
-                },
+                "flow_run": flow_run_detail,
                 "error": None,
             }
 
@@ -123,7 +140,7 @@ async def get_flow_run(
                         logs = logs[:log_limit]  # Trim to limit
 
                     # Format logs for readability
-                    log_entries = []
+                    log_entries: list[LogEntry] = []
                     for log in logs:
                         log_entries.append(
                             {
@@ -160,11 +177,40 @@ async def get_flow_run(
             }
 
 
+class FlowRunsResult(TypedDict):
+    """Result of a flow runs operation."""
+
+    success: bool
+    count: int
+    flow_runs: list[FlowRunDetail]
+    error: str | None
+
+
+class FlowRunFilter(BaseModel):
+    """Filter flow runs. Only flow runs matching all criteria will be returned"""
+
+    name: FlowRunFilterName | None = Field(
+        default=None, description="Filter criteria for `FlowRun.name`"
+    )
+    tags: FlowRunFilterTags | None = Field(
+        default=None, description="Filter criteria for `FlowRun.tags`"
+    )
+    deployment_id: FlowRunFilterDeploymentId | None = Field(
+        default=None, description="Filter criteria for `FlowRun.deployment_id`"
+    )
+    state: FlowRunFilterState | None = Field(
+        default=None, description="Filter criteria for `FlowRun.state`"
+    )
+    start_time: FlowRunFilterStartTime | None = Field(
+        default=None, description="Filter criteria for `FlowRun.start_time`"
+    )
+
+
 async def get_flow_runs(
-    flow_run_id: str | None = None,
-    filter: dict[str, Any] | None = None,
+    flow_run_id: UUID | None = None,
+    filter: FlowRunFilter | None = None,
     limit: int = 50,
-) -> dict[str, Any]:
+) -> FlowRunResult | FlowRunsResult:
     """Get flow runs with optional filters.
 
     If flow_run_id is provided, returns a single flow run with full details.
@@ -182,18 +228,11 @@ async def get_flow_runs(
     # Otherwise, list flow runs with filters
     async with get_client() as client:
         try:
-            from prefect.client.schemas.filters import FlowRunFilter
-
-            # Build filter from JSON if provided
-            flow_run_filter = None
-            if filter:
-                flow_run_filter = FlowRunFilter.model_validate(filter)
-
             # Fetch flow runs
             flow_runs = await client.read_flow_runs(
-                flow_run_filter=flow_run_filter,
+                flow_run_filter=filter,
                 limit=limit,
-                sort="START_TIME_DESC",
+                sort=FlowRunSort.START_TIME_DESC,
             )
 
             # Batch fetch related objects using existing functions
@@ -209,7 +248,7 @@ async def get_flow_runs(
             )
 
             # Batch fetch deployments
-            deployment_cache = {}
+            deployment_cache: dict[str, DeploymentDetail] = {}
             if deployment_ids:
                 from prefect_mcp_server._prefect_client.deployments import (
                     get_deployment,
@@ -221,11 +260,15 @@ async def get_flow_runs(
                 )
 
                 for dep_id, result in zip(deployment_ids, deployment_results):
-                    if isinstance(result, dict) and result.get("success"):
-                        deployment_cache[dep_id] = result["deployment"]
+                    if (
+                        isinstance(result, dict)
+                        and result.get("success")
+                        and (deployment := result.get("deployment"))
+                    ):
+                        deployment_cache[dep_id] = deployment
 
             # Batch fetch work pools
-            work_pool_cache = {}
+            work_pool_cache: dict[str, WorkPoolDetail] = {}
             if work_pool_names:
                 from prefect_mcp_server._prefect_client.work_pools import get_work_pool
 
@@ -233,11 +276,15 @@ async def get_flow_runs(
                 work_pool_results = await asyncio.gather(*tasks, return_exceptions=True)
 
                 for pool_name, result in zip(work_pool_names, work_pool_results):
-                    if isinstance(result, dict) and result.get("success"):
-                        work_pool_cache[pool_name] = result["work_pool"]
+                    if (
+                        isinstance(result, dict)
+                        and result.get("success")
+                        and (work_pool := result.get("work_pool"))
+                    ):
+                        work_pool_cache[pool_name] = work_pool
 
             # Format the flow runs with inlined information
-            flow_run_list = []
+            flow_run_list: list[FlowRunDetail] = []
             for flow_run in flow_runs:
                 # Get flow name from labels
                 flow_name_from_labels = None
@@ -258,45 +305,45 @@ async def get_flow_runs(
                 if flow_run.work_pool_name:
                     work_pool = work_pool_cache.get(flow_run.work_pool_name)
 
-                flow_run_list.append(
-                    {
-                        "id": str(flow_run.id),
-                        "name": flow_run.name,
-                        "flow_name": flow_name_from_labels,
-                        "state_type": flow_run.state_type.value
-                        if flow_run.state_type
-                        else None,
-                        "state_name": flow_run.state_name,
-                        "state_message": flow_run.state.message
-                        if flow_run.state
-                        else None,
-                        "created": flow_run.created.isoformat()
-                        if flow_run.created
-                        else None,
-                        "updated": flow_run.updated.isoformat()
-                        if flow_run.updated
-                        else None,
-                        "start_time": flow_run.start_time.isoformat()
-                        if flow_run.start_time
-                        else None,
-                        "end_time": flow_run.end_time.isoformat()
-                        if flow_run.end_time
-                        else None,
-                        "duration": duration,
-                        "parameters": flow_run.parameters,
-                        "tags": flow_run.tags,
-                        "deployment_id": str(flow_run.deployment_id)
-                        if flow_run.deployment_id
-                        else None,
-                        "work_queue_name": flow_run.work_queue_name,
-                        "infrastructure_pid": flow_run.infrastructure_pid,
-                        "parent_task_run_id": str(flow_run.parent_task_run_id)
-                        if flow_run.parent_task_run_id
-                        else None,
-                        "deployment": deployment,
-                        "work_pool": work_pool,
-                    }
-                )
+                flow_run_detail: FlowRunDetail = {
+                    "id": str(flow_run.id),
+                    "name": flow_run.name,
+                    "flow_name": str(flow_name_from_labels)
+                    if flow_name_from_labels
+                    else None,
+                    "state_type": flow_run.state_type.value
+                    if flow_run.state_type
+                    else None,
+                    "state_name": flow_run.state_name,
+                    "state_message": flow_run.state.message if flow_run.state else None,
+                    "created": flow_run.created.isoformat()
+                    if flow_run.created
+                    else None,
+                    "updated": flow_run.updated.isoformat()
+                    if flow_run.updated
+                    else None,
+                    "start_time": flow_run.start_time.isoformat()
+                    if flow_run.start_time
+                    else None,
+                    "end_time": flow_run.end_time.isoformat()
+                    if flow_run.end_time
+                    else None,
+                    "duration": duration,
+                    "parameters": flow_run.parameters,
+                    "tags": flow_run.tags,
+                    "deployment_id": str(flow_run.deployment_id)
+                    if flow_run.deployment_id
+                    else None,
+                    "work_queue_name": flow_run.work_queue_name,
+                    "work_pool_name": flow_run.work_pool_name,
+                    "infrastructure_pid": flow_run.infrastructure_pid,
+                    "parent_task_run_id": str(flow_run.parent_task_run_id)
+                    if flow_run.parent_task_run_id
+                    else None,
+                    "deployment": deployment,
+                    "work_pool": work_pool,
+                }
+                flow_run_list.append(flow_run_detail)
 
             return {
                 "success": True,
@@ -315,7 +362,8 @@ async def get_flow_runs(
 
 
 async def get_flow_run_logs(flow_run_id: str, limit: int = 100) -> LogsResult:
-    """Get only the logs for a flow run.
+    """
+    Get only the logs for a flow run.
 
     Args:
         flow_run_id: The ID of the flow run
@@ -332,9 +380,7 @@ async def get_flow_run_logs(flow_run_id: str, limit: int = 100) -> LogsResult:
             )
 
             logs = await client.read_logs(
-                log_filter=log_filter,
-                limit=limit,
-                sort="TIMESTAMP_ASC",
+                log_filter=log_filter, limit=limit, sort=LogSort.TIMESTAMP_ASC
             )
 
             # Convert to LogEntry format

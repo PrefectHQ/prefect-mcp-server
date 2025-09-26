@@ -164,13 +164,13 @@ class RunDeploymentResult(TypedDict):
 
 
 class LogEntry(TypedDict):
-    """A single log entry from a flow or task run."""
+    """Log entry from flow run."""
 
     timestamp: str | None
-    level: int
-    level_name: str
+    level: int | None
+    level_name: str | None  # Human-readable log level (INFO, ERROR, etc)
     message: str
-    name: str
+    name: str | None
 
 
 class LogsResult(TypedDict):
@@ -205,20 +205,11 @@ class FlowRunDetail(TypedDict):
     tags: list[str] | None
     deployment_id: str | None
     work_queue_name: str | None
+    work_pool_name: str | None
     infrastructure_pid: str | None
     parent_task_run_id: str | None
     deployment: "DeploymentDetail | None"  # Inlined deployment details
     work_pool: "WorkPoolDetail | None"  # Inlined work pool details
-
-
-class LogEntry(TypedDict):
-    """Log entry from flow run."""
-
-    timestamp: str | None
-    level: int | None
-    level_name: str | None  # Human-readable log level (INFO, ERROR, etc)
-    message: str
-    name: str | None
 
 
 class LogSummary(TypedDict):

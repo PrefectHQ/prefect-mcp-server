@@ -2,6 +2,7 @@
 
 import textwrap
 from typing import Annotated, Any, Literal
+from uuid import UUID
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from fastmcp import FastMCP
@@ -9,6 +10,7 @@ from fastmcp.server.proxy import ProxyClient
 from pydantic import Field
 
 from prefect_mcp_server import _prefect_client
+from prefect_mcp_server._prefect_client.flow_runs import FlowRunFilter, FlowRunsResult
 from prefect_mcp_server.types import (
     DashboardResult,
     DeploymentResult,
@@ -143,14 +145,13 @@ async def get_deployments(
 @mcp.tool
 async def get_flow_runs(
     flow_run_id: Annotated[
-        str | None,
+        UUID | None,
         Field(
             description="UUID of a specific flow run to retrieve",
-            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
         ),
     ] = None,
     filter: Annotated[
-        dict[str, Any] | None,
+        FlowRunFilter | None,
         Field(
             description="JSON filter object for advanced querying. Supports all Prefect FlowRunFilter fields.",
             examples=[
@@ -169,8 +170,9 @@ async def get_flow_runs(
     limit: Annotated[
         int, Field(description="Maximum number of flow runs to return", ge=1, le=200)
     ] = 50,
-) -> FlowRunResult | dict[str, Any]:
-    """Get flow runs with optional filters.
+) -> FlowRunResult | FlowRunsResult:
+    """
+    Get flow runs with optional filters.
 
     Returns a single flow run with full details if flow_run_id is provided,
     or a list of flow runs matching the filters otherwise.
