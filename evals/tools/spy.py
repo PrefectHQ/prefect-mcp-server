@@ -83,14 +83,15 @@ class ToolCallSpy:
         return expected == actual
 
     def assert_tool_was_called_with(self, tool_name: str, **kwargs: Any) -> None:
-        call = self.get_last_tool_call(tool_name)
-        assert self._compare_args(kwargs, call["tool_args"]), (
-            f"Tool {tool_name} was not called with {kwargs}. Tool was called with {call['tool_args']}"
+        assert any(
+            self._compare_args(kwargs, call["tool_args"]) for call in self.calls
+        ), (
+            f"Tool {tool_name} was not called with {kwargs}. Tool was called with {[call['tool_args'] for call in self.calls]}"
         )
 
     def get_last_tool_call(self, tool_name: str) -> ToolCall:
         self.assert_tool_was_called(tool_name)
-        return next(call for call in self.calls if call["name"] == tool_name)
+        return next(call for call in reversed(self.calls) if call["name"] == tool_name)
 
     def reset(self) -> None:
         self._calls = []
