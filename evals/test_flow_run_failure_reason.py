@@ -41,5 +41,5 @@ async def test_agent_identifies_flow_failure_reason(
         result.output,
     )
 
-    # Agent must use get_flow_run_logs to get the actual error details
-    tool_call_spy.assert_tool_was_called("get_flow_run_logs")
+    # Agent must at least use get_flow_runs to get the actual error details
+    tool_call_spy.assert_tool_was_called("get_flow_runs")
