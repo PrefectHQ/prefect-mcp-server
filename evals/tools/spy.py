@@ -223,10 +223,8 @@ class ToolCallSpy:
 
             # Using ANY to ignore dynamic values
             spy.assert_tool_was_called_with(
-                "run_deployment_by_name",
-                flow_name="my-flow",
-                deployment_name=ANY,  # Don't care about specific deployment
-                parameters={"date": "2024-01-01"}
+                "get_flow_runs",
+                limit=ANY,  # Don't care about specific deployment
             )
             ```
         """

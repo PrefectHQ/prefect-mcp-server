@@ -33,7 +33,6 @@ async def test_server_has_expected_capabilities(prefect_mcp_server: FastMCP) -> 
         assert "get_flow_run_logs" in tool_names
         assert "get_task_runs" in tool_names
         assert "get_work_pools" in tool_names
-        assert "run_deployment_by_name" in tool_names
         assert "read_events" in tool_names
         assert "get_object_schema" in tool_names
         assert len(tools) >= 10
@@ -82,53 +81,6 @@ async def test_get_deployments_with_test_data(
         assert data["success"] is True
         assert "deployment" in data
         assert data["deployment"]["name"] == "test-deployment-0"
-
-
-async def test_run_deployment_by_name(
-    prefect_mcp_server: FastMCP, prefect_client: PrefectClient, test_flow: UUID
-) -> None:
-    """Test running a deployment by flow and deployment names."""
-    await prefect_client.create_deployment(
-        flow_id=test_flow,
-        name="test-deployment",
-        description="A test deployment",
-        tags=["test"],
-    )
-
-    async with Client(prefect_mcp_server) as client:
-        result = await client.call_tool(
-            "run_deployment_by_name",
-            {"flow_name": "test-flow", "deployment_name": "test-deployment"},
-        )
-
-        assert hasattr(result, "structured_content")
-        # FastMCP wraps the result in a 'result' key
-        data = result.structured_content.get("result") or result.structured_content
-
-        assert data["success"] is True
-        assert "flow_run" in data
-        assert "deployment" in data
-        assert data["deployment"]["name"] == "test-deployment"
-
-
-async def test_run_nonexistent_deployment_by_name(prefect_mcp_server: FastMCP) -> None:
-    """Test error handling when running a non-existent deployment by name."""
-    async with Client(prefect_mcp_server) as client:
-        result = await client.call_tool(
-            "run_deployment_by_name",
-            {
-                "flow_name": "nonexistent-flow",
-                "deployment_name": "nonexistent-deployment",
-            },
-        )
-
-        assert hasattr(result, "structured_content")
-        # FastMCP wraps the result in a 'result' key
-        data = result.structured_content.get("result") or result.structured_content
-
-        assert data["success"] is False
-        assert "error" in data
-        assert data["error"] is not None
 
 
 async def test_identity_tool(prefect_mcp_server: FastMCP) -> None:

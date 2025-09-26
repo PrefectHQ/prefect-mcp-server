@@ -16,7 +16,6 @@ from prefect_mcp_server.types import (
     FlowRunResult,
     IdentityResult,
     LogsResult,
-    RunDeploymentResult,
     TaskRunResult,
     WorkPoolResult,
 )
@@ -359,54 +358,6 @@ async def read_events(
         event_prefix=event_type_prefix,
         occurred_after=occurred_after,
         occurred_before=occurred_before,
-    )
-
-
-@mcp.tool
-async def run_deployment_by_name(
-    flow_name: Annotated[
-        str, Field(description="The name of the flow", examples=["my-flow", "etl-flow"])
-    ],
-    deployment_name: Annotated[
-        str,
-        Field(
-            description="The name of the deployment", examples=["production", "daily"]
-        ),
-    ],
-    parameters: Annotated[
-        dict[str, Any] | None,
-        Field(
-            description="Optional parameter overrides for the flow run",
-            examples=[{"date": "2024-01-01", "user_id": 123}, {"env": "prod"}],
-        ),
-    ] = None,
-    name: Annotated[
-        str | None,
-        Field(
-            description="Optional custom name for the flow run",
-            examples=["daily-etl-2024-01-01", "manual-trigger"],
-        ),
-    ] = None,
-    tags: Annotated[
-        list[str] | None,
-        Field(
-            description="Optional tags to add to the flow run",
-            examples=[["production", "daily"], ["manual", "test"]],
-        ),
-    ] = None,
-) -> RunDeploymentResult:
-    """Run a deployment by its flow and deployment names.
-
-    Examples:
-        - Simple run: run_deployment_by_name("my-flow", "production")
-        - With parameters: run_deployment_by_name("etl-flow", "daily", parameters={"date": "2024-01-01"})
-    """
-    return await _prefect_client.run_deployment_by_name(
-        flow_name=flow_name,
-        deployment_name=deployment_name,
-        parameters=parameters,
-        name=name,
-        tags=tags,
     )
 
 
