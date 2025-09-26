@@ -26,7 +26,7 @@ async def unhealthy_work_pool_scenario(
     prefect_client: PrefectClient,
 ) -> LateRunsScenario:
     """Create scenario with unhealthy work pool (no workers)."""
-    work_pool_name = f"prod-pool-{uuid4().hex[:8]}"
+    work_pool_name = f"kubernetes-pool-{uuid4().hex[:8]}"
 
     # Create work pool without workers
     work_pool_create = WorkPoolCreate(

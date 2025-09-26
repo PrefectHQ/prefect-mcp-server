@@ -24,7 +24,7 @@ class LateRunsScenario(NamedTuple):
 @pytest.fixture
 async def tag_concurrency_scenario(prefect_client: PrefectClient) -> LateRunsScenario:
     """Create scenario with tag-based concurrency limit exhausted."""
-    work_pool_name = f"etl-pool-{uuid4().hex[:8]}"
+    work_pool_name = f"docker-pool-{uuid4().hex[:8]}"
     concurrency_tag = f"database-{uuid4().hex[:8]}"
 
     # Create work pool
@@ -55,15 +55,15 @@ async def tag_concurrency_scenario(prefect_client: PrefectClient) -> LateRunsSce
     def database_task():
         return "database work done"
 
-    @flow(name=f"etl-flow-{uuid4().hex[:8]}")
-    def etl_flow():
+    @flow(name=f"flow-{uuid4().hex[:8]}")
+    def workflow():
         return database_task()
 
     # Create deployment with the tag so it's affected by the tag concurrency limit
-    flow_id = await prefect_client.create_flow(etl_flow)
+    flow_id = await prefect_client.create_flow(workflow)
     deployment_id = await prefect_client.create_deployment(
         flow_id=flow_id,
-        name=f"etl-deployment-{uuid4().hex[:8]}",
+        name=f"deployment-{uuid4().hex[:8]}",
         work_pool_name=work_pool_name,
         tags=[concurrency_tag],  # Add the tag to the deployment
     )
@@ -82,7 +82,7 @@ async def tag_concurrency_scenario(prefect_client: PrefectClient) -> LateRunsSce
     for i in range(3):
         flow_run = await prefect_client.create_flow_run_from_deployment(
             deployment_id=deployment.id,
-            name=f"etl-run-{i}",
+            name=f"run-{i}",
         )
         flow_runs.append(flow_run)
         await prefect_client.set_flow_run_state(

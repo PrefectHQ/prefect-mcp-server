@@ -26,8 +26,8 @@ async def work_queue_concurrency_scenario(
     prefect_client: PrefectClient,
 ) -> LateRunsScenario:
     """Create scenario with work queue concurrency limit exhausted."""
-    work_pool_name = f"production-pool-{uuid4().hex[:8]}"
-    queue_name = "default-queue"
+    work_pool_name = f"pool-{uuid4().hex[:8]}"
+    queue_name = "default"
 
     # Create work pool
     work_pool_create = WorkPoolCreate(

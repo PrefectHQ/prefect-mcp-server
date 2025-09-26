@@ -5,7 +5,7 @@ readme = "README.md"
 dynamic = ["version"]
 authors = [{ name = "Prefect Technologies", email = "help@prefect.io" }]
 requires-python = ">=3.10"
-dependencies = ["fastmcp>=2.0.0", "prefect>=3.0.0"]
+dependencies = ["fastmcp>=2.12.3", "prefect>=3.4.20"]
 
 
 [project.scripts]
