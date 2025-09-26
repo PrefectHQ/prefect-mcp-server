@@ -37,10 +37,14 @@ async def work_queue_concurrency_scenario(
     )
     await prefect_client.create_work_pool(work_pool=work_pool_create)
 
-    # Create work queue with concurrency limit
-    await prefect_client.create_work_queue(
-        name=queue_name,
+    default_queue = await prefect_client.read_work_queue_by_name(
         work_pool_name=work_pool_name,
+        name=queue_name,
+    )
+
+    # Update work queue with concurrency limit
+    await prefect_client.update_work_queue(
+        id=default_queue.id,
         concurrency_limit=1,  # Only 1 concurrent run in this queue
     )
 

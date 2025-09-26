@@ -1,9 +1,5 @@
 name: CI
 
-env:
-  # Enable colored output
-  PY_COLORS: 1
-
 on:
   push:
     branches: ["main"]
@@ -133,7 +129,7 @@ jobs:
         id: run_evals
         continue-on-error: true
         run: |
-          uv run --frozen pytest evals --junit-xml=evals-results.xml --tb=short --color=no
+          uv run --frozen pytest evals --junit-xml=evals-results.xml --tb=short
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
