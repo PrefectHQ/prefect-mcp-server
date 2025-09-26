@@ -77,51 +77,27 @@ jobs:
 
       - uses: extractions/setup-just@v3
 
-      - name: Run evals
-        id: run_evals
-        continue-on-error: true
-        run: |
-          uv run --frozen pytest evals --junit-xml=evals-results.xml --tb=short
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
-          ENVIRONMENT: ci
-          LOGFIRE_SERVICE_NAME: prefect-mcp-server-evals
-          LOGFIRE_SERVICE_VERSION: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Upload eval results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: eval-results
-          path: evals-results.xml
-
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
-        with:
-          files: |
-            evals-results.xml
-          check_name: Evaluation Results
-          comment_mode: always
-          fail_on: nothing
-
       - name: Post Logfire Link
-        if: github.event_name == 'pull_request' && always()
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
             const sha = context.payload.pull_request.head.sha;
             const serviceName = 'prefect-mcp-server-evals';
-            const logfireUrl = `https://logfire.pydantic.dev/${context.repo.owner}/prefect-mcp-server?service=${serviceName}&version=${sha}`;
+
+            // Get current time and 15 minutes later
+            const now = new Date();
+            const later = new Date(now.getTime() + 15 * 60 * 1000);
+
+            // Format as ISO strings and encode for URL
+            const since = encodeURIComponent(now.toISOString());
+            const until = encodeURIComponent(later.toISOString());
+
+            const logfireUrl = `https://logfire-us.pydantic.dev/prefect/prefect-mcp-server?env=ci&service=${serviceName}&version=${sha}&since=${since}&until=${until}`;
 
             const comment = `## 📊 Observability
 
-            View eval run traces in Logfire: [${serviceName} @ ${sha.substring(0, 7)}](${logfireUrl})
-
-            Filter by:
-            - Service: \`${serviceName}\`
-            - Version: \`${sha}\``;
+            View eval run traces in Logfire: [${serviceName} @ ${sha.substring(0, 7)}](${logfireUrl})`;
 
             // Find existing comment
             const { data: comments } = await github.rest.issues.listComments({
@@ -152,6 +128,35 @@ jobs:
                 body: comment
               });
             }
+
+      - name: Run evals
+        id: run_evals
+        continue-on-error: true
+        run: |
+          uv run --frozen pytest evals --junit-xml=evals-results.xml --tb=short
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
+          ENVIRONMENT: ci
+          LOGFIRE_SERVICE_NAME: prefect-mcp-server-evals
+          LOGFIRE_SERVICE_VERSION: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: evals-results.xml
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            evals-results.xml
+          check_name: Evaluation Results
+          comment_mode: always
+          fail_on: nothing
 
   lint:
     timeout-minutes: 2
