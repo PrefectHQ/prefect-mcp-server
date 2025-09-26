@@ -1,5 +1,6 @@
 """Prefect MCP Server - Clean implementation following FastMCP patterns."""
 
+import textwrap
 from typing import Annotated, Any, Literal
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
@@ -21,7 +22,20 @@ from prefect_mcp_server.types import (
     WorkPoolResult,
 )
 
-mcp = FastMCP("Prefect MCP Server")
+mcp = FastMCP(
+    name="Prefect MCP Server",
+    instructions=textwrap.dedent("""\
+    When filtering, you can use the following operators:
+        - any_: Match any value in list
+        - all_: Match all values
+        - like_: SQL LIKE pattern matching
+        - not_any_: Exclude values
+        - is_null_: Check for null/not null
+        - eq_/ne_: Equality comparisons
+        - after_/before_: Time comparisons
+        - gt_/gte_/lt_/lte_: Numeric comparisons
+"""),
+)
 
 # Mount the Prefect docs MCP server to expose its tools
 docs_proxy = FastMCP.as_proxy(
@@ -113,14 +127,6 @@ async def get_deployments(
     Returns a single deployment with full details if deployment_id is provided,
     or a list of deployments matching the filters otherwise.
 
-    Filter operators:
-    - any_: Match any value in list
-    - all_: Match all values
-    - like_: SQL LIKE pattern matching
-    - not_any_: Exclude values
-    - is_null_: Check for null/not null
-    - eq_/ne_: Equality comparisons
-
     Examples:
         - Get specific deployment: get_deployments(deployment_id="...")
         - List all deployments: get_deployments()
@@ -168,15 +174,6 @@ async def get_flow_runs(
 
     Returns a single flow run with full details if flow_run_id is provided,
     or a list of flow runs matching the filters otherwise.
-
-    Filter operators:
-    - any_: Match any value in list
-    - all_: Match all values
-    - like_: SQL LIKE pattern matching
-    - not_any_: Exclude values
-    - is_null_: Check for null/not null
-    - after_/before_: Time comparisons
-    - gt_/gte_/lt_/lte_: Numeric comparisons
 
     Examples:
         - Get specific run: get_flow_runs(flow_run_id="...")
@@ -248,12 +245,6 @@ async def get_task_runs(
     information (upstream task relationships), not the actual parameter values
     passed to the task.
 
-    Filter operators:
-    - any_: Match any value in list
-    - like_: SQL LIKE pattern matching
-    - not_any_: Exclude values
-    - is_null_: Check for null/not null
-
     Examples:
         - Get specific task: get_task_runs(task_run_id="...")
         - Failed tasks: get_task_runs(filter={"state": {"type": {"any_": ["FAILED"]}}})
@@ -296,10 +287,6 @@ async def get_work_pools(
     Essential for debugging deployment issues related to flow runs being stuck
     or not starting. Shows work pool and queue concurrency limits, active workers,
     and configuration details.
-
-    Filter operators:
-    - any_: Match any value in list
-    - like_: SQL LIKE pattern matching
 
     Examples:
         - Get specific pool: get_work_pools(work_pool_name="test-pool")
