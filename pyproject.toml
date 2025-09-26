@@ -24,6 +24,7 @@ dev = [
     "pytest-rerunfailures>=16.0.1",
     "pytest-sugar>=0.9.0",
     "pytest-timeout>=2.4.0",
+    "pytest-xdist>=3.8.0",
     "ruff>=0.12.9",
     "ty>=0.0.1a19",
 ]
