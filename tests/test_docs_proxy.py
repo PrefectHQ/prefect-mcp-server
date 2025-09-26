@@ -5,11 +5,7 @@ from fastmcp.client import Client
 
 
 async def test_docs_proxy_tools_available(prefect_mcp_server: FastMCP) -> None:
-    """Test that tools from the docs proxy are available with prefix.
-
-    This test can be flaky due to the external docs.prefect.io/mcp endpoint
-    occasionally returning 500 errors.
-    """
+    """Test that tools from the docs proxy are available with prefix."""
     async with Client(prefect_mcp_server) as client:
         tools = await client.list_tools()
         tool_names = [t.name for t in tools]

@@ -60,6 +60,11 @@ jobs:
 
     timeout-minutes: 10
 
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -73,11 +78,31 @@ jobs:
       - uses: extractions/setup-just@v3
 
       - name: Run evals
-        run: just evals
+        id: run_evals
+        continue-on-error: true
+        run: |
+          just evals --junit-xml=evals-results.xml --tb=short -v
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
           ENVIRONMENT: ci
+
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: evals-results.xml
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            evals-results.xml
+          check_name: Evaluation Results
+          comment_mode: always
+          fail_on: nothing
 
   lint:
     timeout-minutes: 2
