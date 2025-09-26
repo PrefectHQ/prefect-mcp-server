@@ -26,7 +26,7 @@ async def work_pool_concurrency_scenario(
     prefect_client: PrefectClient,
 ) -> LateRunsScenario:
     """Create scenario with work pool concurrency limit exhausted."""
-    work_pool_name = f"limited-pool-{uuid4().hex[:8]}"
+    work_pool_name = f"main-pool-{uuid4().hex[:8]}"
 
     # Create work pool with concurrency limit of 1
     work_pool_create = WorkPoolCreate(
@@ -45,7 +45,7 @@ async def work_pool_concurrency_scenario(
     flow_id = await prefect_client.create_flow(test_flow)
     deployment_id = await prefect_client.create_deployment(
         flow_id=flow_id,
-        name=f"limited-deployment-{uuid4().hex[:8]}",
+        name=f"primary-deployment-{uuid4().hex[:8]}",
         work_pool_name=work_pool_name,
     )
     deployment = await prefect_client.read_deployment(deployment_id)

@@ -26,7 +26,7 @@ async def deployment_concurrency_scenario(
     prefect_client: PrefectClient,
 ) -> LateRunsScenario:
     """Create scenario with deployment concurrency limit exhausted."""
-    work_pool_name = f"deployment-pool-{uuid4().hex[:8]}"
+    work_pool_name = f"worker-pool-{uuid4().hex[:8]}"
 
     # Create work pool
     work_pool_create = WorkPoolCreate(

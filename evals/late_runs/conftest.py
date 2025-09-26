@@ -13,7 +13,7 @@ async def background_noise(prefect_client: PrefectClient) -> None:
     # Create several unrelated READY work pools
     ready_pool_names = []
     for i in range(2):
-        noise_pool_name = f"healthy-pool-{uuid4().hex[:8]}"
+        noise_pool_name = f"staging-pool-{uuid4().hex[:8]}"
         work_pool_create = WorkPoolCreate(
             name=noise_pool_name,
             type="process",
@@ -31,7 +31,7 @@ async def background_noise(prefect_client: PrefectClient) -> None:
 
     # Create several unrelated NOT_READY work pools
     for i in range(2):
-        noise_pool_name = f"inactive-pool-{uuid4().hex[:8]}"
+        noise_pool_name = f"backup-pool-{uuid4().hex[:8]}"
         work_pool_create = WorkPoolCreate(
             name=noise_pool_name,
             type="process",
