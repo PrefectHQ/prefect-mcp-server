@@ -344,6 +344,9 @@ async def read_events(
 
     Provides a structured view of events with filtering capabilities.
 
+    Note: When no time range is specified, events from the last 1 hour are returned by default.
+    Use occurred_after/occurred_before parameters to query a different time range.
+
     Common event type prefixes:
     - prefect.flow-run: Flow run lifecycle events
     - prefect.deployment: Deployment-related events
@@ -352,6 +355,7 @@ async def read_events(
 
     Examples:
         - Recent flow run events: read_events(event_type_prefix="prefect.flow-run")
+        - Last 24 hours: read_events(occurred_after="2024-01-01T00:00:00Z")
         - Specific time range: read_events(occurred_after="2024-01-01T00:00:00Z", occurred_before="2024-01-02T00:00:00Z")
     """
     return await _prefect_client.fetch_events(

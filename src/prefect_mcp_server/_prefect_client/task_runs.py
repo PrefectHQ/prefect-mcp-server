@@ -123,7 +123,7 @@ async def get_task_runs(
             task_runs = await client.read_task_runs(
                 task_run_filter=task_run_filter,
                 limit=limit,
-                sort="START_TIME_DESC",
+                sort="EXPECTED_START_TIME_DESC",
             )
 
             # Format the task runs
