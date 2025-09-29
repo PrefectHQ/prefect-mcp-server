@@ -355,7 +355,7 @@ async def read_events(
 
     Examples:
         - Recent flow run events: read_events(event_type_prefix="prefect.flow-run")
-        - Last 24 hours: read_events(occurred_after="2024-01-01T00:00:00Z")
+        - Last 24 hours: read_events(occurred_after="<ISO8601-timestamp-24-hours-ago>")
         - Specific time range: read_events(occurred_after="2024-01-01T00:00:00Z", occurred_before="2024-01-02T00:00:00Z")
     """
     return await _prefect_client.fetch_events(
