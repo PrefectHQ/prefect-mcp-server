@@ -77,7 +77,9 @@ async def get_identity() -> IdentityResult:
 async def get_dashboard() -> DashboardResult:
     """Get a high-level dashboard overview of the Prefect instance.
 
-    Returns current flow run statistics and work pool status.
+    Returns current flow run statistics, work pool status, and all active
+    concurrency limits (global/tag-based, deployment, work pool, and work queue).
+    Essential for diagnosing flow run delays and bottlenecks.
     """
     return await _prefect_client.fetch_dashboard()
 

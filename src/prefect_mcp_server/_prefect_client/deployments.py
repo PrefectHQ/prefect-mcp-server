@@ -170,10 +170,16 @@ async def get_deployments(
                     else None
                 )
 
+                # Create slug for CLI commands (flow_name/deployment_name)
+                slug = None
+                if deployment_flow_name and deployment.name:
+                    slug = f"{deployment_flow_name}/{deployment.name}"
+
                 # Transform to DeploymentDetail format (same as single deployment)
                 detail: DeploymentDetail = {
                     "id": str(deployment.id),
                     "name": deployment.name,
+                    "slug": slug,
                     "description": deployment.description,
                     "flow_id": str(deployment.flow_id) if deployment.flow_id else None,
                     "flow_name": deployment_flow_name,

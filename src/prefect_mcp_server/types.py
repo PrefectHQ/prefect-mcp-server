@@ -136,12 +136,23 @@ class WorkPoolsResult(TypedDict):
     error: str | None
 
 
+class ConcurrencyLimitInfo(TypedDict):
+    """Information about a concurrency limit."""
+
+    name: str
+    limit: int
+    active_slots: int
+    type: str  # "global", "deployment", "work_pool", or "work_queue"
+    details: dict[str, Any] | None  # Additional context (tags, deployment name, etc)
+
+
 class DashboardResult(TypedDict):
     """Dashboard overview of Prefect instance."""
 
     success: bool
     flow_runs: FlowRunStats
     active_work_pools: list[WorkPoolInfo]
+    concurrency_limits: list[ConcurrencyLimitInfo]
     error: str | None
 
 
@@ -246,6 +257,7 @@ class DeploymentDetail(TypedDict):
 
     id: str
     name: str | None
+    slug: str | None  # flow_name/deployment_name format for CLI commands
     description: str | None
     flow_id: str | None
     flow_name: str | None
