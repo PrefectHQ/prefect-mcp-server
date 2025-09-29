@@ -161,25 +161,18 @@ async def get_flow_run(
 
 
 async def get_flow_runs(
-    flow_run_id: str | None = None,
     filter: dict[str, Any] | None = None,
     limit: int = 50,
 ) -> dict[str, Any]:
     """Get flow runs with optional filters.
 
-    If flow_run_id is provided, returns a single flow run with full details.
-    Otherwise returns a list of flow runs matching the filters.
+    Returns a list of flow runs matching the filters.
+    To get a specific flow run by ID, use filter={"id": {"any_": ["<flow-run-id>"]}}
 
     Args:
-        flow_run_id: UUID of a specific flow run to retrieve
         filter: JSON-like dict that gets converted to FlowRunFilter
         limit: Maximum number of flow runs to return
     """
-    # If we have a specific flow run ID, get detailed info for that one
-    if flow_run_id:
-        return await get_flow_run(flow_run_id, include_logs=False)
-
-    # Otherwise, list flow runs with filters
     async with get_client() as client:
         try:
             from prefect.client.schemas.filters import FlowRunFilter
@@ -197,9 +190,6 @@ async def get_flow_runs(
             )
 
             # Batch fetch related objects using existing functions
-            # Import here to avoid circular imports
-            import asyncio
-
             # Collect unique deployment and work pool IDs
             deployment_ids = list(
                 {str(fr.deployment_id) for fr in flow_runs if fr.deployment_id}
@@ -212,21 +202,21 @@ async def get_flow_runs(
             deployment_cache = {}
             if deployment_ids:
                 from prefect_mcp_server._prefect_client.deployments import (
-                    get_deployment,
+                    get_deployments,
                 )
 
-                tasks = [get_deployment(dep_id) for dep_id in deployment_ids]
-                deployment_results = await asyncio.gather(
-                    *tasks, return_exceptions=True
-                )
+                # Fetch all deployments in one call using filter
+                result = await get_deployments(filter={"id": {"any_": deployment_ids}})
 
-                for dep_id, result in zip(deployment_ids, deployment_results):
-                    if isinstance(result, dict) and result.get("success"):
-                        deployment_cache[dep_id] = result["deployment"]
+                if result.get("success"):
+                    for deployment in result["deployments"]:
+                        deployment_cache[deployment["id"]] = deployment
 
             # Batch fetch work pools
             work_pool_cache = {}
             if work_pool_names:
+                import asyncio
+
                 from prefect_mcp_server._prefect_client.work_pools import get_work_pool
 
                 tasks = [get_work_pool(pool_name) for pool_name in work_pool_names]

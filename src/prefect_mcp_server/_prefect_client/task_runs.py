@@ -24,9 +24,7 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
                 else None,
                 "state_type": task_run.state.type.value if task_run.state else None,
                 "state_name": task_run.state.name if task_run.state else None,
-                "state_message": task_run.state.message
-                if task_run.state and hasattr(task_run.state, "message")
-                else None,
+                "state_message": task_run.state.message if task_run.state else None,
                 "created": task_run.created.isoformat() if task_run.created else None,
                 "updated": task_run.updated.isoformat() if task_run.updated else None,
                 "start_time": task_run.start_time.isoformat()
@@ -43,14 +41,15 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
                 else None,
                 "cache_key": task_run.cache_key,
                 "retry_count": (task_run.run_count - 1) if task_run.run_count else 0,
-                "max_retries": getattr(task_run, "max_retries", None),
+                "max_retries": task_run.empirical_policy.retries
+                if task_run.empirical_policy
+                else None,
             }
 
             # Process task_inputs - convert Pydantic models to dicts
-            raw_inputs = getattr(task_run, "task_inputs", {})
-            if raw_inputs:
+            if task_run.task_inputs:
                 processed_inputs = {}
-                for key, value in raw_inputs.items():
+                for key, value in task_run.task_inputs.items():
                     if isinstance(value, list):
                         # Handle list of items (could be TaskRunResult objects)
                         processed_inputs[key] = [
@@ -96,20 +95,14 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
 
 
 async def get_task_runs(
-    task_run_id: str | None = None,
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-) -> TaskRunResult | dict[str, Any]:
+) -> dict[str, Any]:
     """Get task runs with optional filters.
 
-    If task_run_id is provided, returns a single task run with full details.
-    Otherwise returns a list of task runs matching the filters.
+    Returns a list of task runs matching the filters.
+    To get a specific task run by ID, use filter={"id": {"any_": ["<task-run-id>"]}}
     """
-    # If we have a specific task run ID, get detailed info for that one
-    if task_run_id:
-        return await get_task_run(task_run_id)
-
-    # Otherwise, list task runs with filters
     async with get_client() as client:
         try:
             from prefect.client.schemas.filters import TaskRunFilter
@@ -146,8 +139,14 @@ async def get_task_runs(
                         if task_run.state
                         else None,
                         "state_name": task_run.state.name if task_run.state else None,
+                        "state_message": task_run.state.message
+                        if task_run.state
+                        else None,
                         "created": task_run.created.isoformat()
                         if task_run.created
+                        else None,
+                        "updated": task_run.updated.isoformat()
+                        if task_run.updated
                         else None,
                         "start_time": task_run.start_time.isoformat()
                         if task_run.start_time
@@ -156,10 +155,18 @@ async def get_task_runs(
                         if task_run.end_time
                         else None,
                         "duration": duration,
+                        "task_inputs": {},  # Not included in list view for brevity
+                        "tags": list(task_run.tags) if task_run.tags else [],
+                        "cache_expiration": task_run.cache_expiration.isoformat()
+                        if task_run.cache_expiration
+                        else None,
+                        "cache_key": task_run.cache_key,
                         "retry_count": (task_run.run_count - 1)
                         if task_run.run_count
                         else 0,
-                        "tags": list(task_run.tags) if task_run.tags else [],
+                        "max_retries": task_run.empirical_policy.retries
+                        if task_run.empirical_policy
+                        else None,
                     }
                 )
 

@@ -7,7 +7,7 @@ from prefect import flow, task
 from prefect.client.orchestration import get_client
 
 from prefect_mcp_server._prefect_client import (
-    get_deployment,
+    get_deployments,
     get_task_run,
 )
 
@@ -37,30 +37,29 @@ async def test_deployment_operations():
 
         deployment_id = str(deployments[0].id)
 
-        # Test get_deployment
-        result = await get_deployment(deployment_id)
+        # Test get_deployments
+        result = await get_deployments(filter={"id": {"any_": [deployment_id]}})
 
         assert result["success"] is True
-        assert result["deployment"] is not None
-        assert result["deployment"]["id"] == deployment_id
-        assert result["deployment"]["name"] is not None
-        assert "parameters" in result["deployment"]
-        assert (
-            "job_variables" in result["deployment"]
-            or "infrastructure_overrides" in result["deployment"]
-        )
+        assert result["deployments"] is not None
+        assert len(result["deployments"]) == 1
+        deployment = result["deployments"][0]
+        assert deployment["id"] == deployment_id
+        assert deployment["name"] is not None
+        assert "parameters" in deployment
+        assert "job_variables" in deployment
         assert result["error"] is None
 
 
 async def test_get_deployment_not_found():
-    """Test get_deployment with non-existent ID."""
+    """Test get_deployments with non-existent ID."""
     fake_id = str(uuid4())
-    result = await get_deployment(fake_id)
+    result = await get_deployments(filter={"id": {"any_": [fake_id]}})
 
-    assert result["success"] is False
-    assert result["deployment"] is None
-    assert result["error"] is not None
-    assert "Error fetching deployment" in result["error"]
+    assert result["success"] is True  # Should succeed with empty list
+    assert result["deployments"] == []
+    assert result["count"] == 0
+    assert result["error"] is None
 
 
 async def test_flow_and_task_runs():

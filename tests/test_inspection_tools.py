@@ -2,15 +2,15 @@
 
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from prefect_mcp_server._prefect_client import (
-    get_deployment,
+    get_deployments,
     get_task_run,
 )
 
 
-async def test_get_deployment_success():
+async def test_get_deployments_success():
     """Test successful deployment retrieval."""
     mock_deployment = MagicMock()
     mock_deployment.id = UUID("12345678-1234-5678-1234-567812345678")
@@ -21,10 +21,9 @@ async def test_get_deployment_success():
     mock_deployment.tags = ["test", "prod"]
     mock_deployment.parameters = {"param1": "value1"}
     mock_deployment.parameter_openapi_schema = {}
-    mock_deployment.infra_overrides = {}
+    mock_deployment.job_variables = {}
     mock_deployment.work_pool_name = "default"
     mock_deployment.work_queue_name = "default"
-    mock_deployment.is_schedule_active = True
     mock_deployment.created = MagicMock(isoformat=lambda: "2024-01-01T00:00:00")
     mock_deployment.updated = MagicMock(isoformat=lambda: "2024-01-02T00:00:00")
     mock_deployment.paused = False
@@ -36,6 +35,7 @@ async def test_get_deployment_success():
     mock_flow_run = MagicMock()
     mock_flow_run.id = UUID("99999999-9999-9999-9999-999999999999")
     mock_flow_run.name = "test-run"
+    mock_flow_run.deployment_id = UUID("12345678-1234-5678-1234-567812345678")
     mock_flow_run.state = MagicMock(name="Completed")
     mock_flow_run.created = MagicMock(isoformat=lambda: "2024-01-01T00:00:00")
     mock_flow_run.start_time = MagicMock(isoformat=lambda: "2024-01-01T00:01:00")
@@ -43,8 +43,16 @@ async def test_get_deployment_success():
     with patch(
         "prefect_mcp_server._prefect_client.deployments.get_client"
     ) as mock_get_client:
+        # Create a mock flow for name fetching
+        mock_flow = MagicMock()
+        mock_flow.id = UUID("87654321-4321-8765-4321-876543218765")
+        mock_flow.name = "test-flow"
+
         mock_client = AsyncMock()
-        mock_client.read_deployment = AsyncMock(return_value=mock_deployment)
+        mock_client.read_deployments = AsyncMock(return_value=[mock_deployment])
+        mock_client.read_flows = AsyncMock(
+            return_value=[mock_flow]
+        )  # For flow name fetching
         mock_client.read_flow_runs = AsyncMock(return_value=[mock_flow_run])
         mock_client.read_global_concurrency_limits = AsyncMock(return_value=[])
         mock_get_client.return_value.__aenter__.return_value = mock_client
@@ -55,37 +63,45 @@ async def test_get_deployment_success():
         ) as mock_get_work_pool:
             mock_get_work_pool.return_value = {"success": False, "work_pool": None}
 
-            result = await get_deployment("12345678-1234-5678-1234-567812345678")
+            result = await get_deployments(
+                filter={"id": {"any_": ["12345678-1234-5678-1234-567812345678"]}}
+            )
 
             assert result["success"] is True
-            assert result["deployment"] is not None
-            assert result["deployment"]["name"] == "test-deployment"
-            assert result["deployment"]["flow_name"] == "test-flow"
-            assert len(result["deployment"]["recent_runs"]) == 1
+            assert result["deployments"] is not None
+            assert len(result["deployments"]) == 1
+            deployment = result["deployments"][0]
+            assert deployment["name"] == "test-deployment"
+            assert deployment["flow_name"] == "test-flow"
+            assert len(deployment["recent_runs"]) == 1
             assert (
-                result["deployment"]["work_pool"] is None
+                deployment["work_pool"] is None
             )  # New field should be None when work pool fetch fails
             assert (
-                result["deployment"]["applicable_concurrency_limits"] == []
+                deployment["applicable_concurrency_limits"] == []
             )  # New field should be empty list
             assert result["error"] is None
 
 
-async def test_get_deployment_not_found():
+async def test_get_deployments_not_found():
     """Test deployment not found scenario."""
     with patch(
         "prefect_mcp_server._prefect_client.deployments.get_client"
     ) as mock_get_client:
         mock_client = AsyncMock()
-        mock_client.read_deployment = AsyncMock(side_effect=Exception("Not found"))
+        mock_client.read_deployments = AsyncMock(
+            return_value=[]
+        )  # Empty list for not found
+        mock_client.read_flows = AsyncMock(return_value=[])  # For flow name fetching
+        mock_client.read_flow_runs = AsyncMock(return_value=[])  # For recent runs
         mock_get_client.return_value.__aenter__.return_value = mock_client
 
-        result = await get_deployment("nonexistent")
+        result = await get_deployments(filter={"id": {"any_": [str(uuid4())]}})
 
-        assert result["success"] is False
-        assert result["deployment"] is None
-        assert result["error"] is not None
-        assert "Error fetching deployment" in result["error"]
+        assert result["success"] is True  # Should succeed with empty list
+        assert result["deployments"] == []
+        assert result["count"] == 0
+        assert result["error"] is None
 
 
 async def test_get_task_run_success():

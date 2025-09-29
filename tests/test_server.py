@@ -71,7 +71,7 @@ async def test_get_deployments_with_test_data(
 
         # Test getting a specific deployment by ID
         result = await client.call_tool(
-            "get_deployments", {"deployment_id": str(deployment_ids[0])}
+            "get_deployments", {"filter": {"id": {"any_": [str(deployment_ids[0])]}}}
         )
 
         assert hasattr(result, "structured_content")
@@ -79,8 +79,9 @@ async def test_get_deployments_with_test_data(
         data = result.structured_content.get("result") or result.structured_content
 
         assert data["success"] is True
-        assert "deployment" in data
-        assert data["deployment"]["name"] == "test-deployment-0"
+        assert "deployments" in data
+        assert len(data["deployments"]) == 1
+        assert data["deployments"][0]["name"] == "test-deployment-0"
 
 
 async def test_identity_tool(prefect_mcp_server: FastMCP) -> None:

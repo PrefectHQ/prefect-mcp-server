@@ -10,14 +10,13 @@ from pydantic import Field
 from prefect_mcp_server import _prefect_client
 from prefect_mcp_server.types import (
     DashboardResult,
-    DeploymentResult,
     DeploymentsResult,
     EventsResult,
-    FlowRunResult,
+    FlowRunsResult,
     IdentityResult,
     LogsResult,
-    TaskRunResult,
-    WorkPoolResult,
+    TaskRunsResult,
+    WorkPoolsResult,
 )
 
 mcp = FastMCP("Prefect MCP Server")
@@ -85,20 +84,13 @@ async def get_dashboard() -> DashboardResult:
 
 @mcp.tool
 async def get_deployments(
-    deployment_id: Annotated[
-        str | None,
-        Field(
-            description="UUID of a specific deployment to retrieve",
-            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
-        ),
-    ] = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
             description="JSON filter object for advanced querying. Supports all Prefect DeploymentFilter fields.",
             examples=[
                 {"name": {"like_": "prod-%"}},
-                {"tags": {"all_": ["production"]}, "is_schedule_active": {"eq_": True}},
+                {"tags": {"all_": ["production"]}, "paused": {"eq_": False}},
                 {"work_queue_name": {"any_": ["critical", "default"]}},
             ],
         ),
@@ -106,11 +98,10 @@ async def get_deployments(
     limit: Annotated[
         int, Field(description="Maximum number of deployments to return", ge=1, le=200)
     ] = 50,
-) -> DeploymentsResult | DeploymentResult:
+) -> DeploymentsResult:
     """Get deployments with optional filters.
 
-    Returns a single deployment with full details if deployment_id is provided,
-    or a list of deployments matching the filters otherwise.
+    Returns a list of deployments and their details matching the filters.
 
     Filter operators:
     - any_: Match any value in list
@@ -121,13 +112,12 @@ async def get_deployments(
     - eq_/ne_: Equality comparisons
 
     Examples:
-        - Get specific deployment: get_deployments(deployment_id="...")
         - List all deployments: get_deployments()
-        - Active deployments: get_deployments(filter={"is_schedule_active": {"eq_": True}})
+        - Get specific deployment: get_deployments(filter={"id": {"any_": ["<deployment-id>"]}})
+        - Active deployments: get_deployments(filter={"paused": {"eq_": False}})
         - Production deployments: get_deployments(filter={"tags": {"all_": ["production"]}})
     """
     return await _prefect_client.get_deployments(
-        deployment_id=deployment_id,
         filter=filter,
         limit=limit,
     )
@@ -135,13 +125,6 @@ async def get_deployments(
 
 @mcp.tool
 async def get_flow_runs(
-    flow_run_id: Annotated[
-        str | None,
-        Field(
-            description="UUID of a specific flow run to retrieve",
-            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
-        ),
-    ] = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -162,11 +145,10 @@ async def get_flow_runs(
     limit: Annotated[
         int, Field(description="Maximum number of flow runs to return", ge=1, le=200)
     ] = 50,
-) -> FlowRunResult | dict[str, Any]:
+) -> FlowRunsResult:
     """Get flow runs with optional filters.
 
-    Returns a single flow run with full details if flow_run_id is provided,
-    or a list of flow runs matching the filters otherwise.
+    Returns a list of flow runs and their details matching the filters.
 
     Filter operators:
     - any_: Match any value in list
@@ -178,13 +160,12 @@ async def get_flow_runs(
     - gt_/gte_/lt_/lte_: Numeric comparisons
 
     Examples:
-        - Get specific run: get_flow_runs(flow_run_id="...")
         - List recent runs: get_flow_runs()
+        - Get specific run: get_flow_runs(filter={"id": {"any_": ["<flow-run-id>"]}})
         - Failed runs: get_flow_runs(filter={"state": {"type": {"any_": ["FAILED"]}}})
         - Production runs: get_flow_runs(filter={"tags": {"all_": ["production"]}})
     """
     return await _prefect_client.get_flow_runs(
-        flow_run_id=flow_run_id,
         filter=filter,
         limit=limit,
     )
@@ -217,13 +198,6 @@ async def get_flow_run_logs(
 
 @mcp.tool
 async def get_task_runs(
-    task_run_id: Annotated[
-        str | None,
-        Field(
-            description="UUID of a specific task run to retrieve",
-            examples=["068adce4-aeec-7e9b-8000-97b7feeb70fa"],
-        ),
-    ] = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -238,11 +212,10 @@ async def get_task_runs(
     limit: Annotated[
         int, Field(description="Maximum number of task runs to return", ge=1, le=200)
     ] = 50,
-) -> TaskRunResult | dict[str, Any]:
+) -> TaskRunsResult:
     """Get task runs with optional filters.
 
-    Returns a single task run with full details if task_run_id is provided,
-    or a list of task runs matching the filters otherwise.
+    Returns a list of task runs and their details matching the filters.
     Note that 'task_inputs' contains dependency tracking
     information (upstream task relationships), not the actual parameter values
     passed to the task.
@@ -254,12 +227,12 @@ async def get_task_runs(
     - is_null_: Check for null/not null
 
     Examples:
-        - Get specific task: get_task_runs(task_run_id="...")
+        - List recent tasks: get_task_runs()
+        - Get specific task: get_task_runs(filter={"id": {"any_": ["<task-run-id>"]}})
         - Failed tasks: get_task_runs(filter={"state": {"type": {"any_": ["FAILED"]}}})
         - Tasks by pattern: get_task_runs(filter={"name": {"like_": "%process%"}})
     """
     return await _prefect_client.get_task_runs(
-        task_run_id=task_run_id,
         filter=filter,
         limit=limit,
     )
@@ -267,13 +240,6 @@ async def get_task_runs(
 
 @mcp.tool
 async def get_work_pools(
-    work_pool_name: Annotated[
-        str | None,
-        Field(
-            description="Name of a specific work pool to retrieve",
-            examples=["test-pool", "kubernetes-pool"],
-        ),
-    ] = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -287,11 +253,10 @@ async def get_work_pools(
     limit: Annotated[
         int, Field(description="Maximum number of work pools to return", ge=1, le=200)
     ] = 50,
-) -> WorkPoolResult | dict[str, Any]:
+) -> WorkPoolsResult:
     """Get work pools with optional filters.
 
-    Returns a single work pool with full details if work_pool_name is provided,
-    or a list of work pools matching the filters otherwise.
+    Returns a list of work pools and their details matching the filters.
     Essential for debugging deployment issues related to flow runs being stuck
     or not starting. Shows work pool and queue concurrency limits, active workers,
     and configuration details.
@@ -301,12 +266,11 @@ async def get_work_pools(
     - like_: SQL LIKE pattern matching
 
     Examples:
-        - Get specific pool: get_work_pools(work_pool_name="test-pool")
         - List all pools: get_work_pools()
+        - Get specific pool: get_work_pools(filter={"name": {"any_": ["test-pool"]}})
         - Kubernetes pools: get_work_pools(filter={"type": {"any_": ["kubernetes"]}})
     """
     return await _prefect_client.get_work_pools(
-        work_pool_name=work_pool_name,
         filter=filter,
         limit=limit,
     )

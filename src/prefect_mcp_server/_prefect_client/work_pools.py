@@ -42,7 +42,7 @@ async def get_work_pool(work_pool_name: str) -> WorkPoolResult:
                 "id": str(work_pool.id),
                 "name": work_pool.name,
                 "type": work_pool.type,
-                "status": getattr(work_pool, "status", None),
+                "status": work_pool.status,
                 "is_paused": work_pool.is_paused,
                 "concurrency_limit": work_pool.concurrency_limit,
                 "work_queues": queue_list,
@@ -76,20 +76,14 @@ async def get_work_pool(work_pool_name: str) -> WorkPoolResult:
 
 
 async def get_work_pools(
-    work_pool_name: str | None = None,
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-) -> WorkPoolResult | dict[str, Any]:
+) -> dict[str, Any]:
     """Get work pools with optional filters.
 
-    If work_pool_name is provided, returns a single work pool with full details.
-    Otherwise returns a list of work pools matching the filters.
+    Returns a list of work pools matching the filters.
+    To get a specific work pool by name, use filter={"name": {"any_": ["<pool-name>"]}}
     """
-    # If we have a specific work pool name, get detailed info for that one
-    if work_pool_name:
-        return await get_work_pool(work_pool_name)
-
-    # Otherwise, list work pools with filters
     try:
         async with get_client() as client:
             from prefect.client.schemas.filters import WorkPoolFilter
@@ -114,14 +108,31 @@ async def get_work_pools(
                 )
                 active_worker_count = len([w for w in workers if w.status == "ONLINE"])
 
+                # Get work queues for this pool
+                work_queues = await client.read_work_queues(
+                    work_pool_name=work_pool.name
+                )
+
+                queue_list: list[WorkQueueInfo] = []
+                for queue in work_queues:
+                    queue_info: WorkQueueInfo = {
+                        "id": str(queue.id),
+                        "name": queue.name,
+                        "concurrency_limit": queue.concurrency_limit,
+                        "priority": queue.priority,
+                        "is_paused": queue.is_paused,
+                    }
+                    queue_list.append(queue_info)
+
                 work_pool_list.append(
                     {
                         "id": str(work_pool.id),
                         "name": work_pool.name,
                         "type": work_pool.type,
-                        "status": getattr(work_pool, "status", None),
+                        "status": work_pool.status,
                         "is_paused": work_pool.is_paused,
                         "concurrency_limit": work_pool.concurrency_limit,
+                        "work_queues": queue_list,
                         "active_workers": active_worker_count,
                         "description": work_pool.description,
                     }
