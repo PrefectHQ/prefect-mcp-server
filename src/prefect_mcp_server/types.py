@@ -261,11 +261,22 @@ class DeploymentDetail(TypedDict):
     recent_runs: list[dict[str, Any]]
     paused: bool
     enforce_parameter_schema: bool
-    concurrency_limit: int | None
-    applicable_concurrency_limits: Annotated[
+    global_concurrency_limit: Annotated[
+        GlobalConcurrencyLimitInfo | None,
+        Field(
+            description="Global concurrency limit for this deployment. If over_limit=true, runs will be delayed until slots free up."
+        ),
+    ]
+    tag_concurrency_limits: Annotated[
         list[GlobalConcurrencyLimitInfo],
         Field(
-            description="Concurrency limits affecting this deployment. 'deployment:' prefix = this deployment, 'tag:' prefix = flows with matching tags. over_limit=true indicates exhaustion causing delays."
+            description="Tag-based concurrency limits affecting this deployment (based on deployment tags). If any show over_limit=true, runs will be delayed."
+        ),
+    ]
+    concurrency_options: Annotated[
+        dict[str, Any] | None,
+        Field(
+            description="Concurrency options including collision_strategy (ENQUEUE or CANCEL_NEW)."
         ),
     ]
     work_pool: "WorkPoolDetail | None"  # Inlined work pool details

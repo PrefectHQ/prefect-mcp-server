@@ -7,9 +7,11 @@ import prefect.main  # noqa: F401 - Import to resolve Pydantic forward reference
 from prefect.client.orchestration import get_client
 from prefect.client.schemas.filters import DeploymentFilter, DeploymentFilterId
 
+from prefect_mcp_server._prefect_client.work_pools import get_work_pools
 from prefect_mcp_server.types import (
     DeploymentDetail,
     DeploymentsResult,
+    GlobalConcurrencyLimitInfo,
 )
 
 
@@ -62,6 +64,27 @@ async def get_deployments(
             # Batch fetch flow names
             flow_names = await fetch_flow_names(client, flow_ids)
 
+            # Batch fetch work pools for all unique work pool names
+            work_pool_names = list(
+                {d.work_pool_name for d in deployments if d.work_pool_name}
+            )
+            work_pools_map = {}
+            if work_pool_names:
+                work_pools_result = await get_work_pools(
+                    filter={"name": {"any_": work_pool_names}},
+                    limit=len(work_pool_names),
+                )
+                if work_pools_result["success"]:
+                    work_pools_map = {
+                        wp["name"]: wp for wp in work_pools_result["work_pools"]
+                    }
+
+            # Batch fetch tag-based concurrency limits (old API) for all deployments
+            # These are stored as ConcurrencyLimit objects with tag field
+            tag_concurrency_limits = await client.read_concurrency_limits(
+                limit=100, offset=0
+            )
+
             # Batch fetch recent runs for all deployments
             deployment_ids = [deployment.id for deployment in deployments]
             all_recent_runs = {}
@@ -102,6 +125,51 @@ async def get_deployments(
                 # Get flow name from our batch-fetched mapping
                 deployment_flow_name = flow_names.get(deployment.flow_id)
 
+                # Transform global concurrency limit if present
+                global_concurrency_limit: GlobalConcurrencyLimitInfo | None = None
+                if deployment.global_concurrency_limit:
+                    gcl = deployment.global_concurrency_limit
+                    global_concurrency_limit = {
+                        "id": str(gcl.id),
+                        "name": gcl.name,
+                        "limit": gcl.limit,
+                        "active": gcl.active,
+                        "active_slots": gcl.active_slots,
+                        "slot_decay_per_second": gcl.slot_decay_per_second,
+                        "over_limit": gcl.active_slots >= gcl.limit,
+                    }
+
+                # Find tag-based concurrency limits matching this deployment's tags
+                tag_limits: list[GlobalConcurrencyLimitInfo] = []
+                for tag_limit in tag_concurrency_limits:
+                    if tag_limit.tag and tag_limit.tag in deployment.tags:
+                        tag_limits.append(
+                            {
+                                "id": str(tag_limit.id),
+                                "name": f"tag:{tag_limit.tag}",
+                                "limit": tag_limit.concurrency_limit,
+                                "active": tag_limit.active,
+                                "active_slots": tag_limit.active_slots,
+                                "slot_decay_per_second": 0.0,  # Tag limits don't have decay
+                                "over_limit": tag_limit.active_slots
+                                >= tag_limit.concurrency_limit,
+                            }
+                        )
+
+                # Transform concurrency options if present
+                concurrency_options = None
+                if deployment.concurrency_options:
+                    concurrency_options = {
+                        "collision_strategy": deployment.concurrency_options.collision_strategy.value
+                    }
+
+                # Get work pool from our batch-fetched mapping
+                work_pool = (
+                    work_pools_map.get(deployment.work_pool_name)
+                    if deployment.work_pool_name
+                    else None
+                )
+
                 # Transform to DeploymentDetail format (same as single deployment)
                 detail: DeploymentDetail = {
                     "id": str(deployment.id),
@@ -126,9 +194,10 @@ async def get_deployments(
                     "recent_runs": recent_run_summaries,
                     "paused": deployment.paused,
                     "enforce_parameter_schema": deployment.enforce_parameter_schema,
-                    "concurrency_limit": deployment.concurrency_limit,
-                    "applicable_concurrency_limits": [],
-                    "work_pool": None,  # Could add this too if needed
+                    "global_concurrency_limit": global_concurrency_limit,
+                    "tag_concurrency_limits": tag_limits,
+                    "concurrency_options": concurrency_options,
+                    "work_pool": work_pool,
                 }
 
                 # Add source code location info only if available

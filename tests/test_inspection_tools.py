@@ -29,8 +29,8 @@ async def test_get_deployments_success():
     mock_deployment.paused = False
     mock_deployment.enforce_parameter_schema = True
     mock_deployment.schedules = []
-    mock_deployment.concurrency_limit = None
     mock_deployment.global_concurrency_limit = None
+    mock_deployment.concurrency_options = None
 
     mock_flow_run = MagicMock()
     mock_flow_run.id = UUID("99999999-9999-9999-9999-999999999999")
@@ -54,14 +54,16 @@ async def test_get_deployments_success():
             return_value=[mock_flow]
         )  # For flow name fetching
         mock_client.read_flow_runs = AsyncMock(return_value=[mock_flow_run])
-        mock_client.read_global_concurrency_limits = AsyncMock(return_value=[])
+        mock_client.read_concurrency_limits = AsyncMock(
+            return_value=[]
+        )  # For tag-based limits
         mock_get_client.return_value.__aenter__.return_value = mock_client
 
-        # Mock the work pool function that get_deployment now calls
+        # Mock the work pools function that get_deployments now calls
         with patch(
-            "prefect_mcp_server._prefect_client.work_pools.get_work_pool"
-        ) as mock_get_work_pool:
-            mock_get_work_pool.return_value = {"success": False, "work_pool": None}
+            "prefect_mcp_server._prefect_client.deployments.get_work_pools"
+        ) as mock_get_work_pools:
+            mock_get_work_pools.return_value = {"success": False, "work_pools": []}
 
             result = await get_deployments(
                 filter={"id": {"any_": ["12345678-1234-5678-1234-567812345678"]}}
@@ -77,9 +79,9 @@ async def test_get_deployments_success():
             assert (
                 deployment["work_pool"] is None
             )  # New field should be None when work pool fetch fails
-            assert (
-                deployment["applicable_concurrency_limits"] == []
-            )  # New field should be empty list
+            assert deployment["global_concurrency_limit"] is None
+            assert deployment["tag_concurrency_limits"] == []
+            assert deployment["concurrency_options"] is None
             assert result["error"] is None
 
 
