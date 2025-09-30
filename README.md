@@ -16,39 +16,39 @@ a [`fastmcp`](https://github.com/jlowin/fastmcp) server for interacting with [`p
 3. create a new server pointing to your fork:
    - server path: `src/prefect_mcp_server/server.py`
    - requirements: `pyproject.toml` (or leave blank)
-   - (optional) default environment variables:
-     - `PREFECT_API_URL` - url of your prefect server or cloud workspace
-     - `PREFECT_API_KEY` - api key for prefect cloud (not required for open source server)
 4. get your server URL (e.g., `https://your-server-name.fastmcp.app/mcp`)
-5. add to your favorite MCP client. e.g. claude code:
+5. add to your favorite MCP client (e.g., claude code):
 
 ```bash
 # add to claude code with http transport
+# environment variables are required when using FastMCP Cloud
 claude mcp add prefect \
-  -e PREFECT_API_URL=your-url \
-  -e PREFECT_API_KEY=your-key \
+  -e PREFECT_API_URL=https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID] \
+  -e PREFECT_API_KEY=your-cloud-api-key \
   --transport http https://your-server-name.fastmcp.app/mcp
 ```
 
+> [!NOTE]
+> when deploying to FastMCP Cloud, the server has no access to your local Prefect configuration.
+> you **must** provide `PREFECT_API_URL` and `PREFECT_API_KEY` (for Prefect Cloud) or `PREFECT_API_AUTH_STRING` (for OSS with basic auth) as environment variables in the `claude mcp add` command above.
+
 ### run locally
 
+when running the MCP server locally (via stdio transport), it will automatically use your local Prefect configuration from `~/.prefect/profiles.toml` if available.
+
 ```bash
-# add to claude code running locally
+# minimal setup - inherits from local prefect profile
 claude mcp add prefect \
-  -e PREFECT_API_URL=your-url \
-  -e PREFECT_API_KEY=your-key \
+  -- uvx prefect-mcp-server@git+https://github.com/prefecthq/prefect-mcp-server.git
+
+# or explicitly set credentials
+claude mcp add prefect \
+  -e PREFECT_API_URL=https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID] \
+  -e PREFECT_API_KEY=your-cloud-api-key \
   -- uvx prefect-mcp-server@git+https://github.com/prefecthq/prefect-mcp-server.git
 ```
 
-### environment variables
-
-**required:**
-- `PREFECT_API_URL` - url of your prefect server or cloud workspace
-- `PREFECT_API_KEY` - api key for prefect cloud (not needed for oss server)
-
 > [!NOTE]
-> for prefect cloud, find your api url at: `https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID]`
-> 
 > for open-source servers with basic auth, [use `PREFECT_API_AUTH_STRING`](https://docs.prefect.io/v3/advanced/security-settings#basic-authentication) instead of `PREFECT_API_KEY`
 
 ## capabilities
