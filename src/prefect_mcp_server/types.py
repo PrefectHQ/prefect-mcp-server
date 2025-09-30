@@ -353,3 +353,27 @@ class IdentityResult(TypedDict):
     success: bool
     identity: IdentityInfo
     error: str | None
+
+
+class AutomationDetail(TypedDict):
+    """Detailed automation information."""
+
+    id: str
+    name: str
+    description: str
+    enabled: bool
+    trigger: dict[str, Any]  # Full trigger configuration
+    actions: list[dict[str, Any]]  # Actions to perform when triggered
+    actions_on_trigger: list[dict[str, Any]]  # Actions when going into triggered state
+    actions_on_resolve: list[dict[str, Any]]  # Actions when resolving
+    tags: list[str]
+    owner_resource: str | None
+
+
+class AutomationsResult(TypedDict):
+    """Result of listing automations."""
+
+    success: bool
+    count: int
+    automations: list[AutomationDetail]
+    error: str | None

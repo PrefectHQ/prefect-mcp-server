@@ -7,6 +7,7 @@ from prefect import flow, task
 from prefect.client.orchestration import get_client
 
 from prefect_mcp_server._prefect_client import (
+    get_automations,
     get_deployments,
     get_task_run,
 )
@@ -104,3 +105,48 @@ async def test_get_task_run_not_found():
     assert result["task_run"] is None
     assert result["error"] is not None
     assert "not found" in result["error"].lower() or "Error fetching" in result["error"]
+
+
+async def test_get_automations():
+    """Test getting automations from the API."""
+    result = await get_automations()
+
+    assert result["success"] is True
+    assert result["count"] >= 0
+    assert "automations" in result
+    assert result["error"] is None
+
+    # If we have automations, check their structure
+    if result["count"] > 0:
+        automation = result["automations"][0]
+        assert "id" in automation
+        assert "name" in automation
+        assert "enabled" in automation
+        assert "trigger" in automation
+        assert "actions" in automation
+
+
+async def test_get_automations_with_filter():
+    """Test filtering automations."""
+    async with get_client() as client:
+        # Get all automations first
+        all_automations = await client.read_automations()
+
+        if not all_automations:
+            pytest.skip("No automations available for testing")
+
+        # Test filtering by ID
+        target_id = str(all_automations[0].id)
+        result = await get_automations(filter={"id": {"any_": [target_id]}})
+
+        assert result["success"] is True
+        assert result["count"] == 1
+        assert result["automations"][0]["id"] == target_id
+
+        # Test filtering by name
+        target_name = all_automations[0].name
+        result = await get_automations(filter={"name": {"any_": [target_name]}})
+
+        assert result["success"] is True
+        assert result["count"] >= 1
+        assert any(a["name"] == target_name for a in result["automations"])

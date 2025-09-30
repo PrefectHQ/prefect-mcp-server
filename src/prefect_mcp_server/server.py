@@ -9,6 +9,7 @@ from pydantic import Field
 
 from prefect_mcp_server import _prefect_client
 from prefect_mcp_server.types import (
+    AutomationsResult,
     DashboardResult,
     DeploymentsResult,
     EventsResult,
@@ -329,6 +330,48 @@ async def read_events(
         occurred_after=occurred_after,
         occurred_before=occurred_before,
     )
+
+
+@mcp.tool
+async def get_automations(
+    filter: Annotated[
+        dict[str, Any] | None,
+        Field(
+            description="JSON filter object for querying automations",
+            examples=[
+                {"id": {"any_": ["<automation-id>"]}},
+                {"name": {"any_": ["my-automation"]}},
+                {"enabled": {"eq_": True}},
+            ],
+        ),
+    ] = None,
+    limit: Annotated[
+        int, Field(description="Maximum number of automations to return", ge=1, le=200)
+    ] = 100,
+) -> AutomationsResult:
+    """Get automations with optional filters.
+
+    Returns automations with their complete configurations including:
+    - Trigger conditions (event type, posture, threshold, resource filters)
+    - Actions to perform when triggered (main, on_trigger, on_resolve)
+    - Enabled/disabled state
+    - Tags and metadata
+
+    Essential for debugging automation behavior and understanding why automations
+    did or didn't fire for specific events.
+
+    Filter operators:
+    - id.any_: Match specific automation IDs
+    - name.any_: Match automation names
+    - enabled.eq_: Filter by enabled state
+
+    Examples:
+        - List all automations: get_automations()
+        - Get specific automation: get_automations(filter={"id": {"any_": ["<automation-id>"]}})
+        - Get by name: get_automations(filter={"name": {"any_": ["my-automation"]}})
+        - Only enabled: get_automations(filter={"enabled": {"eq_": True}})
+    """
+    return await _prefect_client.get_automations(filter=filter, limit=limit)
 
 
 @mcp.tool
