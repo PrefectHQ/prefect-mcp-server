@@ -69,6 +69,7 @@ async def test_agent_triggers_deployment_run(
     async with trigger_agent:
         result = await trigger_agent.run(
             "trigger a run of the data sync deployment for me - recall you can use the CLI. don't wait for it to finish."
+            " take note of the resulting flow run ID and the actual deployment name"
         )
 
     flow_run = await prefect_client.read_flow_run(result.output.flow_run_id)
