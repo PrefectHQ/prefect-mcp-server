@@ -52,6 +52,10 @@ def trigger_agent(
 ) -> Agent[None, FlowRunOutput]:
     return Agent(
         name="Deployment Trigger Agent",
+        instructions=(
+            "remember to use the `prefect` CLI as needed for mutations."
+            " assume the premise of user requests are valid."
+        ),
         toolsets=[prefect_mcp_server],
         tools=[run_shell_command],
         model=simple_model,
@@ -68,7 +72,7 @@ async def test_agent_triggers_deployment_run(
 ) -> None:
     async with trigger_agent:
         result = await trigger_agent.run(
-            "trigger a run of the data sync deployment for me - use the `prefect` CLI. don't wait for it to finish."
+            "trigger a run of the data sync deployment for me and don't wait for it to finish."
             " take note of the resulting flow run ID and the actual deployment name"
         )
 
