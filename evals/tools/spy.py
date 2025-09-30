@@ -269,3 +269,38 @@ class ToolCallSpy:
             ```
         """
         self._calls = []
+
+    def assert_tool_in_messages(self, agent_result: Any, tool_name: str) -> None:
+        """Assert that a tool appears in the agent's message history.
+
+        Use this for regular pydantic-ai tools that bypass the MCP spy.
+        For MCP tools, use assert_tool_was_called() instead.
+
+        Args:
+            agent_result: The AgentRunResult from agent.run()
+            tool_name: The name of the tool expected to be called
+
+        Raises:
+            AssertionError: If the tool was not called
+
+        Example:
+            ```python
+            result = await agent.run("trigger deployment")
+            spy.assert_tool_in_messages(result, "run_shell_command")
+            ```
+        """
+        from pydantic_ai.messages import ModelResponse, ToolCallPart
+
+        # Check all messages for tool calls
+        all_messages = agent_result.all_messages()
+        tool_calls = []
+        for msg in all_messages:
+            if isinstance(msg, ModelResponse):
+                for part in msg.parts:
+                    if isinstance(part, ToolCallPart):
+                        tool_calls.append(part.tool_name)
+
+        assert tool_name in tool_calls, (
+            f"Tool {tool_name} was not found in message history. "
+            f"Tools called: {tool_calls}"
+        )

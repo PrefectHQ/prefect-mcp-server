@@ -5,7 +5,10 @@ readme = "README.md"
 dynamic = ["version"]
 authors = [{ name = "Prefect Technologies", email = "help@prefect.io" }]
 requires-python = ">=3.10"
-dependencies = ["fastmcp>=2.12.3", "prefect>=3.4.20"]
+dependencies = [
+    "fastmcp>=2.12.3",
+    "prefect@git+https://github.com/prefecthq/prefect.git",
+]
 
 
 [project.scripts]
@@ -34,6 +37,9 @@ source = "vcs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/prefect_mcp_server"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

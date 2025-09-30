@@ -2369,8 +2369,8 @@ wheels = [
 
 [[package]]
 name = "prefect"
-version = "3.4.20"
-source = { registry = "https://pypi.org/simple" }
+version = "3.4.21.dev3+2.g60e4b345f"
+source = { git = "https://github.com/prefecthq/prefect.git#60e4b345fff998804dd28127c6d561a8b905dfb5" }
 dependencies = [
     { name = "aiosqlite" },
     { name = "alembic" },
@@ -2427,10 +2427,6 @@ dependencies = [
     { name = "websockets" },
     { name = "whenever", marker = "python_full_version >= '3.13'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/69/76/b7705a3de634de8b96111f3bfe6c6b954ecd208c2030c505a17d8aa655ea/prefect-3.4.20.tar.gz", hash = "sha256:bdde58374125bb0fcb516de642c98e36216b32fe9bcf19c922538bbb81a25475", size = 5616683, upload-time = "2025-09-25T21:13:10.158Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/60/0a/1dd1ede29d2163d79a80692967d4f87f35fd7dee61e0fe1d9b74f7f252eb/prefect-3.4.20-py3-none-any.whl", hash = "sha256:2a95c3a1ee8810842c699c27abdf7f27713a7fefa203bc314645086aeba2bfc4", size = 6136697, upload-time = "2025-09-25T21:13:06.633Z" },
-]
 
 [[package]]
 name = "prefect-mcp"
@@ -2458,7 +2454,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastmcp", specifier = ">=2.12.3" },
-    { name = "prefect", specifier = ">=3.4.20" },
+    { name = "prefect", git = "https://github.com/prefecthq/prefect.git" },
 ]
 
 [package.metadata.requires-dev]
