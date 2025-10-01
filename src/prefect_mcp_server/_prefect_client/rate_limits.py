@@ -22,7 +22,6 @@ DEFAULT_KEYS = [
     "work_queues",
     "writing-logs",
     "reading-events",
-    "events/filter,events/count-by",
     "artifacts",
     "variables",
     "concurrency_limits",
