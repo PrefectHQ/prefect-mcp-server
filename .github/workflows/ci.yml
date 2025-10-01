@@ -127,9 +127,26 @@ jobs:
 
       - name: Run evals
         id: run_evals
-        continue-on-error: true
         run: |
-          uv run --frozen pytest -n 2 evals --junit-xml=evals-results.xml --tb=short
+          # Run pytest and capture exit code
+          # Exit codes: 0=pass, 1=test failures (acceptable), 3+=collection/setup errors (should fail)
+          uv run --frozen pytest -n 2 evals --junit-xml=evals-results.xml --tb=short || EXIT_CODE=$?
+
+          # If no exit code set, tests passed
+          if [ -z "$EXIT_CODE" ]; then
+            echo "✅ All evals passed"
+            exit 0
+          fi
+
+          # Exit code 1 = tests ran but some failed (acceptable with continue-on-error behavior)
+          if [ "$EXIT_CODE" -eq 1 ]; then
+            echo "⚠️ Some evals failed (exit code 1)"
+            exit 0
+          fi
+
+          # Exit codes 2-5 = collection errors, internal errors, etc (should fail the job)
+          echo "❌ Eval setup/collection failed (exit code $EXIT_CODE)"
+          exit "$EXIT_CODE"
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
