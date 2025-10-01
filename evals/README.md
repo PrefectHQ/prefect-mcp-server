@@ -22,6 +22,25 @@ From the repo root, run `just evals` (or `uv run pytest evals`).
 Each test bootstraps an ephemeral Prefect API via `prefect_test_harness`, mutates it into the
 required state, and drives the `prefect_mcp_server` through Pydantic AI.
 
+### configuring model providers
+
+By default, evals use Anthropic models. You can switch providers or override specific models:
+
+```bash
+# use openai instead of anthropic
+MODEL_PROVIDER=openai just evals
+
+# use specific models (works with any provider)
+SIMPLE_AGENT_MODEL=openai:gpt-4o REASONING_AGENT_MODEL=openai:gpt-4.1 just evals
+
+# override just one model
+REASONING_AGENT_MODEL=anthropic:claude-opus-4-1-20250805 just evals
+```
+
+Provider defaults:
+- **anthropic** (default): simple=claude-3-5-sonnet-latest, reasoning=claude-sonnet-4-20250514
+- **openai**: simple=gpt-4o, reasoning=gpt-4.1
+
 ## current evals
 
 | eval | description | status | issue |
