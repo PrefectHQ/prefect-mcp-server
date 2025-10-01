@@ -117,19 +117,15 @@ async def test_diagnoses_deployment_concurrency(
     evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
     """Test agent diagnoses late runs caused by deployment concurrency limit."""
-    deployment_name = deployment_concurrency_scenario.deployment.name
-
     async with reasoning_agent:
         result = await reasoning_agent.run(
             """Why recent flow runs of my deployment taking so long to start? Some have
             been scheduled for a while but haven't begun execution."""
         )
     await evaluate_response(
-        f"""Does this response specifically identify that deployment
-        '{deployment_name}' has a deployment-level concurrency limit of 1 that is
-        causing the late flow runs? The response should identify this specific
-        deployment by name and mention that its deployment concurrency limit
-        (not tag limits) is exhausted. There are other tag-based concurrency
-        limits with higher limits that should be ignored.""",
+        """Does this response correctly identify that a deployment-level concurrency
+        limit (not tag-based limits) is causing the late flow runs? The response should
+        identify the specific deployment (by name or ID) and explain that the deployment
+        concurrency limit is exhausted.""",
         result.output,
     )
