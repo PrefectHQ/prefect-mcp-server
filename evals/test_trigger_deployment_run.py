@@ -5,9 +5,9 @@ from uuid import UUID
 import pytest
 from prefect import flow
 from prefect.client.orchestration import PrefectClient
+from prefect.client.schemas.filters import DeploymentFilter, DeploymentFilterId
 from prefect.client.schemas.objects import Flow as FlowSchema
 from prefect.client.schemas.responses import DeploymentResponse
-from pydantic import BaseModel
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServer
 
@@ -17,9 +17,7 @@ from evals.tools.spy import ToolCallSpy
 
 @pytest.fixture
 async def test_flow_id(prefect_client: PrefectClient) -> FlowSchema:
-    flow_name = f"data-sync-{uuid.uuid4().hex[:8]}"
-
-    @flow(name=flow_name)
+    @flow
     def sync_data():
         return "synced"
 
@@ -32,7 +30,7 @@ async def test_deployment(
 ) -> DeploymentResponse:
     deployment_id = await prefect_client.create_deployment(
         flow_id=test_flow_id,
-        name=f"test-deployment-{uuid.uuid4().hex[:8]}",
+        name=f"data-sync-{uuid.uuid4().hex[:8]}",
         parameter_openapi_schema={
             "type": "object",
             "properties": {},
@@ -41,15 +39,8 @@ async def test_deployment(
     return await prefect_client.read_deployment(deployment_id)
 
 
-class FlowRunOutput(BaseModel):
-    flow_run_id: uuid.UUID
-    details: str
-
-
 @pytest.fixture
-def trigger_agent(
-    prefect_mcp_server: MCPServer, simple_model: str
-) -> Agent[None, FlowRunOutput]:
+def trigger_agent(prefect_mcp_server: MCPServer, simple_model: str) -> Agent[None, str]:
     return Agent(
         name="Deployment Trigger Agent",
         instructions=(
@@ -59,12 +50,11 @@ def trigger_agent(
         toolsets=[prefect_mcp_server],
         tools=[run_shell_command],
         model=simple_model,
-        output_type=FlowRunOutput,
     )
 
 
 async def test_agent_triggers_deployment_run(
-    trigger_agent: Agent[None, FlowRunOutput],
+    trigger_agent: Agent[None, str],
     test_deployment: DeploymentResponse,
     tool_call_spy: ToolCallSpy,
     evaluate_response: Callable[[str, str], Awaitable[None]],
@@ -76,7 +66,14 @@ async def test_agent_triggers_deployment_run(
             " take note of the resulting flow run ID and the actual deployment name"
         )
 
-    flow_run = await prefect_client.read_flow_run(result.output.flow_run_id)
+    flow_runs = await prefect_client.read_flow_runs(
+        deployment_filter=DeploymentFilter(
+            id=DeploymentFilterId(any_=[test_deployment.id])
+        )
+    )
+
+    assert len(flow_runs) == 1
+    flow_run = flow_runs[0]
     assert flow_run.deployment_id == test_deployment.id
 
     await evaluate_response(
