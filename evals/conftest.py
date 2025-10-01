@@ -1,3 +1,21 @@
+"""Eval test configuration and fixtures.
+
+Environment Variables:
+    MODEL_PROVIDER: Model provider to use (default: "anthropic")
+        - "anthropic": Use Anthropic Claude models (requires ANTHROPIC_API_KEY)
+        - "openai": Use OpenAI models (requires OPENAI_API_KEY)
+
+    SIMPLE_AGENT_MODEL: Override default simple agent model
+        - Default for anthropic: "anthropic:claude-3-5-sonnet-latest"
+        - Default for openai: "openai:gpt-4o"
+
+    REASONING_AGENT_MODEL: Override default reasoning agent model
+        - Default for anthropic: "anthropic:claude-sonnet-4-20250514"
+        - Default for openai: "openai:gpt-4.1"
+
+    EVALUATOR_MODEL: Override default evaluator model (default: "anthropic:claude-opus-4-1-20250805")
+"""
+
 import os
 import textwrap
 from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
@@ -37,21 +55,62 @@ class EvaluationResult(BaseModel):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def ensure_anthropic_api_key() -> None:
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        raise ValueError("ANTHROPIC_API_KEY is not set")
+def ensure_api_key() -> None:
+    """Ensure required API key is set based on provider."""
+    provider = os.getenv("MODEL_PROVIDER", "anthropic").lower()
+
+    if provider == "anthropic":
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            raise ValueError("ANTHROPIC_API_KEY is not set")
+    elif provider == "openai":
+        if not os.getenv("OPENAI_API_KEY"):
+            raise ValueError("OPENAI_API_KEY is not set")
+    else:
+        raise ValueError(f"unsupported MODEL_PROVIDER: {provider}")
 
 
 @pytest.fixture
 def simple_model() -> str:
-    """Model for straightforward diagnostic tasks."""
-    return os.getenv("SIMPLE_AGENT_MODEL", "anthropic:claude-3-5-sonnet-latest")
+    """Model for straightforward diagnostic tasks.
+
+    Provider-specific defaults:
+    - anthropic: claude-3-5-sonnet-latest
+    - openai: gpt-4o
+
+    Override with SIMPLE_AGENT_MODEL environment variable.
+    """
+    if model := os.getenv("SIMPLE_AGENT_MODEL"):
+        return model
+
+    provider = os.getenv("MODEL_PROVIDER", "anthropic").lower()
+    if provider == "anthropic":
+        return "anthropic:claude-3-5-sonnet-latest"
+    elif provider == "openai":
+        return "openai:gpt-4o"
+    else:
+        raise ValueError(f"unsupported MODEL_PROVIDER: {provider}")
 
 
 @pytest.fixture
 def reasoning_model() -> str:
-    """Model for tasks requiring complex reasoning and conceptual relationship navigation."""
-    return os.getenv("REASONING_AGENT_MODEL", "anthropic:claude-sonnet-4-20250514")
+    """Model for tasks requiring complex reasoning and conceptual relationship navigation.
+
+    Provider-specific defaults:
+    - anthropic: claude-sonnet-4-20250514
+    - openai: gpt-4.1
+
+    Override with REASONING_AGENT_MODEL environment variable.
+    """
+    if model := os.getenv("REASONING_AGENT_MODEL"):
+        return model
+
+    provider = os.getenv("MODEL_PROVIDER", "anthropic").lower()
+    if provider == "anthropic":
+        return "anthropic:claude-sonnet-4-20250514"
+    elif provider == "openai":
+        return "openai:gpt-4.1"
+    else:
+        raise ValueError(f"unsupported MODEL_PROVIDER: {provider}")
 
 
 @pytest.fixture(scope="session")
