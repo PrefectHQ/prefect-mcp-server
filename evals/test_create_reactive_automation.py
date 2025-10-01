@@ -9,8 +9,8 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServer
 
-from evals.tools import read_file, run_shell_command, write_file
-from evals.tools.spy import ToolCallSpy
+from evals._tools import read_file, run_shell_command, write_file
+from evals._tools.spy import ToolCallSpy
 
 
 @pytest.fixture

@@ -11,8 +11,8 @@ from prefect.client.schemas.responses import DeploymentResponse
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServer
 
-from evals.tools import run_shell_command
-from evals.tools.spy import ToolCallSpy
+from evals._tools import run_shell_command
+from evals._tools.spy import ToolCallSpy
 
 
 @pytest.fixture

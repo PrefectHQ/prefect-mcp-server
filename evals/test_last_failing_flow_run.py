@@ -6,7 +6,7 @@ from prefect.client.orchestration import PrefectClient
 from prefect.client.schemas.objects import FlowRun
 from pydantic_ai import Agent
 
-from evals.tools.spy import ToolCallSpy
+from evals._tools.spy import ToolCallSpy
 
 
 @pytest.fixture

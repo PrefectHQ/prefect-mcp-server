@@ -111,15 +111,15 @@ async def deployment_concurrency_scenario(
     )
 
 
+@pytest.mark.usefixtures("deployment_concurrency_scenario")
 async def test_diagnoses_deployment_concurrency(
     reasoning_agent: Agent,
-    deployment_concurrency_scenario: LateRunsScenario,
     evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
     """Test agent diagnoses late runs caused by deployment concurrency limit."""
     async with reasoning_agent:
         result = await reasoning_agent.run(
-            """Why recent flow runs of my deployment taking so long to start? Some have
+            """Why are recent flow runs of my deployment taking so long to start? Some have
             been scheduled for a while but haven't begun execution."""
         )
     await evaluate_response(
