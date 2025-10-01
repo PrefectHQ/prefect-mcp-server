@@ -2,6 +2,8 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from prefect.client.base import ServerType
+
 from prefect_mcp_server._prefect_client.identity import get_identity
 
 
@@ -14,17 +16,22 @@ async def test_get_identity_oss() -> None:
     mock_response.text = '"2.14.0"'
     mock_client._client.get = AsyncMock(return_value=mock_response)
 
-    with patch(
-        "prefect_mcp_server._prefect_client.identity.get_client"
-    ) as mock_get_client:
+    with (
+        patch(
+            "prefect_mcp_server._prefect_client.identity.get_client"
+        ) as mock_get_client,
+        patch(
+            "prefect_mcp_server._prefect_client.identity.determine_server_type"
+        ) as mock_determine,
+    ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
+        mock_determine.return_value = ServerType.SERVER
 
         result = await get_identity()
 
     assert result["success"] is True
     assert result["identity"] is not None
     assert result["identity"]["api_url"] == "http://localhost:4200/api"
-    assert result["identity"]["api_type"] == "oss"
     assert result["identity"]["version"] == "2.14.0"
 
     # Verify Cloud-specific fields are not present on OSS
@@ -74,9 +81,13 @@ async def test_get_identity_cloud_basic() -> None:
         patch(
             "prefect_mcp_server._prefect_client.identity.get_cloud_client"
         ) as mock_get_cloud_client,
+        patch(
+            "prefect_mcp_server._prefect_client.identity.determine_server_type"
+        ) as mock_determine,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
         mock_get_cloud_client.return_value = mock_cloud_client
+        mock_determine.return_value = ServerType.CLOUD
 
         result = await get_identity()
     if not result["success"]:
@@ -87,7 +98,6 @@ async def test_get_identity_cloud_basic() -> None:
         result["identity"]["api_url"]
         == "https://api.prefect.cloud/api/accounts/abc-123/workspaces/xyz-789"
     )
-    assert result["identity"]["api_type"] == "cloud"
     assert result["identity"]["account_id"] == "abc-123"
     assert result["identity"]["account_name"] == "Test Account"
     assert result["identity"]["workspace_id"] == "xyz-789"
@@ -151,15 +161,18 @@ async def test_get_identity_cloud_with_account_details() -> None:
         patch(
             "prefect_mcp_server._prefect_client.identity.get_cloud_client"
         ) as mock_get_cloud_client,
+        patch(
+            "prefect_mcp_server._prefect_client.identity.determine_server_type"
+        ) as mock_determine,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
         mock_get_cloud_client.return_value = mock_cloud_client
+        mock_determine.return_value = ServerType.CLOUD
 
         result = await get_identity()
 
     assert result["success"] is True
     assert result["identity"] is not None
-    assert result["identity"]["api_type"] == "cloud"
     assert result["identity"]["account_id"] == "abc-123"
     assert result["identity"]["account_name"] == "Test Account"
     assert result["identity"]["workspace_name"] == "Production Workspace"

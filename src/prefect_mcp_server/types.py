@@ -350,7 +350,6 @@ class ServerIdentityInfo(TypedDict, total=False):
     """Identity information for Prefect OSS instances."""
 
     api_url: str
-    api_type: str  # "oss"
     version: str | None
 
 
@@ -358,7 +357,6 @@ class CloudIdentityInfo(TypedDict, total=False):
     """Identity information for Prefect Cloud instances."""
 
     api_url: str
-    api_type: str  # "cloud"
     account_id: str
     account_name: str | None
     workspace_id: str
@@ -408,4 +406,68 @@ class AutomationsResult(TypedDict):
     success: bool
     count: int
     automations: list[AutomationDetail]
+    error: str | None
+
+
+class RateLimitSummary(TypedDict):
+    """Summary statistics for rate limit usage."""
+
+    total_throttling_periods: int
+    affected_keys: Annotated[
+        list[str],
+        Field(
+            description="API operation groups that experienced throttling (e.g., 'runs', 'deployments', 'writing-logs'). These are NOT API authentication keys."
+        ),
+    ]
+    first_throttled_at: str | None
+    last_throttled_at: str | None
+    total_minutes_throttled: int
+
+
+class KeyThrottlingDetail(TypedDict):
+    """Throttling details for a specific operation group within a period."""
+
+    key: Annotated[
+        str,
+        Field(
+            description="API operation group name (e.g., 'runs', 'deployments'). This is NOT an API authentication key."
+        ),
+    ]
+    total_denied: int
+    peak_denied_per_minute: int
+
+
+class ThrottlingPeriod(TypedDict):
+    """A continuous stretch of time where throttling occurred.
+
+    Consecutive minutes with throttling are grouped into a single period.
+    """
+
+    start: str
+    end: str
+    duration_minutes: int
+    keys_affected: Annotated[
+        list[KeyThrottlingDetail],
+        Field(
+            description="API operation groups that were throttled during this period. These are categories of API calls (e.g., 'runs', 'deployments'), not authentication keys."
+        ),
+    ]
+
+
+class RateLimitsResult(TypedDict):
+    """Result of getting rate limit usage (Cloud only).
+
+    Groups consecutive throttled minutes into periods and shows which API
+    operation groups were affected in each stretch.
+
+    Note: 'keys' refer to categories of API operations (e.g., 'runs' for flow
+    run operations, 'writing-logs' for log writes), NOT API authentication keys.
+    """
+
+    success: bool
+    account_id: str | None
+    since: str | None
+    until: str | None
+    summary: RateLimitSummary | None
+    throttling_periods: list[ThrottlingPeriod] | None
     error: str | None

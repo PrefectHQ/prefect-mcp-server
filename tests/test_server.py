@@ -105,8 +105,6 @@ async def test_identity_tool(prefect_mcp_server: FastMCP) -> None:
         assert "identity" in data
         assert isinstance(data["identity"], dict)
         assert "api_url" in data["identity"]
-        assert "api_type" in data["identity"]
-        assert data["identity"]["api_type"] in ["cloud", "oss", "unknown"]
 
 
 async def test_dashboard_tool(prefect_mcp_server: FastMCP) -> None:

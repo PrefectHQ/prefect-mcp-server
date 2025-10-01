@@ -1,10 +1,12 @@
 """Prefect MCP Server - Clean implementation following FastMCP patterns."""
 
+from datetime import datetime
 from typing import Annotated, Any, Literal
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from fastmcp import FastMCP
 from fastmcp.server.proxy import ProxyClient
+from prefect.client.base import ServerType, determine_server_type
 from pydantic import Field
 
 from prefect_mcp_server import _prefect_client
@@ -16,6 +18,7 @@ from prefect_mcp_server.types import (
     FlowRunsResult,
     IdentityResult,
     LogsResult,
+    RateLimitsResult,
     TaskRunsResult,
     WorkPoolsResult,
 )
@@ -27,6 +30,9 @@ docs_proxy = FastMCP.as_proxy(
     ProxyClient("https://prefect-docs-mcp.fastmcp.app/mcp"), name="Prefect Docs Proxy"
 )
 mcp.mount(docs_proxy, prefix="docs")
+
+# Cloud-specific tools (conditionally mounted at end of file)
+cloud_mcp = FastMCP("Prefect Cloud Tools")
 
 
 # Prompts - guidance for LLM interactions
@@ -388,3 +394,48 @@ async def get_object_schema(
         return AutomationCore.model_json_schema()
     else:
         raise ValueError(f"Unknown object type: {object_type}")
+
+
+# Cloud-specific tools
+@cloud_mcp.tool
+async def review_rate_limits(
+    since: Annotated[
+        datetime | None,
+        Field(
+            description="Start time for usage data (ISO 8601). Defaults to 3 days ago.",
+            examples=["2025-09-28T00:00:00Z"],
+        ),
+    ] = None,
+    until: Annotated[
+        datetime | None,
+        Field(
+            description="End time for usage data (ISO 8601). Defaults to 1 minute ago.",
+            examples=["2025-10-01T00:00:00Z"],
+        ),
+    ] = None,
+) -> RateLimitsResult:
+    """Review rate limit usage for this Prefect Cloud account (Cloud only).
+
+    Queries all common rate limit operation groups (runs, deployments, flows,
+    work_pools, writing-logs, etc.) and groups consecutive throttled minutes
+    into periods, showing which operation groups were affected during each stretch.
+
+    Note: These are not API authentication keys - they're categories of API
+    operations that are rate limited together (e.g., "runs" includes all
+    flow run API calls, "writing-logs" includes log write operations).
+
+    Useful for diagnosing why API calls are being rate limited. The response shows:
+    - Distinct time periods where throttling occurred
+    - Which operation groups were throttled during each period
+    - Total denied requests and peak denials per minute for each group
+
+    Examples:
+        - Check recent throttling: review_rate_limits()
+        - Custom time range: review_rate_limits(since="2025-09-30T00:00:00Z", until="2025-10-01T00:00:00Z")
+    """
+    return await _prefect_client.get_rate_limits(since=since, until=until)
+
+
+# Conditionally mount Cloud tools if connected to Prefect Cloud
+if determine_server_type() == ServerType.CLOUD:
+    mcp.mount(cloud_mcp)

@@ -1,5 +1,6 @@
 """Identity and connection information for Prefect MCP server."""
 
+from prefect.client.base import ServerType, determine_server_type
 from prefect.client.cloud import get_cloud_client
 from prefect.client.orchestration import get_client
 
@@ -17,12 +18,8 @@ async def get_identity() -> IdentityResult:
         async with get_client() as client:
             api_url = str(client.api_url)
 
-            # Determine if we're connected to Prefect Cloud by checking for the cloud URL pattern
-            # Cloud URLs have the format: .../accounts/{account_id}/workspaces/{workspace_id}
-            is_cloud = "/accounts/" in api_url and "/workspaces/" in api_url
-
             # If it's Prefect Cloud, build CloudIdentityInfo
-            if is_cloud:
+            if determine_server_type() == ServerType.CLOUD:
                 # Use the CloudClient to access cloud-specific endpoints
                 cloud_client = get_cloud_client(infer_cloud_url=True)
                 async with cloud_client:
@@ -54,7 +51,6 @@ async def get_identity() -> IdentityResult:
 
                     identity: CloudIdentityInfo = {
                         "api_url": api_url,
-                        "api_type": "cloud",
                         "account_id": account_id,
                         "account_name": account_data.get("name"),
                         "workspace_id": workspace_id,
@@ -83,7 +79,6 @@ async def get_identity() -> IdentityResult:
 
                 identity: ServerIdentityInfo = {
                     "api_url": api_url,
-                    "api_type": "oss",
                     "version": version,
                 }
 
