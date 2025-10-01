@@ -6,6 +6,13 @@ from prefect.client.orchestration import PrefectClient
 from prefect.client.schemas.actions import WorkPoolCreate
 from prefect.states import Completed, Failed, Scheduled
 
+# Retry tests on Anthropic API rate limiting or overload errors
+pytestmark = pytest.mark.flaky(
+    reruns=3,
+    reruns_delay=2,
+    only_rerun=["ModelHTTPError", "RateLimitError"],
+)
+
 
 @pytest.fixture(autouse=True)
 async def background_noise(prefect_client: PrefectClient) -> None:

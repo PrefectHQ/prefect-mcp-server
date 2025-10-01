@@ -353,12 +353,9 @@ async def get_automations(
 
     Returns automations with their complete configurations including:
     - Trigger conditions (event type, posture, threshold, resource filters)
-    - Actions to perform when triggered (main, on_trigger, on_resolve)
+    - Actions to perform (main, on_trigger, on_resolve)
     - Enabled/disabled state
     - Tags and metadata
-
-    Essential for debugging automation behavior and understanding why automations
-    did or didn't fire for specific events.
 
     Filter operators:
     - id.any_: Match specific automation IDs

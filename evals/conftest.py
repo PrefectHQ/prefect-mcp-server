@@ -22,7 +22,11 @@ logfire.configure(
 logfire.instrument_pydantic_ai()
 
 # Retry all eval tests on Anthropic API rate limiting or overload errors
-pytestmark = pytest.mark.flaky(reruns=3, reruns_delay=2, only_rerun=["ModelHTTPError"])
+pytestmark = pytest.mark.flaky(
+    reruns=3,
+    reruns_delay=2,
+    only_rerun=["ModelHTTPError", "RateLimitError"],
+)
 
 
 class EvaluationResult(BaseModel):
