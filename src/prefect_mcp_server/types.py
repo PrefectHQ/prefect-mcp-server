@@ -336,22 +336,54 @@ class TaskRunsResult(TypedDict):
     error: str | None
 
 
-class IdentityInfo(TypedDict, total=False):
-    """Identity and connection information."""
+class UserInfo(TypedDict, total=False):
+    """User information for Prefect Cloud."""
+
+    id: str | None
+    email: str | None
+    handle: str | None
+    first_name: str | None
+    last_name: str | None
+
+
+class ServerIdentityInfo(TypedDict, total=False):
+    """Identity information for Prefect OSS instances."""
 
     api_url: str
-    api_type: str  # "cloud" or "oss"
+    api_type: str  # "oss"
     version: str | None
-    account_id: str | None  # Cloud only
-    workspace_id: str | None  # Cloud only
-    user: dict[str, Any] | None  # Cloud only
+
+
+class CloudIdentityInfo(TypedDict, total=False):
+    """Identity information for Prefect Cloud instances."""
+
+    api_url: str
+    api_type: str  # "cloud"
+    account_id: str
+    account_name: str | None
+    workspace_id: str
+    workspace_name: str | None
+    workspace_description: str | None
+    user: UserInfo | None
+    plan_type: str | None
+    plan_tier: int | None
+    features: list[str] | None
+    automations_limit: int | None
+    work_pool_limit: int | None
+    mex_work_pool_limit: int | None
+    run_retention_days: int | None
+    audit_log_retention_days: int | None
+    self_serve: bool | None
+
+
+IdentityInfo = CloudIdentityInfo | ServerIdentityInfo
 
 
 class IdentityResult(TypedDict):
     """Result of getting identity information."""
 
     success: bool
-    identity: IdentityInfo
+    identity: IdentityInfo | None
     error: str | None
 
 

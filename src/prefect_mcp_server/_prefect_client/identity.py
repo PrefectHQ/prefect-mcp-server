@@ -3,7 +3,12 @@
 from prefect.client.cloud import get_cloud_client
 from prefect.client.orchestration import get_client
 
-from prefect_mcp_server.types import IdentityResult
+from prefect_mcp_server.types import (
+    CloudIdentityInfo,
+    IdentityResult,
+    ServerIdentityInfo,
+    UserInfo,
+)
 
 
 async def get_identity() -> IdentityResult:
@@ -16,19 +21,14 @@ async def get_identity() -> IdentityResult:
             # Cloud URLs have the format: .../accounts/{account_id}/workspaces/{workspace_id}
             is_cloud = "/accounts/" in api_url and "/workspaces/" in api_url
 
-            identity_info = {
-                "api_url": api_url,
-                "api_type": "cloud" if is_cloud else "oss",
-            }
-
-            # If it's Prefect Cloud, try to get user/workspace info
+            # If it's Prefect Cloud, build CloudIdentityInfo
             if is_cloud:
                 # Use the CloudClient to access cloud-specific endpoints
                 cloud_client = get_cloud_client(infer_cloud_url=True)
                 async with cloud_client:
                     # Get user info from /me/ endpoint
                     me_data = await cloud_client.get("/me/")
-                    identity_info["user"] = {
+                    user_info: UserInfo = {
                         "id": str(me_data.get("id")) if me_data.get("id") else None,
                         "email": me_data.get("email"),
                         "handle": me_data.get("handle"),
@@ -36,31 +36,65 @@ async def get_identity() -> IdentityResult:
                         "last_name": me_data.get("last_name"),
                     }
 
-                # Extract workspace info from URL
-                # Format: https://api.prefect.cloud/api/accounts/{account_id}/workspaces/{workspace_id}
-                parts = api_url.split("/")
-                account_idx = parts.index("accounts") + 1
-                workspace_idx = parts.index("workspaces") + 1
-                identity_info["account_id"] = parts[account_idx]
-                identity_info["workspace_id"] = parts[workspace_idx]
+                    # Extract workspace info from URL
+                    # Format: https://api.prefect.cloud/api/accounts/{account_id}/workspaces/{workspace_id}
+                    parts = api_url.split("/")
+                    account_idx = parts.index("accounts") + 1
+                    workspace_idx = parts.index("workspaces") + 1
+                    account_id = parts[account_idx]
+                    workspace_id = parts[workspace_idx]
 
-            # Get server version (only available on OSS, not cloud)
-            if not is_cloud:
+                    # Get account details including plan information
+                    account_data = await cloud_client.get(f"/accounts/{account_id}")
+
+                    # Get workspace details
+                    workspace_data = await cloud_client.get(
+                        f"/accounts/{account_id}/workspaces/{workspace_id}"
+                    )
+
+                    identity: CloudIdentityInfo = {
+                        "api_url": api_url,
+                        "api_type": "cloud",
+                        "account_id": account_id,
+                        "account_name": account_data.get("name"),
+                        "workspace_id": workspace_id,
+                        "workspace_name": workspace_data.get("name"),
+                        "workspace_description": workspace_data.get("description"),
+                        "user": user_info,
+                        "plan_type": account_data.get("plan_type"),
+                        "plan_tier": account_data.get("plan_tier"),
+                        "features": account_data.get("features"),
+                        "automations_limit": account_data.get("automations_limit"),
+                        "work_pool_limit": account_data.get("work_pool_limit"),
+                        "mex_work_pool_limit": account_data.get("mex_work_pool_limit"),
+                        "run_retention_days": account_data.get("run_retention_days"),
+                        "audit_log_retention_days": account_data.get(
+                            "audit_log_retention_days"
+                        ),
+                        "self_serve": account_data.get("self_serve"),
+                    }
+
+            # Otherwise build ServerIdentityInfo
+            else:
+                version: str | None = None
                 version_response = await client._client.get("/version")
                 if version_response.status_code == 200:
-                    identity_info["version"] = version_response.text.strip('"')
+                    version = version_response.text.strip('"')
+
+                identity: ServerIdentityInfo = {
+                    "api_url": api_url,
+                    "api_type": "oss",
+                    "version": version,
+                }
 
             return {
                 "success": True,
-                "identity": identity_info,
+                "identity": identity,
                 "error": None,
             }
     except Exception as e:
         return {
             "success": False,
-            "identity": {
-                "api_url": "unknown",
-                "api_type": "unknown",
-            },
+            "identity": None,
             "error": f"Failed to fetch identity: {str(e)}",
         }
