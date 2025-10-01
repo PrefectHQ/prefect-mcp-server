@@ -15,19 +15,21 @@ from prefect_mcp_server.types import (
 # Common rate limit operation groups to check
 # These are categories of API operations that are rate limited together
 DEFAULT_KEYS = [
-    "runs",
-    "deployments",
-    "flows",
-    "work_pools",
-    "work_queues",
-    "writing-logs",
-    "reading-events",
     "artifacts",
-    "variables",
-    "concurrency_limits",
     "block_documents",
     "block_schemas",
     "block_types",
+    "concurrency_limits",
+    "deployments",
+    "flows",
+    "runs",
+    "variables",
+    "work_pools",
+    "work_queues",
+    "reading-events",
+    "writing-events",
+    "reading-logs",
+    "writing-logs",
 ]
 
 
