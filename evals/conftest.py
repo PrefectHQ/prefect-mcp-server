@@ -32,7 +32,7 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServer, MCPServerStdio
 
-from evals.tools.spy import ToolCallSpy
+from evals._tools.spy import ToolCallSpy
 
 load_dotenv(".env.local")
 logfire.configure(
