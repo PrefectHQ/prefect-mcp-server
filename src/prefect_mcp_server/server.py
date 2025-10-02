@@ -416,9 +416,14 @@ async def review_rate_limits(
 ) -> RateLimitsResult:
     """Review rate limit usage for this Prefect Cloud account (Cloud only).
 
-    Queries all common rate limit operation groups (runs, deployments, flows,
-    work_pools, writing-logs, etc.) and groups consecutive throttled minutes
-    into periods, showing which operation groups were affected during each stretch.
+    Prefect Cloud API access is governed by rate limits in different categories
+    (runs, deployments, flows, work_pools, writing-logs, etc.). When you see
+    HTTP 429 errors or "Too Many Requests" responses from the Prefect API,
+    use this tool to identify which operation groups were throttled and when.
+
+    Queries all common rate limit operation groups and groups consecutive
+    throttled minutes into periods, showing which operation groups were
+    affected during each stretch.
 
     Note: These are not API authentication keys - they're categories of API
     operations that are rate limited together (e.g., "runs" includes all
