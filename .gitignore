@@ -34,3 +34,4 @@ server-info.json
 # OS
 .DS_Store
 Thumbs.db
+automation.yaml
