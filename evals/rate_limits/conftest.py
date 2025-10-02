@@ -11,7 +11,6 @@ import uvicorn
 from fastapi import APIRouter, FastAPI, Request, Response
 from prefect.client.orchestration import PrefectClient
 from prefect.settings import get_current_settings
-from prefect.testing.utilities import prefect_test_harness
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServer, MCPServerStdio
 
@@ -138,125 +137,134 @@ def cloud_api_router(
     return router
 
 
+@pytest.fixture(scope="session")
+def oss_server_url(prefect_mcp_server: MCPServer) -> str:
+    """OSS Prefect server URL from the session-scoped test harness.
+
+    Depends on prefect_mcp_server to ensure the session harness is running.
+    """
+    url = get_current_settings().api.url
+    if not url:
+        raise RuntimeError("OSS server URL not available")
+    return url
+
+
 @pytest.fixture(scope="module")
 def cloud_proxy_server(
     cloud_api_router: APIRouter,
+    oss_server_url: str,
     tool_call_spy: ToolCallSpy,
     unused_tcp_port_factory: Callable[[], int],
 ) -> Generator[str, None, None]:
     """Proxy server that mounts Cloud API router and proxies OSS requests.
 
     Returns the base URL of the proxy server (e.g. http://localhost:8000).
+
+    Reuses the OSS server from the session-scoped prefect_test_harness.
     """
-    # Reuse the OSS server from prefect_test_harness
-    with prefect_test_harness():
-        oss_url = get_current_settings().api.url
-        if not oss_url:
-            raise RuntimeError("OSS server URL not available")
+    # Event to signal when server is ready
+    server_ready = threading.Event()
 
-        # Event to signal when server is ready
-        server_ready = threading.Event()
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        """Set event when server is ready."""
+        server_ready.set()
+        yield
 
-        @asynccontextmanager
-        async def lifespan(app: FastAPI):
-            """Set event when server is ready."""
-            server_ready.set()
-            yield
+    # Create FastAPI app with lifespan
+    app = FastAPI(lifespan=lifespan)
 
-        # Create FastAPI app with lifespan
-        app = FastAPI(lifespan=lifespan)
+    # Mount Cloud API router
+    app.include_router(cloud_api_router)
 
-        # Mount Cloud API router
-        app.include_router(cloud_api_router)
+    def _strip_cloud_prefix(path: str) -> str:
+        """Strip /api/accounts/{id}/workspaces/{id} prefix from path if present.
 
-        def _strip_cloud_prefix(path: str) -> str:
-            """Strip /api/accounts/{id}/workspaces/{id} prefix from path if present.
+        Examples:
+            api/accounts/123/workspaces/456/flow_runs -> /flow_runs
+            /api/accounts/123/workspaces/456/flow_runs -> /flow_runs
+            flow_runs -> /flow_runs
+        """
+        # Match: optional /, optional api/, accounts/{id}/workspaces/{id}, then capture the rest
+        pattern = r"^/?(?:api/)?accounts/[^/]+/workspaces/[^/]+(/.*)?$"
+        match = re.match(pattern, path)
+        if match and match.group(1):
+            return match.group(1)
+        # If no match, ensure it starts with /
+        return f"/{path}" if not path.startswith("/") else path
 
-            Examples:
-                api/accounts/123/workspaces/456/flow_runs -> /flow_runs
-                /api/accounts/123/workspaces/456/flow_runs -> /flow_runs
-                flow_runs -> /flow_runs
-            """
-            # Match: optional /, optional api/, accounts/{id}/workspaces/{id}, then capture the rest
-            pattern = r"^/?(?:api/)?accounts/[^/]+/workspaces/[^/]+(/.*)?$"
-            match = re.match(pattern, path)
-            if match and match.group(1):
-                return match.group(1)
-            # If no match, ensure it starts with /
-            return f"/{path}" if not path.startswith("/") else path
+    # Proxy all other requests to OSS server
+    @app.api_route(
+        "/{path:path}",
+        methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+    )
+    async def proxy_request(request: Request, path: str) -> Response:
+        """Proxy OSS API requests to real Prefect server."""
+        # Strip Cloud prefix from path
+        clean_path = _strip_cloud_prefix(path)
 
-        # Proxy all other requests to OSS server
-        @app.api_route(
-            "/{path:path}",
-            methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
-        )
-        async def proxy_request(request: Request, path: str) -> Response:
-            """Proxy OSS API requests to real Prefect server."""
-            # Strip Cloud prefix from path
-            clean_path = _strip_cloud_prefix(path)
+        # Build target URL
+        target_url = f"{oss_server_url}{clean_path}"
 
-            # Build target URL
-            target_url = f"{oss_url}{clean_path}"
+        # Forward request
+        async with httpx.AsyncClient() as client:
+            # Copy headers except host
+            headers = dict(request.headers)
+            headers.pop("host", None)
 
-            # Forward request
-            async with httpx.AsyncClient() as client:
-                # Copy headers except host
-                headers = dict(request.headers)
-                headers.pop("host", None)
+            # Copy query params
+            query_params = dict(request.query_params)
 
-                # Copy query params
-                query_params = dict(request.query_params)
+            # Get request body if present
+            body = await request.body()
 
-                # Get request body if present
-                body = await request.body()
+            # Make proxied request
+            response = await client.request(
+                method=request.method,
+                url=target_url,
+                headers=headers,
+                params=query_params,
+                content=body,
+                follow_redirects=True,
+            )
 
-                # Make proxied request
-                response = await client.request(
-                    method=request.method,
-                    url=target_url,
-                    headers=headers,
-                    params=query_params,
-                    content=body,
-                    follow_redirects=True,
-                )
+            # Return response (exclude headers that httpx handles automatically)
+            headers = {
+                k: v
+                for k, v in response.headers.items()
+                if k.lower()
+                not in ("content-length", "transfer-encoding", "content-encoding")
+            }
+            return Response(
+                content=response.content,
+                status_code=response.status_code,
+                headers=headers,
+            )
 
-                # Return response (exclude headers that httpx handles automatically)
-                headers = {
-                    k: v
-                    for k, v in response.headers.items()
-                    if k.lower()
-                    not in ("content-length", "transfer-encoding", "content-encoding")
-                }
-                return Response(
-                    content=response.content,
-                    status_code=response.status_code,
-                    headers=headers,
-                )
+    # Start server in background thread
+    port: int = unused_tcp_port_factory()
+    config = uvicorn.Config(app=app, host="localhost", port=port, log_level="error")
+    server = uvicorn.Server(config)
 
-        # Start server in background thread
-        port: int = unused_tcp_port_factory()
-        config = uvicorn.Config(app=app, host="localhost", port=port, log_level="error")
-        server = uvicorn.Server(config)
+    def run_server() -> None:
+        import asyncio
 
-        def run_server() -> None:
-            import asyncio
+        asyncio.run(server.serve())
 
-            asyncio.run(server.serve())
+    thread = threading.Thread(target=run_server, daemon=True)
+    thread.start()
 
-        thread = threading.Thread(target=run_server, daemon=True)
-        thread.start()
+    # Wait for server to be ready
+    if not server_ready.wait(timeout=5.0):
+        raise TimeoutError("Proxy server did not start within 5 seconds")
 
-        # Wait for server to be ready
-        if not server_ready.wait(timeout=5.0):
-            raise TimeoutError("Proxy server did not start within 5 seconds")
-
-        try:
-            yield f"http://localhost:{port}"
-        finally:
-            # Signal server to shutdown
-            server.should_exit = True
-            # Wait for shutdown to complete
-            thread.join(timeout=2.0)
+    try:
+        yield f"http://localhost:{port}"
+    finally:
+        # Signal server to shutdown
+        server.should_exit = True
+        # Wait for shutdown to complete
+        thread.join(timeout=2.0)
 
 
 @pytest.fixture
