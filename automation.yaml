@@ -1,0 +1,14 @@
+name: Run test-deployment on flow run failure
+description: Automation that runs the test-deployment whenever any flow run fails
+enabled: true
+trigger:
+  type: event
+  posture: Reactive
+  expect:
+    - prefect.flow-run.Failed
+  threshold: 1
+  within: 0
+actions:
+  - type: run-deployment
+    source: selected
+    deployment_id: 9c65761c-ae05-4c15-ab0e-7093ecaf5e73
