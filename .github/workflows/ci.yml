@@ -71,8 +71,6 @@ jobs:
           cache-dependency-glob: "uv.lock"
           python-version: "3.12"
 
-      - uses: extractions/setup-just@v3
-
       - name: Post Logfire Link
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7

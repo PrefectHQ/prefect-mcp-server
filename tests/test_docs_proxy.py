@@ -13,13 +13,13 @@ async def test_docs_proxy_tools_available(prefect_mcp_server: FastMCP) -> None:
         # Check that the docs SearchPrefect tool is available (prefixed with docs_)
         docs_tools = [name for name in tool_names if name.startswith("docs_")]
         assert len(docs_tools) >= 1
-        assert "docs_SearchPrefect" in tool_names
+        assert "docs_search_prefect" in tool_names
 
         # Verify the docs tool has expected properties
         docs_search_tool = next(
-            (t for t in tools if t.name == "docs_SearchPrefect"), None
+            (t for t in tools if t.name == "docs_search_prefect"), None
         )
         assert docs_search_tool is not None
         assert docs_search_tool.description is not None
-        assert "Search the Prefect documentation" in docs_search_tool.description
+        assert "Search the Prefect knowledgebase" in docs_search_tool.description
         assert "search" in docs_search_tool.description.lower()
