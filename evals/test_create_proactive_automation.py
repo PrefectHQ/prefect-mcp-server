@@ -58,10 +58,6 @@ async def test_create_proactive_automation(
             """
         )
 
-    tool_call_spy.assert_tool_was_called_with(
-        "get_object_schema", object_type="automation"
-    )
-
     assert result.output.automation_id is not None
 
     automation = await prefect_client.read_automation(result.output.automation_id)

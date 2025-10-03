@@ -18,6 +18,9 @@ prefect-mcp-server = "prefect_mcp_server.__main__:main"
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
+[project.optional-dependencies]
+logfire = ["logfire"]
+
 [dependency-groups]
 dev = [
     "ipython",
