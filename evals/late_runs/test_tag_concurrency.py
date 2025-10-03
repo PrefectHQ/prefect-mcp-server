@@ -123,9 +123,9 @@ async def tag_concurrency_scenario(prefect_client: PrefectClient) -> LateRunsSce
     )
 
 
+@pytest.mark.usefixtures("tag_concurrency_scenario")
 async def test_diagnoses_tag_concurrency(
     reasoning_agent: Agent,
-    tag_concurrency_scenario: LateRunsScenario,
     evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
     """Test agent diagnoses late runs caused by tag-based concurrency limit."""
