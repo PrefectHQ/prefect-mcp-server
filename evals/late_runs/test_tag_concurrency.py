@@ -131,7 +131,7 @@ async def test_diagnoses_tag_concurrency(
     """Test agent diagnoses late runs caused by tag-based concurrency limit."""
     async with reasoning_agent:
         result = await reasoning_agent.run(
-            """Why are my recent flow runs taking so long to start? Some have
+            """Why exactly are my recent flow runs taking so long to start? Some have
             been scheduled for a while but haven't begun execution."""
         )
 
