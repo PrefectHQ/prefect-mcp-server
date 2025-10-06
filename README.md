@@ -5,7 +5,7 @@
 > 
 > This is an experimental MCP server for Prefect. APIs, features, and behaviors are subject to change without notice. We encourage you to try it out, provide feedback, and contribute! Please [create issues](https://github.com/PrefectHQ/prefect-mcp-server/issues) or [open PRs](https://github.com/PrefectHQ/prefect-mcp-server/pulls) with your ideas and suggestions.
 
-a [`fastmcp`](https://github.com/jlowin/fastmcp) server for interacting with [`prefect`](https://github.com/prefecthq/prefect) resources.
+an MCP server for interacting with [`prefect`](https://github.com/prefecthq/prefect) resources.
 
 ## quick start
 
