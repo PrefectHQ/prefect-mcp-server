@@ -11,7 +11,7 @@ class DocsMcpSettings(BaseSettings):
     """Docs MCP proxy settings."""
 
     model_config = SettingsConfigDict(
-        env_prefix="DOCS_MCP_", extra="ignore", env_file=".env"
+        env_prefix="PREFECT_DOCS_MCP_", extra="ignore", env_file=".env"
     )
 
     url: str = Field(
