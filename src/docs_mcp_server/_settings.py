@@ -5,17 +5,21 @@ from typing import Literal
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from raggy.vectorstores.tpuf import (  # type: ignore[reportMissingTypeStubs]
-    TurboPufferSettings as BaseTurboPufferSettings,
-)
 
 
-class TurboPufferSettings(BaseTurboPufferSettings):
-    """Settings for the TurboPuffer vector store."""
+class TurboPufferSettings(BaseSettings):
+    """Settings for the TurboPuffer vectorstore."""
 
-    namespace: str = Field(
-        default="prefect-docs-embeddings", description="The TurboPuffer namespace."
+    model_config = SettingsConfigDict(
+        env_prefix="TURBOPUFFER_",
+        extra="ignore",
     )
+
+    api_key: SecretStr = Field(
+        default=..., description="The API key for the TurboPuffer instance."
+    )
+    region: str = Field(default="api", description="The TurboPuffer region.")
+    namespace: str = Field(default="prefect-docs-for-mcp")
 
 
 class LogfireSettings(BaseSettings):

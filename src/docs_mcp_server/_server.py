@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Annotated, Any
 
 import logfire
@@ -10,13 +11,14 @@ from openai import AsyncOpenAI, OpenAIError
 from pydantic import Field
 from turbopuffer import (
     APIError,
+    AsyncTurbopuffer,
     AuthenticationError,
     NotFoundError,
     PermissionDeniedError,
 )
+from turbopuffer.types.row import Row
 
 from docs_mcp_server._settings import settings
-from docs_mcp_server._tpuf import normalize_score, row_to_dict, run_query
 
 logfire.configure(
     service_name="prefect-docs-mcp",
@@ -47,7 +49,7 @@ def _build_response(
 
 
 @docs_mcp.tool
-def search_prefect(
+async def search_prefect(
     query: Annotated[
         str,
         Field(
@@ -71,7 +73,7 @@ def search_prefect(
         raise ValueError("Query must not be empty.")
 
     result_limit = top_k or settings.top_k
-    include_attributes = list(dict.fromkeys(settings.include_attributes))
+    include_attributes = list(dict.fromkeys(settings.include_attributes)) or ["text"]
 
     with logfire.span(
         "search_prefect",
@@ -82,16 +84,25 @@ def search_prefect(
     ) as span:
         try:
             with logfire.span("vector_query", top_k=result_limit) as vq_span:
-                response = run_query(
-                    query=query,
-                    top_k=result_limit,
-                    include_attributes=include_attributes,
-                )
+                async with AsyncTurbopuffer(
+                    region=settings.turbopuffer.region,
+                    api_key=settings.turbopuffer.api_key.get_secret_value(),
+                ) as client:
+                    namespace = client.namespace(settings.turbopuffer.namespace)
+                    async with AsyncOpenAI() as openai_client:
+                        embedding = await openai_client.embeddings.create(
+                            input=query, model="text-embedding-3-small", timeout=60
+                        )
+                    response = await namespace.query(
+                        rank_by=("vector", "ANN", embedding.data[0].embedding),
+                        top_k=result_limit,
+                        include_attributes=include_attributes,
+                    )
                 rows_returned = len(response.rows or [])
                 vq_span.set_attribute("rows_returned", rows_returned)
                 vq_span.set_attribute("partial_results", rows_returned < result_limit)
         except NotFoundError:
-            rows: list[Any] = []
+            rows: list[Row] = []
             span.set_attribute("error_type", "not_found")
         except (AuthenticationError, PermissionDeniedError) as exc:
             span.set_attribute("error_type", "authentication")
@@ -169,3 +180,31 @@ def search_prefect(
             span.set_attribute("score_avg", sum(scores) / len(scores))
 
         return _build_response(query, results)
+
+
+def row_to_dict(row: Row) -> dict[str, Any]:
+    """normalize turbopuffer row objects to plain dictionaries."""
+
+    data = row.model_dump(mode="python")
+    if row.model_extra:
+        data.update(row.model_extra)
+
+    metadata = data.get("metadata")
+    if isinstance(metadata, str):
+        try:
+            data["metadata"] = json.loads(metadata)
+        except json.JSONDecodeError:
+            pass
+
+    return data
+
+
+def normalize_score(value: Any) -> float | None:
+    """coerce turbopuffer scores into floats when present."""
+
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None

@@ -12,6 +12,14 @@ from prefect.testing.utilities import prefect_test_harness
 from prefect_mcp_server.server import mcp
 
 
+@pytest.fixture(scope="module")
+def vcr_config():
+    """Configure VCR to filter sensitive headers."""
+    return {
+        "filter_headers": ["authorization"],
+    }
+
+
 @pytest.fixture(autouse=True, scope="session")
 def prefect_db() -> Generator[None, None, None]:
     """Create an ephemeral test database for the session."""

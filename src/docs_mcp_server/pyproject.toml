@@ -6,6 +6,6 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "fastmcp>=2.12.3",
-    "raggy>=0.3.5",
+    "openai>=1.109.1",
     "turbopuffer>=1.3.1",
 ]
