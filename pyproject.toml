@@ -43,7 +43,6 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 pythonpath = ["src"]
 # filterwarnings = ["ignore::DeprecationWarning", "ignore::ResourceWarning"]
-env = ["PREFECT_DOCS_MCP_URL=https://prefect-docs-mcp.fastmcp.app/mcp"]
 
 [tool.ty.src]
 include = ["src", "tests"]

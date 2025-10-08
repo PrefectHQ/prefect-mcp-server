@@ -149,10 +149,15 @@ def reset_tool_call_spy(tool_call_spy: ToolCallSpy) -> None:
 def prefect_mcp_server(tool_call_spy: ToolCallSpy) -> Generator[MCPServer, None, None]:
     with prefect_test_harness():
         api_url = get_current_settings().api.url
+        env = {}
+        if api_url:
+            env["PREFECT_API_URL"] = api_url
+        # Use good docs MCP for evals
+        env["PREFECT_DOCS_MCP_URL"] = "https://prefect-docs-mcp.fastmcp.app/mcp"
         yield MCPServerStdio(
             command="uv",
             args=["run", "-m", "prefect_mcp_server"],
-            env={"PREFECT_API_URL": api_url} if api_url else None,
+            env=env,
             process_tool_call=tool_call_spy,
             max_retries=3,
         )
