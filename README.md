@@ -61,7 +61,7 @@ This server enables MCP clients like Claude Code to interact with your Prefect i
 - Retrieve detailed execution logs from flow runs
 - Track events across your workflow ecosystem
 
-**Enable CLI usage
+**Enable CLI usage**
 - Allows AI assistants to effectively use the `prefect` CLI to manage Prefect resources
 - Create automations, trigger deployment runs, and more while maintaining proper attribution
 
