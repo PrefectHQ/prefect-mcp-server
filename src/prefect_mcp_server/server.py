@@ -39,8 +39,9 @@ except ImportError:
 mcp = FastMCP("Prefect MCP Server")
 
 # Mount the Prefect docs MCP server to expose its tools
+# Note: Use a short init_timeout to fail fast if the docs server is unavailable
 docs_proxy = FastMCP.as_proxy(
-    ProxyClient("https://docs.prefect.io/mcp"),
+    ProxyClient("https://docs.prefect.io/mcp", init_timeout=10.0),
     name="Prefect Documentation Search",
 )
 mcp.mount(docs_proxy, prefix="docs")
