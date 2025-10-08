@@ -7,6 +7,24 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class DocsMcpSettings(BaseSettings):
+    """Docs MCP proxy settings."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="DOCS_MCP_", extra="ignore", env_file=".env"
+    )
+
+    url: str = Field(
+        default="https://docs.prefect.io/mcp",
+        description="URL for the Prefect docs MCP server to proxy",
+    )
+
+    init_timeout: float = Field(
+        default=10.0,
+        description="Timeout in seconds for initializing the docs proxy connection",
+    )
+
+
 class LogfireSettings(BaseSettings):
     """Logfire settings."""
 
@@ -40,8 +58,13 @@ class Settings(BaseSettings):
         description="Default time window to look back for events",
     )
 
+    docs_mcp: DocsMcpSettings = Field(
+        default_factory=DocsMcpSettings,
+        description="Docs MCP proxy settings",
+    )
+
     logfire: LogfireSettings = Field(
-        default=LogfireSettings(),
+        default_factory=LogfireSettings,
         description="Logfire settings",
     )
 
