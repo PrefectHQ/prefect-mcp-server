@@ -2,7 +2,7 @@
 
 This example provides a [FastMCP](https://github.com/jlowin/fastmcp) server that exposes
 Prefect documentation through a single semantic search tool powered by
-[Raggy](https://github.com/zzstoatzz/raggy) and a TurboPuffer vector store.
+OpenAI and a TurboPuffer vector store.
 
 ## Features
 
@@ -14,7 +14,7 @@ Prefect documentation through a single semantic search tool powered by
 1. A TurboPuffer API key with access to the Prefect documentation namespace
 2. Python 3.10+
 
-Set the following environment variables (for example in `.env` or `~/.raggy/.env`):
+Set the following environment variables:
 
 ```bash
 export TURBOPUFFER_API_KEY="your-api-key"

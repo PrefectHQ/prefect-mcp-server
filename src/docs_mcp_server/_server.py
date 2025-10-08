@@ -1,4 +1,4 @@
-"""Prefect documentation MCP server backed by Raggy and TurboPuffer."""
+"""Prefect documentation MCP server backed by OpenAI and TurboPuffer."""
 
 from __future__ import annotations
 

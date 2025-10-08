@@ -26,15 +26,15 @@ setup: check-uv
 
 # Run tests
 test:
-    uv run --frozen pytest -xvs tests
+    uv run --all-packages --frozen pytest -xvs tests
 
 # Run linting
 lint:
-    uv run --frozen ruff check --fix
+    uv run --all-packages --frozen ruff check --fix
 
 # Run ty type checker on all files
 typecheck:
-    uv run --frozen ty check
+    uv run --all-packages --frozen ty check
 
 # Run evals with optional pytest arguments
 evals *args:
