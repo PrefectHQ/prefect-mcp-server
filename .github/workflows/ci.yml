@@ -183,6 +183,6 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Run pre-commit
-        run: uv run pre-commit run --all-files
+        run: uv run --all-packages pre-commit run --all-files
         env:
           SKIP: no-commit-to-branch
