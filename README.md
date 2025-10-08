@@ -17,7 +17,7 @@ An MCP server for interacting with [`prefect`](https://github.com/prefecthq/pref
    - server path: `src/prefect_mcp_server/server.py`
    - requirements: `pyproject.toml` (or leave blank)
 4. get your server URL (e.g., `https://your-server-name.fastmcp.app/mcp`)
-5. Add to your favorite MCP client (e.g., Claude Dode):
+5. Add to your favorite MCP client (e.g., Claude Code):
 
 ```bash
 # add to claude code with http transport
