@@ -16,21 +16,19 @@ An MCP server for interacting with [`prefect`](https://github.com/prefecthq/pref
 3. Create a new server pointing to your fork:
    - server path: `src/prefect_mcp_server/server.py`
    - requirements: `pyproject.toml` (or leave blank)
+   - environment variables:
+     - `PREFECT_API_URL`: `https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID]`
+     - `PREFECT_API_KEY`: your Prefect Cloud API key (or `PREFECT_API_AUTH_STRING` for OSS with basic auth)
 4. get your server URL (e.g., `https://your-server-name.fastmcp.app/mcp`)
 5. Add to your favorite MCP client (e.g., Claude Code):
 
 ```bash
 # add to claude code with http transport
-# environment variables are required when using FastMCP Cloud
-claude mcp add prefect \
-  -e PREFECT_API_URL=https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID] \
-  -e PREFECT_API_KEY=your-cloud-api-key \
-  --transport http https://your-server-name.fastmcp.app/mcp
+claude mcp add prefect --transport http https://your-server-name.fastmcp.app/mcp
 ```
 
 > [!NOTE]
-> When deploying to FastMCP Cloud, the server has no access to your local Prefect configuration.
-> You **must** provide `PREFECT_API_URL` and `PREFECT_API_KEY` (for Prefect Cloud) or `PREFECT_API_AUTH_STRING` (for OSS with basic auth) as environment variables in the `claude mcp add` command above.
+> When deploying to FastMCP Cloud, environment variables are configured on the FastMCP Cloud server itself, not in your client configuration. FastMCP's authentication secures access to your MCP server, while the MCP server uses your Prefect API key to access your Prefect instance.
 
 ### run locally
 
@@ -50,6 +48,9 @@ claude mcp add prefect \
 
 > [!NOTE]
 > For open-source servers with basic auth, [use `PREFECT_API_AUTH_STRING`](https://docs.prefect.io/v3/advanced/security-settings#basic-authentication) instead of `PREFECT_API_KEY`
+
+> [!TIP]
+> Prefect Cloud users on Team, Pro, and Enterprise plans can use service accounts for API authentication. Pro and Enterprise users can restrict service accounts to read-only access (only `see_*` permissions) since this MCP server requires no write permissions.
 
 ## Capabilities
 
