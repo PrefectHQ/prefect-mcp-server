@@ -5,19 +5,19 @@
 > 
 > This is an experimental MCP server for Prefect. APIs, features, and behaviors are subject to change without notice. We encourage you to try it out, provide feedback, and contribute! Please [create issues](https://github.com/PrefectHQ/prefect-mcp-server/issues) or [open PRs](https://github.com/PrefectHQ/prefect-mcp-server/pulls) with your ideas and suggestions.
 
-an MCP server for interacting with [`prefect`](https://github.com/prefecthq/prefect) resources.
+An MCP server for interacting with [`prefect`](https://github.com/prefecthq/prefect) resources.
 
-## quick start
+## Quick start
 
-### deploy on FastMCP Cloud
+### Deploy on FastMCP Cloud
 
-1. fork this repository on github (`gh repo fork prefecthq/prefect-mcp-server`)
-2. go to [fastmcp.cloud](https://fastmcp.cloud) and sign in
-3. create a new server pointing to your fork:
+1. Fork this repository on GitHub (`gh repo fork prefecthq/prefect-mcp-server`)
+2. Go to [fastmcp.cloud](https://fastmcp.cloud) and sign in
+3. Create a new server pointing to your fork:
    - server path: `src/prefect_mcp_server/server.py`
    - requirements: `pyproject.toml` (or leave blank)
 4. get your server URL (e.g., `https://your-server-name.fastmcp.app/mcp`)
-5. add to your favorite MCP client (e.g., claude code):
+5. Add to your favorite MCP client (e.g., Claude Dode):
 
 ```bash
 # add to claude code with http transport
@@ -29,12 +29,12 @@ claude mcp add prefect \
 ```
 
 > [!NOTE]
-> when deploying to FastMCP Cloud, the server has no access to your local Prefect configuration.
-> you **must** provide `PREFECT_API_URL` and `PREFECT_API_KEY` (for Prefect Cloud) or `PREFECT_API_AUTH_STRING` (for OSS with basic auth) as environment variables in the `claude mcp add` command above.
+> When deploying to FastMCP Cloud, the server has no access to your local Prefect configuration.
+> You **must** provide `PREFECT_API_URL` and `PREFECT_API_KEY` (for Prefect Cloud) or `PREFECT_API_AUTH_STRING` (for OSS with basic auth) as environment variables in the `claude mcp add` command above.
 
 ### run locally
 
-when running the MCP server locally (via stdio transport), it will automatically use your local Prefect configuration from `~/.prefect/profiles.toml` if available.
+When running the MCP server locally (via stdio transport), it will automatically use your local Prefect configuration from `~/.prefect/profiles.toml` if available.
 
 ```bash
 # minimal setup - inherits from local prefect profile
@@ -49,31 +49,31 @@ claude mcp add prefect \
 ```
 
 > [!NOTE]
-> for open-source servers with basic auth, [use `PREFECT_API_AUTH_STRING`](https://docs.prefect.io/v3/advanced/security-settings#basic-authentication) instead of `PREFECT_API_KEY`
+> For open-source servers with basic auth, [use `PREFECT_API_AUTH_STRING`](https://docs.prefect.io/v3/advanced/security-settings#basic-authentication) instead of `PREFECT_API_KEY`
 
-## capabilities
+## Capabilities
 
-this server enables MCP clients like Claude Code to interact with your Prefect instance:
+This server enables MCP clients like Claude Code to interact with your Prefect instance:
 
-**monitoring & inspection**
-- view dashboard overviews with flow run statistics and work pool status
-- query deployments, flow runs, task runs, and work pools with advanced filtering
-- retrieve detailed execution logs from flow runs
-- track events across your workflow ecosystem
+**Monitoring & inspection**
+- View dashboard overviews with flow run statistics and work pool status
+- Query deployments, flow runs, task runs, and work pools with advanced filtering
+- Retrieve detailed execution logs from flow runs
+- Track events across your workflow ecosystem
 
-**orchestration & actions**
-- trigger deployment runs with custom parameters and tags
-- pass dynamic configurations to workflows at runtime
+**Enable CLI usage
+- Allows AI assistants to effectively use the `prefect` CLI to manage Prefect resources
+- Create automations, trigger deployment runs, and more while maintaining proper attribution
 
-**intelligent debugging**
-- get contextual guidance for troubleshooting failed flow runs
-- diagnose deployment issues including concurrency problems
-- identify root causes of workflow failures
+**Intelligent debugging**
+- Get contextual guidance for troubleshooting failed flow runs
+- Diagnose deployment issues, including concurrency problems
+- Identify root causes of workflow failures
 
-## development
+## Development
 
 <details>
-<summary>setup & testing</summary>
+<summary>Setup & testing</summary>
 
 ```bash
 # clone the repo
@@ -88,7 +88,7 @@ just test
 
 </details>
 
-## links
+## Links
 
 - [FastMCP](https://github.com/jlowin/fastmcp) - the easiest way to build an mcp server
 - [FastMCP Cloud](https://fastmcp.cloud) - deploy your MCP server to the cloud
