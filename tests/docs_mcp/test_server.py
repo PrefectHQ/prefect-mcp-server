@@ -64,3 +64,41 @@ async def test_search_prefect_successful_query(
         assert json.loads(result.content[0].text).get("error") is None
 
         assert result == snapshot
+
+
+@pytest.mark.vcr
+async def test_search_prefect_work_pools(
+    snapshot: SnapshotAssertion, docs_mcp_server: FastMCP
+) -> None:
+    """Test search with different query returns relevant results."""
+    async with Client(docs_mcp_server) as client:
+        result = await client.call_tool(
+            "search_prefect", {"query": "work pools", "top_k": 3}
+        )
+
+        # Ensure successful response with results
+        assert isinstance(result.content[0], TextContent)
+        response = json.loads(result.content[0].text)
+        assert response.get("error") is None
+        assert len(response.get("results", [])) > 0
+
+        assert result == snapshot
+
+
+@pytest.mark.vcr
+async def test_search_prefect_handles_validation_error(
+    snapshot: SnapshotAssertion, docs_mcp_server: FastMCP
+) -> None:
+    """Test that validation errors are handled gracefully."""
+    async with Client(docs_mcp_server) as client:
+        result = await client.call_tool(
+            "search_prefect",
+            {"query": "how to create a flow", "top_k": 999},
+            raise_on_error=False,
+        )
+
+        # Ensure error is returned
+        assert result.is_error is True
+        assert isinstance(result.content[0], TextContent)
+
+        assert result == snapshot
