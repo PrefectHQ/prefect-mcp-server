@@ -64,3 +64,39 @@ async def test_search_prefect_successful_query(
         assert json.loads(result.content[0].text).get("error") is None
 
         assert result == snapshot
+
+
+async def test_search_prefect_empty_query(
+    snapshot: SnapshotAssertion, docs_mcp_server: FastMCP
+) -> None:
+    """Test that empty query raises validation error."""
+    async with Client(docs_mcp_server) as client:
+        result = await client.call_tool(
+            "search_prefect", {"query": "   "}, raise_on_error=False
+        )
+
+        # Should return error for empty query
+        assert result.is_error is True
+        assert isinstance(result.content[0], TextContent)
+        assert "empty" in result.content[0].text.lower()
+
+        assert result == snapshot
+
+
+@pytest.mark.vcr
+async def test_search_prefect_handles_validation_error(
+    snapshot: SnapshotAssertion, docs_mcp_server: FastMCP
+) -> None:
+    """Test that validation errors are handled gracefully."""
+    async with Client(docs_mcp_server) as client:
+        result = await client.call_tool(
+            "search_prefect",
+            {"query": "how to create a flow", "top_k": 999},
+            raise_on_error=False,
+        )
+
+        # Ensure error is returned
+        assert result.is_error is True
+        assert isinstance(result.content[0], TextContent)
+
+        assert result == snapshot
