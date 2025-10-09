@@ -66,21 +66,19 @@ async def test_search_prefect_successful_query(
         assert result == snapshot
 
 
-@pytest.mark.vcr
-async def test_search_prefect_work_pools(
+async def test_search_prefect_empty_query(
     snapshot: SnapshotAssertion, docs_mcp_server: FastMCP
 ) -> None:
-    """Test search with different query returns relevant results."""
+    """Test that empty query raises validation error."""
     async with Client(docs_mcp_server) as client:
         result = await client.call_tool(
-            "search_prefect", {"query": "work pools", "top_k": 3}
+            "search_prefect", {"query": "   "}, raise_on_error=False
         )
 
-        # Ensure successful response with results
+        # Should return error for empty query
+        assert result.is_error is True
         assert isinstance(result.content[0], TextContent)
-        response = json.loads(result.content[0].text)
-        assert response.get("error") is None
-        assert len(response.get("results", [])) > 0
+        assert "empty" in result.content[0].text.lower()
 
         assert result == snapshot
 
