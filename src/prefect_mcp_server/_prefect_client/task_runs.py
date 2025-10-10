@@ -4,6 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from prefect.client.orchestration import get_client
+from prefect.client.schemas.sorting import TaskRunSort
 
 from prefect_mcp_server.types import TaskRunDetail, TaskRunResult
 
@@ -116,7 +117,7 @@ async def get_task_runs(
             task_runs = await client.read_task_runs(
                 task_run_filter=task_run_filter,
                 limit=limit,
-                sort="EXPECTED_START_TIME_DESC",
+                sort=TaskRunSort.EXPECTED_START_TIME_DESC,
             )
 
             # Format the task runs
