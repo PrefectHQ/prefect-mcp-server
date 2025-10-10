@@ -150,7 +150,7 @@ interactions:
           f+9A+Pse+u49/e+pb8vX+PefP9LvVoO/Uz+lz//n9L++N/qvf/0fAAAA//8DAAVN4RDeIAAA
       headers:
         CF-RAY:
-          - 98b8a53ffe01c071-ORD
+          - 98c74a772b7b3418-EWR
         Connection:
           - keep-alive
         Content-Encoding:
@@ -158,14 +158,14 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Wed, 08 Oct 2025 21:14:01 GMT
+          - Fri, 10 Oct 2025 15:53:29 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=xJjGtvXxrlkqVKMlmp.EKIlRfhwThGRmEpsMYI1CXjw-1759958041-1.0.1.1-aPcZ8YA9sSSQHT0syf8fbtI5.Vj7gCUUcdWE5YLdLQj6r8ZSyR9ZCAughecT0Z4w2FwPNZts3IRHk.XNWhDNFTdKdTBp2x4Xzv6XKZexwQo;
-            path=/; expires=Wed, 08-Oct-25 21:44:01 GMT; domain=.api.openai.com; HttpOnly;
+          - __cf_bm=C8twKn7gWAQI67ZZp7DR1_jMgWVIMHV9PCDJbFLqUmI-1760111609-1.0.1.1-Gu23jK.i8lg_m1CvYuPXR6DBO1ISw8nrGHEjYpAyxwtWgL8_sjiv6UieANqjr619QE412OUcxCvuXGehk02XD9oT8bmjfUv4EkfbHIIzOB4;
+            path=/; expires=Fri, 10-Oct-25 16:23:29 GMT; domain=.api.openai.com; HttpOnly;
             Secure; SameSite=None
-          - _cfuvid=MNdgOKvc4_TKC2QoOUUbBHHAjLm6vcm8FT8Nzq1HeNw-1759958041844-0.0.1.1-604800000;
+          - _cfuvid=SvLXVf.Yk.8chI1Hr3hwmMmOMMJYopO15SD_AKRzvZo-1760111609761-0.0.1.1-604800000;
             path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
@@ -184,7 +184,7 @@ interactions:
         openai-organization:
           - user-xgcwoiiqpw3hpu7oxktn2g9g
         openai-processing-ms:
-          - "132"
+          - "93"
         openai-project:
           - proj_nKlzMl1B51a3SCL1Rndf7JTx
         openai-version:
@@ -192,9 +192,9 @@ interactions:
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         via:
-          - envoy-router-797b6d7f75-26n2w
+          - envoy-router-64df5c5b59-g9shs
         x-envoy-upstream-service-time:
-          - "167"
+          - "252"
         x-openai-proxy-wasm:
           - v0.1
         x-ratelimit-limit-requests:
@@ -204,19 +204,19 @@ interactions:
         x-ratelimit-remaining-requests:
           - "2999"
         x-ratelimit-remaining-tokens:
-          - "999994"
+          - "999995"
         x-ratelimit-reset-requests:
           - 20ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_456abb630d74404d9e647b96cd03a520
+          - req_ead20b8d4cc54db1af2d255d3e2a4014
       status:
         code: 200
         message: OK
   - request:
       body: !!binary |
-        H4sIABnU5mgE/3XcW45kWXKd4bnUc0sIv0S4u940AU6AIAiS6geCAilQTUGCoLnr+822J6syg1Xd
+        H4sIAPkr6WgE/3XcW45kWXKd4bnUc0sIv0S4u940AU6AIAiS6geCAilQTUGCoLnr+822J6syg1Xd
         XZUnztkXs2XLltne0f/3t3/853/47//23/78t3/3l7/86z/+/b/95c//87f/8te//eXP//svv/3N
         n37717/753/627//Pz36X3/+h7/8y7/+9qff/utf/dVvf/rrj//8cbl8PW4fH5/X1+Px/Pi4Pf7k
         4cfz+vj6fF6/Xp+f99vj62seXm63r9f98/lxfX3cv74+P//0n7x7/fq8PT8/vi6fH9f759fXY55e
@@ -520,55 +520,57 @@ interactions:
         x-stainless-runtime-version:
           - 3.12.5
       method: POST
-      uri: https://api.turbopuffer.com/v2/namespaces/prefect-docs-for-mcp/query
+      uri: https://api.turbopuffer.com/v2/namespaces/docs-v1/query
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAA/91XbU/kNhD+K6Nw7X5osq+wRVGFhNpSIVU91NJTJeBSJ5kQ3zl2ajuwKeK/d5xk
-          gV2yy64qtdL5w2pjPx4/M54Xz4On1b3xwqsH713KjfXC8XB2PJ7OZxPf46kXeqlKojHGyZzhJDg+
-          PoyDw8Nv6d84mQeTJBnP06MjjA8zz/csLkiAdwDfa2QW4Uyo+2t5LU/gJ80SzCohakiaNQMMJN5D
-          RhDItCrA5gilVnc8xRRMkmPBhnCeEa7B3HObO8y1NKxAkO6HCZKV1oALYm78RkTzn8vbdhc3oNFW
-          WmI6dEzOlIZCaQQuM6ULZrmSPhhEyK0tTTgakbpmWGrMMLFDrkZ3s1GiZIKlNSMn0jRyDg7gfYny
-          9OLcff1Jo2aFgFIZCyNW8hY6upYls7kJryWA+xeuLgIUaHOVhs1G963xrwqNbTYA8UoqzW0dwtVN
-          O1MyTYpb1KaDLOU+PC6/SYCuX07kZCPUT3iARdDpFxCZ4I6EkRVerENn/pUpgABsXWIIxmqy7+pa
-          y5xrJF0yJgyuL1tuBe39I7jojj6loz+0Ry+xiVKfOT5Tj1VaP3FgZSl40lzY6JNZ4duyPdWa1SuU
-          l4RV/IlOXGVEnlaithxNuE7VudarSSIgxPusZ/4tw7SDboluTYbw8erj6KuvT767+eZdP7Kz1C/E
-          oh+Qokk0L50lQrjMu1hQWeP+WRNy0DNwwYpS9Oi7HAEUddC337Jbs6dBuMVi80lvm6tFMHelW610
-          SdR2sNIpCMoKzkZNVrAbd+1gpMBtDyabANABpusAwWIU+9qRyXrDmhu0nqbcqcjExWaHfjm2C2zH
-          0p9jpQQyuRuYS4u3qHcDy6qId8VucxM3Nsf481jKGkgqQYOtHvVzc007+NRJsOm0U0h50tyKrp3P
-          fcY6uGOiws4HhvDBfRlImIQYOw2Nv0leay2qb1S8ujtxVQh6xg7+S2xCaOhs8WECTUM4XHPi5xxv
-          dbWWnTrznVF8tdV/dXnFdD8wy6AyVOfjuslaXVGAX3/87RKoqIJV3TuhK//DdSLZeYrS8oxTZYPB
-          AdXoolSSpsyoLQdm9Exl0K/GlpAJmqS6Otsba+vVrvcCusm1U5o7eHVyU332zMQbU9K+qWirb7z0
-          CY2GzG2W9AfT8XjwJO+/K9U87VHi3xXq9lkYQlXxtB/Refr5q+XWY/el9FaK3y0LLmmnxCCwfNPb
-          Ya9U2AbPKzWrMv2i1Py91Wcd8/8+A73HG98jt28UpvbDCx+8hFH0RDm3kXbB5YWT4djvZum9RWhG
-          rQ5BvVxZascManrcR1ZZJqKCmrzJ3Pea9iDCBbUWLkDb+SPfw0XOKuqc7jAyyHSSR4mqJLVz09ls
-          5nsU01otImcUU1IvFxn+N7aLj74XcyFIZ0fS/WWxwEioW0oCIopr6vYidyxH6ienR/NxM/xN0GXD
-          5oWz2fT48fEfFVXpnKMOAAA=
+          H4sIAAAAAAAA/3VV0W7bRhD8lS1TwAlAyZLsxI6AoA2QtMhDiyBw0YeqII7HpXg1ecfeHWWzhoH+
+          Rn+vX9LZIy0bSWP4QTrtze7OzO7dZd7dhGz72132bWVCzLar5fnZ5vV6c3GRZ6bKtlnldHFRXVxs
+          Xp3zYrMq9eJ8dXa2uFyvLhfnl+cbdXlW8+VmneVZ5FsgZFeNCYR/ZYlvNfs+Uu1dR4qANXRs487S
+          /LezO/uM3s3n1HFUlYrqMSCa2PKbn51lao29fnPSxNiH7ekpsMLibNl7rlnHpXGnh7NT7azmPobT
+          ukVfJxTc4DW/ORl8e3LMXsSxx9kNl9SrPZ88rebLT8/o/dwEwCOub+nXRsXUIEma73b2B8lGyjNV
+          XBvLFamAj9p5FfHl4xgbZ6kerI7G2bCkt6U7cM63fauMLVKxOztRZmyICl2Qq+cEy2MCLc0hoh9i
+          yKlnXzvf0Y3z1zmuVtQ7KdCoth3Jcxy8BYTnMLQRID+yZS+/5Qk2UMmNOgiv1/xFjTmVQ6TY8Egp
+          KLiOSVWVkV9VS1r1qjQtvnLY7uyCfpqlI1W66abx0J/1IDfyKQsr3RD6iywBqQxCxeyRT9ofoutU
+          NDp1EL3S11wtBf2D9AyG90nBgPQW5ZMoSQfVmioRDdaFjATbK69gJ0AngE8cPUp9uDhzhzvStDLt
+          4DmnGxMbkbk2+8GrshU9WzUmbsGnH9FFZ+KEeGU6RqdHSLZA1ECMjuDKg/h5sCZ5JnEGDpzdL/xg
+          cbo/VjqhvZ3ImLEq7ls3coWSGgPK4BQXOPnj7ccPhEQkwCAoJiip20TU2MEB7Xh0TOXIukiWp7KE
+          V3Jg3tPHaW4oqnAdCHiplCeqoxLAfJqLnZy4s3OZ6GEaAM9oNaBDJT1Ong24AOqMPTj95DhZ+aoR
+          v9VP3C1YO/tejHGEbiAkaCZ3Y2e3yB096lZ8Mw3f7A4qx2Slh37EgqUKjBlD676DVY+wAhKhGnRw
+          aDo5MmJZbemxrX///ic8ydZB/ZInsv3QJ5PBh3bErOFQ9OHEZzluF4i2AxKCTYyqqYQWmRRMc9vO
+          THixFD+wchyCRMKCsINV3zOsmzaAB2L7MJKfx6dKGxdkIdRehegHjZFnwZk0HsSRUIdFrDAk/1Sk
+          jccenJZMoOe83C9hkCh2hHDfvNjZd6au2Yt/b9QYknE8iwpPFRMlg+n6lkOK+9+wJNTsO/X9ZKHH
+          vXjs7LlZQrCikLii2NkXOf0xADYppB50/GxFpbH5RcyG8YA8spWCbrgaWgx9auxxi2f3v+fZPPTS
+          eLa9yzQ8x0VjYuFFnGy7Xq7y+TRyh2glfOJFa1zE8xbYH9gX0UHVosOruX6dZ38O7MfiuOem88s8
+          49tGoQVz4CJAT90U2g0Wz+P61eZlnkFl724LixUVeqURZP7i6cf7PMNixWO3lyLlo2yionV72YtF
+          OUYOhaQ1jPd58/LVKv3lXwudHgKJXV+sVvf3/wGn9Yhu9AcAAA==
       headers:
         Content-Encoding:
           - gzip
         Content-Type:
           - application/json
         Date:
-          - Wed, 08 Oct 2025 21:14:01 GMT
+          - Fri, 10 Oct 2025 15:53:29 GMT
         Transfer-Encoding:
           - chunked
         Vary:
           - accept-encoding
         strict-transport-security:
           - max-age=31536000; includeSubDomains
+        x-router-backend:
+          - turbopuffer-query-7
         x-router-frontend-node:
-          - turbopuffer-router-6b55797456-jqrj8
+          - turbopuffer-router-56f66bb645-fkj6p
         x-router-upstream:
           - query
         x-turbopuffer-org-id:
-          - ir3zfmo7m00eebqgwjvsft36
+          - 6pnudyvdvf2aolxuhrdr90tq
       status:
         code: 200
         message: OK
   - request:
       body: !!binary |
-        H4sIABrU5mgE/3XcW45kWXKd4bnUc0sIv0S4u940AU6AIAiS6geCAilQTUGCoLnr+822J6syg1Xd
+        H4sIAPor6WgE/3XcW45kWXKd4bnUc0sIv0S4u940AU6AIAiS6geCAilQTUGCoLnr+822J6syg1Xd
         XZUnztkXs2XLltne0f/3t3/853/47//23/78t3/3l7/86z/+/b/95c//87f/8te//eXP//svv/3N
         n37717/753/627//Pz36X3/+h7/8y7/+9qff/utf/dVvf/rrj//8cbl8PW4fH5/X1+Px/Pi4Pf7k
         4cfz+vj6fF6/Xp+f99vj62seXm63r9f98/lxfX3cv74+P//0n7x7/fq8PT8/vi6fH9f759fXY55e
@@ -872,55 +874,57 @@ interactions:
         x-stainless-runtime-version:
           - 3.12.5
       method: POST
-      uri: https://api.turbopuffer.com/v2/namespaces/prefect-docs-for-mcp/query
+      uri: https://api.turbopuffer.com/v2/namespaces/docs-v1/query
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAA/91XbU/kNhD+K6Nw7X5osu9QFFVIqC0VUtVDLT1VAi51kgnxnWOntgObIv57x0kW
-          2CW77KpSK50/rDb24/Ez43nxPHha3RsvvHrw3qXcWC8cD2fH4+nRbOJ7PPVCL1VJNMY4OWI4CY6P
-          53Ewn39L/8bJUTBJkvFReniI8TzzfM/iggR4B/C9RmYRzoS6v5bX8gR+0izBrBKihqRZM8BA4j1k
-          BIFMqwJsjlBqdcdTTMEkORZsCOcZ4RrMPbe5w1xLwwoE6X6YIFlpDbgg5sZvRDT/ubxtd3EDGm2l
-          JaZDx+RMaSiURuAyU7pglivpg0GE3NrShKMRqWuGpcYMEzvkanQ3GyVKJlhaM3IiTSPn4ADelyhP
-          L87d1580alYIKJWxMGIlb6Gja1kym5vwWgK4f+HqIkCBNldp2Gx03xr/qtDYZgMQr6TS3NYhXN20
-          MyXTpLhFbTrIUu7D4/KbBOj65URONkL9hAdYBJ1+AZEJ7kgYWeHFOnTmX5kCCMDWJYZgrCb7rq61
-          zLlG0iVjwuD6suVW0N4/govu6FM6+kN79BKbKPWZ4zP1WKX1EwdWloInzYWNPpkVvi3bU61ZvUJ5
-          SVjFn+jEVUbkaSVqy9GE61Sda72aJAJCvM965t8yTDvolujWZAgfrz6Ovvr65Lubb971IztL/UIs
-          +gEpmkTz0lkihMu8iwWVNe6fNSEHPQMXrChFj77LEUBRB337Lbs1exqEWyw2n/S2uVoEc1e61UqX
-          RG0HK52CoKzgbNRkBbtx1w5GCtz2YLIJAB1gug4QLEaxrx2ZrDesuUHracqdikxcbHbol2O7wHYs
-          /TlWSiCTu4G5tHiLejewrIp4V+w2N3Fjc4w/j6WsgaQSNNjqUT8317SDT50Em047hZQnza3o2vnc
-          Z6yDOyYq7HxgCB/cl4GESYix09D4m+S11qL6RsWruxNXhaBn7OC/xCaEhs4WHybQNIT5mhM/53ir
-          q7Xs1JnvjOKrrf6ryyum+4FZBpWhOh/XTdbqigL8+uNvl0BFFazq3gld+R+uE8nOU5SWZ5wqGwwO
-          qEYXpZI0ZUZtOTCjZyqDfjW2hEzQJNXV2d5YW692vRfQTa6d0tzBq5Ob6rNnJt6YkvZNRVt946VP
-          aDRkbrOkP5iOx4Mnef9dqeZpjxL/rlC3z8IQqoqn/YjO089fLbceuy+lt1L8bllwSTslBoHlm94O
-          e6XCNnheqVmV6Rel5u+tPuuY//cZ6D3e+B65faMwtR9e+OAljKInyrmNtAsuL5wMx343S+8tQjNq
-          dQjq5cpSO2ZQ0+M+ssoyERXU5E0Ofa9pDyJcUGvhArSdn/seLnJWUed0h5FBppM8SlQlqZ2bzmYz
-          36OY1moROaOYknq5yPC/sV189L2YC0E6O5LuL4sFRkLdUhIQUVxTtxe5YzlSPzk9PBo3w98EXTZs
-          XjibTY8fH/8B4k5PoKMOAAA=
+          H4sIAAAAAAAA/3VV0W7cNhD8la1SwAmgO9+dndg9IGgDJC3y0MIIXPShVwgUtTqxlkiVpM5WDQP9
+          jf5ev6SzlHw2kvZwDxK1HO7OzC7vM+9uQ7b99T77ujIhZtvV8vxs8816c3GRZ6bKtlnldHFRXVxs
+          3pzzYrMq9eJ8dXa2uFyvLhfnl+cbdXlW8+VmneVZ5DsgZNeNCYS/ssR3mn0fqfauI0XAGjq2cWdp
+          /u3szr6g9/M6dRxVpaJ6Cogmtvz2J2eZWmNv3p40MfZhe3oKrLA4W/aea9Zxadzp4exUO6u5j+G0
+          blHXCQU3eM1vTwbfnhxPL+LYY+2WS+rVnk+eZ/Pl0wv6MBcB8IjtW/qlUTEVSHLMtzv7vZxGyjNV
+          XBvLFamAR+28ini5GmPjLNWD1dE4G5b0rnQHzvmub5WxRUp2ZyfKjA1RoQpy9XzA8niAluIQ0Q8x
+          5NSzr53v6Nb5mxxbK+qdJGhU247kOQ7eAsJzGNoIkB/YspdveYINVHKjDsLrDX+RY07lECk2PFIK
+          Cq5jUlVl5KtqSatelabFK4ftzi7ox1k6UqWbdhoP/VkPsiOfTmGlG0J9kSUgpUHImD3Ok/KH6DoV
+          jU4VRK/0DVdLQf8oNYPhfVIw4HiL9EmUpINqTZWIButCRoLtlVewE6ATwCeOHqk+bpy5wx4pWpl2
+          8JzTrYmNyFyb/eBV2YqerRoTt+DTj6iiM3FCvDYdo9IjJFsgaiBGR3DlQfw8WJM8kzgDB87uF36w
+          WN0fM53Q3k1kzFgV960buUJKjQFlcIoLnPzx7uoj4SASYBAUE5TkbSJy7OCAdjw6pnJkXSTLU1rC
+          Kzkw7+lq6huKKtwEAl5K5ZnqyAQwn+ZkJyfu7JwmapgawDNKDahQSY2TZwM2gDpjD04/W05Wvm7E
+          b/UzdwvWzn4QYxyhGwgJmsnd2tktskePuhXfTM03u4PKMVnpsR6xYKkCo8dQuu9g1SOsgESoBh0c
+          ik6OjBhWW3oq65+//g7PTuugfskT2X7ok8ngQzui17Ao+nDisxy3C0TbAQeCTbSqqYQW6RR0c9vO
+          THixFD+ycmyCRMKCMINV3zOsmyaAB2L72JKfx6dMGxdkINRehegHjZZnwZk0HsSRUIdFrDAk/1Sk
+          jcccnIZMoJe83C9hkCh2hHBfvdrZ96au2Yt/b9UYknE8iwrPFRMlg+n6lkOK+8+wJNTsO/XdZKGn
+          uXis7KVZQrCikLii2NlXOf0+ADYppB51/GxEpbb5WcyG9oA8MpWCbrgaWjR9KuxpimcPv+XZ3PRS
+          eLa9zzQ8x0VjYuFFnGy7Xq7yeTVyh2glfOJGa1zE9RbYH9gX0UHVosOtuX6dZ38M7MfiOOeO63zX
+          KJRgDlwE6KmbQrvB4npcv9ngM1T27q6wGFGhVxpB5k+ePj7kGQYrLru9JCmPMomK1u1lLhblGDkU
+          cqxh3M+b129W6Zf/X+h0EUjs+mK1enj4F4aMONb0BwAA
       headers:
         Content-Encoding:
           - gzip
         Content-Type:
           - application/json
         Date:
-          - Wed, 08 Oct 2025 21:14:01 GMT
+          - Fri, 10 Oct 2025 15:53:30 GMT
         Transfer-Encoding:
           - chunked
         Vary:
           - accept-encoding
         strict-transport-security:
           - max-age=31536000; includeSubDomains
+        x-router-backend:
+          - turbopuffer-query-7
         x-router-frontend-node:
-          - turbopuffer-router-6b55797456-jqrj8
+          - turbopuffer-router-56f66bb645-fkj6p
         x-router-upstream:
           - query
         x-turbopuffer-org-id:
-          - ir3zfmo7m00eebqgwjvsft36
+          - 6pnudyvdvf2aolxuhrdr90tq
       status:
         code: 200
         message: OK
   - request:
       body: !!binary |
-        H4sIABrU5mgE/3XcW45kWXKd4bnUc0sIv0S4u940AU6AIAiS6geCAilQTUGCoLnr+822J6syg1Xd
+        H4sIAPsr6WgE/3XcW45kWXKd4bnUc0sIv0S4u940AU6AIAiS6geCAilQTUGCoLnr+822J6syg1Xd
         XZUnztkXs2XLltne0f/3t3/853/47//23/78t3/3l7/86z/+/b/95c//87f/8te//eXP//svv/3N
         n37717/753/627//Pz36X3/+h7/8y7/+9qff/utf/dVvf/rrj//8cbl8PW4fH5/X1+Px/Pi4Pf7k
         4cfz+vj6fF6/Xp+f99vj62seXm63r9f98/lxfX3cv74+P//0n7x7/fq8PT8/vi6fH9f759fXY55e
@@ -1224,55 +1228,57 @@ interactions:
         x-stainless-runtime-version:
           - 3.12.5
       method: POST
-      uri: https://api.turbopuffer.com/v2/namespaces/prefect-docs-for-mcp/query
+      uri: https://api.turbopuffer.com/v2/namespaces/docs-v1/query
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAA/91XbU/kNhD+K6Nw7X5osq+wh6IKCbWlQqp6qKWnSsClTjIhvnPs1HZgU8R/7zjJ
-          Artkl11VaqX6w2pjPx4/M54Xz4On1b3xwqsH713KjfXC8XB2PJ7OZxPf46kXeqlKojHGyZzhJDg+
-          PoyDw8P39G+czINJkozn6dERxoeZ53sWFyTAO4DvNDKLcCbU/bW8lifwo2YJZpUQNSTNmgEGEu8h
-          IwhkWhVgc4RSqzueYgomybFgQzjPCNdg7rnNHeZaGlYgSPfDBMlKa8AFMTd+I6L5z+Vtu4sb0Ggr
-          LTEdOiZnSkOhNAKXmdIFs1xJHwwi5NaWJhyNSF0zLDVmmNghV6O72ShRMsHSmpETaRo5BwfwoUR5
-          enHuvv6gUbNCQKmMhREreQsdXcuS2dyE1xLA/QtXFwEKtLlKw2aj+9b4Z4XGNhuAeCWV5rYO4eqm
-          nSmZJsUtatNBlnIfHpffJEDXLydyshHqJzzAIuj0C4hMcEfCyAov1qEz/8oUQAC2LjEEYzXZd3Wt
-          Zc41ki4ZEwbXly23gvb+Hlx0R5/S0R/bo5fYRKkvHJ+pxyqtnziwshQ8aS5s9Nms8G3ZnmrN6hXK
-          S8Iq/kwnrjIiTytRW44mXKfqXOvVJBEQ4kPWM/+WYdpBt0S3JkP4dPVp9NXXJ9/efPOuH9lZ6mdi
-          0Q9I0SSal84SIVzmXSyorHH/rAk56Bm4YEUpevRdjgCKOujbb9mt2dMg3GKx+aS3zdUimLvSrVa6
-          JGo7WOkUBGUFZ6MmK9iNu3YwUuC2B5NNAOgA03WAYDGKfe3IZL1hzQ1aT1PuVGTiYrNDvxzbBbZj
-          6c+xUgKZ3A3MpcVb1LuBZVXEu2K3uYkbm2P8eSxlDSSVoMFWj/qpuaYdfOok2HTaKaQ8aW5F187n
-          vmAd3DFRYecDQ/jovgwkTEKMnYbG3ySvtRbVNype3Z24KgQ9Ywf/JTYhNHS2+DCBpiEcrjnxc463
-          ulrLTp35zii+2uq/urxiuu+ZZVAZqvNx3WStrijALz/8eglUVMGq7p3Qlf/hOpHsPEVpecapssHg
-          gGp0USpJU2bUlgMzeqYy6FdjS8gETVJdne2NtfVq13sB3eTaKc0dvDq5qT57ZuKNKWnfVLTVN176
-          hEZD5jZL+oPpeDx4kvfvlWqe9ijxzwp1+ywMoap42o/oPP381XLrsftSeivF75YFl7RTYhBYvunt
-          sFcqbIPnlZpVmf6v1Pyt1Wcd898+A73HG98jt28UpvbDCx+8hFH0RDm3kXbB5YWT4djvZum9RWhG
-          rQ5BvVxZascManrcR1ZZJqKCmrzJe99r2oMIF9RauABt5+e+h4ucVdQ53WFkkOkkjxJVSWrnprPZ
-          zPcoprVaRM4opqReLjL8L2wXH30v5kKQzo6k+8tigZFQt5QERBTX1O1F7liO1E9Oj+bjZviboMuG
-          zQtns+nx4+Pfc4HKg6MOAAA=
+          H4sIAAAAAAAA/3VV7W7cNhB8la1SwAmgO9+HE7sHBG2ApEV+tAiCFP3RKwSKWp1YS6RKUmerhoG+
+          Rl+vT9JZSj4bSWv4xx1vObs7M7u8y7y7Cdnu17vs68qEmO1Wy4vt5pv15vIyz0yV7bLK6eKyurzc
+          vLrgxWZV6sXFartdXK1XV4uLq4uNutrWfLVZZ3kW+RYI2afGBMK/ssS3mn0fqfauI0XAGjq2cW9p
+          /tvbvX1Gb+dz6jiqSkX1GBBNbPn1T84ytcZevz5rYuzD7vwcWGGxXfaea9Zxadz5cXuundXcx3Be
+          t+jrjIIbvObXZ4Nvz07Zizj2OLvhknp14LOn1Xz56Rm9m5sAeMT1Hf3SqJgaJEnz7d5+L9lIeaaK
+          a2O5IhXwUTuvIr58GGPjLNWD1dE4G5b0pnRHzvm2b5WxRSp2byfKjA1RoQty9ZxgeUqgpTlE9EMM
+          OfXsa+c7unH+OsfVinonBRrVtiN5joO3gPAchjYC5Ae27OW3PMEGKrlRR+H1mr+oMadyiBQbHikF
+          Bdcxqaoy8qtqSatelabFVw67vV3Qj7N0pEo33TQe+rMe5EY+ZWGlG0J/kSUglUGomD3ySftDdJ2K
+          RqcOolf6mquloL+XnsHwISkYkN6ifBIl6ahaUyWiwbqQkWB75RXsBOgE8JGjR6kPF2fucEeaVqYd
+          POd0Y2IjMtfmMHhVtqJnq8bELfj0I7roTJwQP5mO0ekJki0QNRCjI7jyKH4erEmeSZyBA2cPCz9Y
+          nB5OlU5obyYyZqyK+9aNXKGkxoAyOMUFTv548+E9IREJMAiKCUrqNhE1dnBAO54cUzmyLpLlqSzh
+          lRyY9/RhmhuKKlwHAl4q5YnqqAQwH+diJyfu7VwmepgGwDNaDehQSY+TZwMugDpjj04/OU5W/tSI
+          3+on7hasvX0nxjhBNxASNJO7sbNb5I4edSu+mYZvdgeVY7LSQz9iwVIFxoyhdd/BqidYAYlQDTo4
+          NJ0cGbGsdvTY1j9//R2eZOugfskT2X7ok8ngQzti1nAo+nDisxx3C0TbAQnBJkbVVEKLTAqmuW1n
+          JrxYih9YOQ1BImFB2MGq7xnWTRvAA7F9GMnP41OljQuyEGqvQvSDxsiz4EwaD+JIqMMiVhiSfyrS
+          xmMPTksm0HNeHpYwSBQ7QrivXuztW1PX7MW/N2oMyTieRYWniomSwXR9yyHF/WdYEmr2nfpustDj
+          Xjx19twsIVhRSFxR7O2LnH4fAJsUUg86frai0tj8LGbDeEAe2UpBN1wNLYY+Nfa4xbP73/JsHnpp
+          PNvdZRqe46IxsfAiTrZbL1f5fBq5Q7QSPvGiNS7ieQvsj+yL6KBq0eHVXF/k2R8D+7E47bnpfJtn
+          fNsotGCOXAToqZtCu8HieVy/2rzMM6js3W1hsaJCrzSCzJ88/XifZ1iseOwOUqR8lE1UtO4ge7Eo
+          x8ihkLSG8T5vXr5apb/8/0Knh0Bi15er1f39v/rndaX0BwAA
       headers:
         Content-Encoding:
           - gzip
         Content-Type:
           - application/json
         Date:
-          - Wed, 08 Oct 2025 21:14:02 GMT
+          - Fri, 10 Oct 2025 15:53:30 GMT
         Transfer-Encoding:
           - chunked
         Vary:
           - accept-encoding
         strict-transport-security:
           - max-age=31536000; includeSubDomains
+        x-router-backend:
+          - turbopuffer-query-7
         x-router-frontend-node:
-          - turbopuffer-router-6b55797456-jqrj8
+          - turbopuffer-router-56f66bb645-fkj6p
         x-router-upstream:
           - query
         x-turbopuffer-org-id:
-          - ir3zfmo7m00eebqgwjvsft36
+          - 6pnudyvdvf2aolxuhrdr90tq
       status:
         code: 200
         message: OK
   - request:
       body: !!binary |
-        H4sIABzU5mgE/3XcW45kWXKd4bnUc0sIv0S4u940AU6AIAiS6geCAilQTUGCoLnr+822J6syg1Xd
+        H4sIAPwr6WgE/3XcW45kWXKd4bnUc0sIv0S4u940AU6AIAiS6geCAilQTUGCoLnr+822J6syg1Xd
         XZUnztkXs2XLltne0f/3t3/853/47//23/78t3/3l7/86z/+/b/95c//87f/8te//eXP//svv/3N
         n37717/753/627//Pz36X3/+h7/8y7/+9qff/utf/dVvf/rrj//8cbl8PW4fH5/X1+Px/Pi4Pf7k
         4cfz+vj6fF6/Xp+f99vj62seXm63r9f98/lxfX3cv74+P//0n7x7/fq8PT8/vi6fH9f759fXY55e
@@ -1576,55 +1582,57 @@ interactions:
         x-stainless-runtime-version:
           - 3.12.5
       method: POST
-      uri: https://api.turbopuffer.com/v2/namespaces/prefect-docs-for-mcp/query
+      uri: https://api.turbopuffer.com/v2/namespaces/docs-v1/query
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAA/91XbU/kNhD+K6Nw7X5osu9QFFVIqC0VUtVDLT1VAi51kgnxnWOntgObIv57x0kW
-          2CW77KpSK50/rDb24/Ez43nxPHha3RsvvHrw3qXcWC8cD2fH4+nRbOJ7PPVCL1VJNMY4OWI4CY6P
-          53Ewn39L/8bJUTBJkvFReniI8TzzfM/iggR4B/C9RmYRzoS6v5bX8gR+0izBrBKihqRZM8BA4j1k
-          BIFMqwJsjlBqdcdTTMEkORZsCOcZ4RrMPbe5w1xLwwoE6X6YIFlpDbgg5sZvRDT/ubxtd3EDGm2l
-          JaZDx+RMaSiURuAyU7pglivpg0GE3NrShKMRqWuGpcYMEzvkanQ3GyVKJlhaM3IiTSPn4ADelyhP
-          L87d1580alYIKJWxMGIlb6Gja1kym5vwWgK4f+HqIkCBNldp2Gx03xr/qtDYZgMQr6TS3NYhXN20
-          MyXTpLhFbTrIUu7D4/KbBOj65URONkL9hAdYBJ1+AZEJ7kgYWeHFOnTmX5kCCMDWJYZgrCb7rq61
-          zLlG0iVjwuD6suVW0N4/govu6FM6+kN79BKbKPWZ4zP1WKX1EwdWloInzYWNPpkVvi3bU61ZvUJ5
-          SVjFn+jEVUbkaSVqy9GE61Sda72aJAJCvM965t8yTDvolujWZAgfrz6Ovvr65Lubb971IztL/UIs
-          +gEpmkTz0lkihMu8iwWVNe6fNSEHPQMXrChFj77LEUBRB337Lbs1exqEWyw2n/S2uVoEc1e61UqX
-          RG0HK52CoKzgbNRkBbtx1w5GCtz2YLIJAB1gug4QLEaxrx2ZrDesuUHracqdikxcbHbol2O7wHYs
-          /TlWSiCTu4G5tHiLejewrIp4V+w2N3Fjc4w/j6WsgaQSNNjqUT8317SDT50Em047hZQnza3o2vnc
-          Z6yDOyYq7HxgCB/cl4GESYix09D4m+S11qL6RsWruxNXhaBn7OC/xCaEhs4WHybQNIT5mhM/53ir
-          q7Xs1JnvjOKrrf6ryyum+4FZBpWhOh/XTdbqigL8+uNvl0BFFazq3gld+R+uE8nOU5SWZ5wqGwwO
-          qEYXpZI0ZUZtOTCjZyqDfjW2hEzQJNXV2d5YW692vRfQTa6d0tzBq5Ob6rNnJt6YkvZNRVt946VP
-          aDRkbrOkP5iOx4Mnef9dqeZpjxL/rlC3z8IQqoqn/YjO089fLbceuy+lt1L8bllwSTslBoHlm94O
-          e6XCNnheqVmV6Rel5u+tPuuY//cZ6D3e+B65faMwtR9e+OAljKInyrmNtAsuL5wMx343S+8tQjNq
-          dQjq5cpSO2ZQ0+M+ssoyERXU5E0Ofa9pDyJcUGvhArSdn/seLnJWUed0h5FBppM8SlQlqZ2bzmYz
-          36OY1moROaOYknq5yPC/sV189L2YC0E6O5LuL4sFRkLdUhIQUVxTtxe5YzlSPzk9PBo3w98EXTZs
-          XjibTY8fH/8B4k5PoKMOAAA=
+          H4sIAAAAAAAA/3VV0W7bRhD8lS1TwAlAybLkxK6AoA2QtMhDCyNw0YeqII7HpXg1ecfeHWWzhoH+
+          Rn+vX9LZIy0bSWv4QTrtze7OzO7dZ97dhmz76332dWVCzLar5flm/c3Z+uIiz0yVbbPK6eKiurhY
+          vznnxXpV6sX5arNZXJ6tLhfnl+drdbmp+XJ9luVZ5DsgZNeNCYR/ZYnvNPs+Uu1dR4qANXRs487S
+          /LezO/uC3s/n1HFUlYrqKSCa2PLbn5xlao29eXvSxNiH7ekpsMJis+w916zj0rjTw+ZUO6u5j+G0
+          btHXCQU3eM1vTwbfnhyzF3HscXbLJfVqzyfPq/ny0wv6MDcB8IjrW/qlUTE1SJLm2539XrKR8kwV
+          18ZyRSrgo3ZeRXy5GmPjLNWD1dE4G5b0rnQHzvmub5WxRSp2ZyfKjA1RoQty9ZxgeUygpTlE9EMM
+          OfXsa+c7unX+JsfVinonBRrVtiN5joO3gPAchjYC5Ae27OW3PMEGKrlRB+H1hr+oMadyiBQbHikF
+          Bdcxqaoy8qtqSatelabFVw7bnV3Qj7N0pEo33TQe+rMe5EY+ZWGlG0J/kSUglUGomD3ySftDdJ2K
+          RqcOolf6hquloH+UnsHwPikYkN6ifBIl6aBaUyWiwbqQkWB75RXsBOgE8ImjR6mPF2fucEeaVqYd
+          POd0a2IjMtdmP3hVtqJnq8bELfj0I7roTJwQr03H6PQIyRaIGojREVx5ED8P1iTPJM7AgbP7hR8s
+          TvfHSie0dxMZM1bFfetGrlBSY0AZnOICJ3+8u/pISEQCDIJigpK6TUSNHRzQjkfHVI6si2R5Kkt4
+          JQfmPV1Nc0NRhZtAwEulPFMdlQDm01zs5MSdnctED9MAeEarAR0q6XHybMAFUGfswelnx8nK1434
+          rX7mbsHa2Q9ijCN0AyFBM7lbO7tF7uhRt+Kbafhmd1A5Jis99iMWLFVgzBha9x2seoQVkAjVoIND
+          08mREctqS09t/fPX3+FZtg7qlzyR7Yc+mQw+tCNmDYeiDyc+y3G7QLQdkBBsYlRNJbTIpGCa23Zm
+          woul+JGV4xAkEhaEHaz6nmHdtAE8ENvHkfw8PlXauCALofYqRD9ojDwLzqTxII6EOixihSH5pyJt
+          PPbgtGQCveTlfgmDRLEjhPvq1c6+N3XNXvx7q8aQjONZVHiumCgZTNe3HFLcf4YloWbfqe8mCz3t
+          xWNnL80SghWFxBXFzr7K6fcBsEkh9ajjZysqjc3PYjaMB+SRrRR0w9XQYuhTY09bPHv4Lc/moZfG
+          s+19puE5LhoTCy/iZNuz5SqfTyN3iFbCJ160xkU8b4H9gX0RHVQtOrya602e/TGwH4vjnjue812j
+          0II5cBGgp24K7QaL5/Hszfp1nkFl7+4KixUVeqURZP7k6ceHPMNixWO3lyLlo2yionV72YtFOUYO
+          haQ1jPd5/frNKv3l/xc6PQQSe3axWj08/AsG6rCb9AcAAA==
       headers:
         Content-Encoding:
           - gzip
         Content-Type:
           - application/json
         Date:
-          - Wed, 08 Oct 2025 21:14:03 GMT
+          - Fri, 10 Oct 2025 15:53:31 GMT
         Transfer-Encoding:
           - chunked
         Vary:
           - accept-encoding
         strict-transport-security:
           - max-age=31536000; includeSubDomains
+        x-router-backend:
+          - turbopuffer-query-7
         x-router-frontend-node:
-          - turbopuffer-router-6b55797456-jqrj8
+          - turbopuffer-router-56f66bb645-fkj6p
         x-router-upstream:
           - query
         x-turbopuffer-org-id:
-          - ir3zfmo7m00eebqgwjvsft36
+          - 6pnudyvdvf2aolxuhrdr90tq
       status:
         code: 200
         message: OK
   - request:
       body: !!binary |
-        H4sIAB7U5mgE/3XcW45kWXKd4bnUc0sIv0S4u940AU6AIAiS6geCAilQTUGCoLnr+822J6syg1Xd
+        H4sIAP4r6WgE/3XcW45kWXKd4bnUc0sIv0S4u940AU6AIAiS6geCAilQTUGCoLnr+822J6syg1Xd
         XZUnztkXs2XLltne0f/3t3/853/47//23/78t3/3l7/86z/+/b/95c//87f/8te//eXP//svv/3N
         n37717/753/627//Pz36X3/+h7/8y7/+9qff/utf/dVvf/rrj//8cbl8PW4fH5/X1+Px/Pi4Pf7k
         4cfz+vj6fF6/Xp+f99vj62seXm63r9f98/lxfX3cv74+P//0n7x7/fq8PT8/vi6fH9f759fXY55e
@@ -1928,49 +1936,51 @@ interactions:
         x-stainless-runtime-version:
           - 3.12.5
       method: POST
-      uri: https://api.turbopuffer.com/v2/namespaces/prefect-docs-for-mcp/query
+      uri: https://api.turbopuffer.com/v2/namespaces/docs-v1/query
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAA/91XbU/kNhD+K6Nw7X7oZt+hKKqQUFsqpKqHWnqqBFzqJBPiO8dObQc2Rfz3jpMs
-          sEuy7KpSK50/rDb24/Ez43nxPHha3RsvuHrw3iXcWC+YjObHk9nRfDr0eOIFXqLicIJRfMRw6h8f
-          LyJ/sfiW/k3iI38ax5Oj5PAQo0XqDT2LSxLgHcD3GplFOBPq/lpeyxP4SbMY01KICuJ6zQADifeQ
-          EgRSrXKwGUKh1R1PMAETZ5izEZynhKsx99xmDnMtDcsRpPthgmQlFeCSmJthLaL+z+Vts4sb0GhL
-          LTEZOSZnSkOuNAKXqdI5s1zJIRhEyKwtTDAek7pmVGhMMbYjrsZ383GsZIyFNWMn0tRyDg7gfYHy
-          9OLcff1Jo2K5gEIZC2NW8AY6vpYFs5kJriWA+xesLwLkaDOVBPVG963xrxKNrTcA8YpLzW0VwNVN
-          M1MwTYpb1KaFrOQ+PK6+SYCuXk5kZCPUT3iApd/q5xMZ/46EkRVerENr/rUpAB9sVWAAxmqy7/pa
-          w5xrJF1SJgxuLltuBe39w79ojz6loz80R6+wsVKfOT5Tj1RSPXFgRSF4XF/Y+JNZ49uwPdWaVWuU
-          V4RV9IlOXGdEnlagthxNsEnVudarSSIgxPu0Y/4twzSDboluTQbw8erj+KuvT767+eZdN7K11C/E
-          ohuQoIk1L5wlArjM2lhQae3+aR1y0DFwyfJCdOi7Gj7kld+137Jbs6dBuMW8/6S3zdUgmLvSrVa6
-          JGo7WOkUBGUFZ6M6K9jeXTsYyXfb/WkfAFrAbBMgWIRiXzsyWfWsuUHrScKdikxc9Dv0y7FdYDNW
-          /hwpJZDJ3cBcWrxFvRtYlnm0K3abm7jRH+PPYyVrIKkEDbZ61M/1Ne3gUyd+32mnkPC4vhVdOZ/7
-          jJV/x0SJrQ+M4IP7MhAzCRG2Gpphn7zGWlTfqHi1d+KqEHSMHfyX2ARQ09niwwSaBbDYcOLnHG91
-          uZGdWvOdUXw11X99ec10PzDLoDRU56OqzlptUYBff/ztEqioglXtO6Et/6NNIul5gtLylFNlg8EB
-          1ei8UJKmzLgpB2b8TGXQrcaWkPHrpLo+2xlrm9Wu8wLayY1T6jt4dXJdffbMxL0pad9UtNU3XvqE
-          RkPmNiv6g9lkMniS99+Vap50KPHvCnXzLAygLHnSjWg9/fzVcuOx+1J6K8XvlgVXtBNi4Fve93bY
-          KxU2wfNKzbJIvig1f2/02cT8v89A7/Fm6JHb1wpT++EFD17MKHrCjNtQu+DyguloMmxn6b1FaEat
-          DkG9TFlqxwxqetyHVlkmwpyavOli6NXtQYhLai1cgDbz86GHy4yV1DndYWiQ6TgLY1VKaudm8zkt
-          U0xrtQydUUxBvVxo+N/YLD4OvYgLQTo7ku4viwSGQt1SEhBhVFG3F7pjOVI/OTs8mtRj2AddNWxe
-          MJ/Pjh8f/wHZ/a6iow4AAA==
+          H4sIAAAAAAAA/3VV0W7bRhD8lS1TwAlAyZLsxK6AoA2QtMhDCyNw0YeqII7HpXg1ecfeHWWzhoH+
+          Rn+vX9LZIy0bSWv4QTrtze7OzO7dZ97dhmz76332dWVCzLar5fnZ5pv15uIiz0yVbbPK6eKiurjY
+          vDnnxWZV6sX56uxscbleXS7OL8836vKs5svNOsuzyHdAyK4bEwj/yhLfafZ9pNq7jhQBa+jYxp2l
+          +W9nd/YFvZ/PqeOoKhXVU0A0seW3PznL1Bp78/akibEP29NTYIXF2bL3XLOOS+NOD2en2lnNfQyn
+          dYu+Tii4wWt+ezL49uSYvYhjj7NbLqlXez55Xs2Xn17Qh7kJgEdc39IvjYqpQZI03+7s95KNlGeq
+          uDaWK1IBH7XzKuLL1RgbZ6kerI7G2bCkd6U7cM53fauMLVKxOztRZmyICl2Qq+cEy2MCLc0hoh9i
+          yKlnXzvf0a3zNzmuVtQ7KdCoth3Jcxy8BYTnMLQRID+wZS+/5Qk2UMmNOgivN/xFjTmVQ6TY8Egp
+          KLiOSVWVkV9VS1r1qjQtvnLY7uyCfpylI1W66abx0J/1IDfyKQsr3RD6iywBqQxCxeyRT9ofoutU
+          NDp1EL3SN1wtBf2j9AyG90nBgPQW5ZMoSQfVmioRDdaFjATbK69gJ0AngE8cPUp9vDhzhzvStDLt
+          4DmnWxMbkbk2+8GrshU9WzUmbsGnH9FFZ+KEeG06RqdHSLZA1ECMjuDKg/h5sCZ5JnEGDpzdL/xg
+          cbo/VjqhvZvImLEq7ls3coWSGgPK4BQXOPnj3dVHQiISYBAUE5TUbSJq7OCAdjw6pnJkXSTLU1nC
+          Kzkw7+lqmhuKKtwEAl4q5ZnqqAQwn+ZiJyfu7FwmepgGwDNaDehQSY+TZwMugDpjD04/O05Wvm7E
+          b/UzdwvWzn4QYxyhGwgJmsnd2tktckePuhXfTMM3u4PKMVnpsR+xYKkCY8bQuu9g1SOsgESoBh0c
+          mk6OjFhWW3pq65+//g7PsnVQv+SJbD/0yWTwoR0xazgUfTjxWY7bBaLtgIRgE6NqKqFFJgXT3LYz
+          E14sxY+sHIcgkbAg7GDV9wzrpg3ggdg+juTn8anSxgVZCLVXIfpBY+RZcCaNB3Ek1GERKwzJPxVp
+          47EHpyUT6CUv90sYJIodIdxXr3b2valr9uLfWzWGZBzPosJzxUTJYLq+5ZDi/jMsCTX7Tn03Wehp
+          Lx47e2mWEKwoJK4odvZVTr8PgE0KqUcdP1tRaWx+FrNhPCCPbKWgG66GFkOfGnva4tnDb3k2D700
+          nm3vMw3PcdGYWHgRJ9uul6t8Po3cIVoJn3jRGhfxvAX2B/ZFdFC16PBqbtZ59sfAfiyOe+54zneN
+          QgvmwEWAnroptBssnsf1m83rPIPK3t0VFisq9EojyPzJ048PeYbFisduL0XKR9lERev2sheLcowc
+          CklrGO/z5vWbVfrL/y90eggkdn2xWj08/AuXJTW49AcAAA==
       headers:
         Content-Encoding:
           - gzip
         Content-Type:
           - application/json
         Date:
-          - Wed, 08 Oct 2025 21:14:06 GMT
+          - Fri, 10 Oct 2025 15:53:34 GMT
         Transfer-Encoding:
           - chunked
         Vary:
           - accept-encoding
         strict-transport-security:
           - max-age=31536000; includeSubDomains
+        x-router-backend:
+          - turbopuffer-query-7
         x-router-frontend-node:
-          - turbopuffer-router-6b55797456-jqrj8
+          - turbopuffer-router-56f66bb645-fkj6p
         x-router-upstream:
           - query
         x-turbopuffer-org-id:
-          - ir3zfmo7m00eebqgwjvsft36
+          - 6pnudyvdvf2aolxuhrdr90tq
       status:
         code: 200
         message: OK

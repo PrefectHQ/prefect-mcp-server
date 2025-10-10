@@ -19,7 +19,7 @@ def test_docs_mcp_settings_defaults() -> None:
     assert settings.top_k == 5
     assert settings.max_tokens == 900
     assert settings.include_attributes == []
-    assert settings.turbopuffer.namespace == "prefect-docs-for-mcp"
+    assert settings.turbopuffer.namespace == "docs-v1"
     assert settings.logfire.environment == "local"
     assert settings.logfire.send_to_logfire == "if-token-present"
     assert settings.logfire.console is False
@@ -83,7 +83,7 @@ def test_turbopuffer_settings_defaults() -> None:
     from docs_mcp_server._settings import TurboPufferSettings
 
     settings = TurboPufferSettings()
-    assert settings.namespace == "prefect-docs-for-mcp"
+    assert settings.namespace == "docs-v1"
 
 
 def test_turbopuffer_settings_custom_namespace() -> None:
