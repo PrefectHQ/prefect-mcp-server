@@ -19,7 +19,7 @@ class TurboPufferSettings(BaseSettings):
         default=..., description="The API key for the TurboPuffer instance."
     )
     region: str = Field(default="api", description="The TurboPuffer region.")
-    namespace: str = Field(default="prefect-docs-for-mcp")
+    namespace: str = Field(default="docs-v1")
 
 
 class LogfireSettings(BaseSettings):
