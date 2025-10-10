@@ -24,6 +24,7 @@ dev = [
     "pre-commit>=4.3.0",
     "pydantic-ai>=1.0.10",
     "pytest-asyncio>=0.21.0",
+    "pytest-env>=1.2.0",
     "pytest-recording>=0.13.4",
     "pytest-rerunfailures>=16.0.1",
     "pytest-sugar>=0.9.0",
@@ -45,6 +46,7 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 pythonpath = ["src"]
 # filterwarnings = ["ignore::DeprecationWarning", "ignore::ResourceWarning"]
+env = ["PREFECT_DOCS_MCP_URL=https://prefect-docs-mcp.fastmcp.app/mcp"]
 
 [tool.ty.src]
 include = ["src", "tests"]
@@ -68,9 +70,6 @@ extend-select = ["I", "UP"]
 [tool.ruff.lint.per-file-ignores]
 
 [tool.uv.workspace]
-members = [
-    "src/docs_mcp_server",
-    "src/ingestion_pipeline",
-]
+members = ["src/docs_mcp_server", "src/ingestion_pipeline"]
 # "__init__.py" = ["F401", "I001", "RUF013"]
 # "src/prefect_mcp_server/__init__.py" = ["E402"]

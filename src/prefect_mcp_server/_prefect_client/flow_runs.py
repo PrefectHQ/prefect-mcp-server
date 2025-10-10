@@ -6,6 +6,7 @@ from uuid import UUID
 import prefect.main  # noqa: F401
 from prefect import get_client
 from prefect.client.schemas.filters import LogFilter, LogFilterFlowRunId
+from prefect.client.schemas.sorting import FlowRunSort, LogSort
 
 from prefect_mcp_server.types import LogEntry, LogsResult
 
@@ -42,7 +43,7 @@ async def get_flow_run(
     async with get_client() as client:
         try:
             # Fetch the flow run
-            flow_run = await client.read_flow_run(flow_run_id)
+            flow_run = await client.read_flow_run(UUID(flow_run_id))
 
             # Try to get flow name from labels first (no extra API call needed!)
             # This appears to be reliably populated in recent Prefect versions
@@ -102,12 +103,6 @@ async def get_flow_run(
             # Optionally fetch logs
             if include_logs:
                 try:
-                    from prefect.client.schemas.filters import (
-                        LogFilter,
-                        LogFilterFlowRunId,
-                    )
-                    from prefect.client.schemas.sorting import LogSort
-
                     log_filter = LogFilter(
                         flow_run_id=LogFilterFlowRunId(any_=[flow_run.id])
                     )
@@ -186,7 +181,7 @@ async def get_flow_runs(
             flow_runs = await client.read_flow_runs(
                 flow_run_filter=flow_run_filter,
                 limit=limit,
-                sort="START_TIME_DESC",
+                sort=FlowRunSort.START_TIME_DESC,
             )
 
             # Batch fetch related objects using existing functions
@@ -324,7 +319,7 @@ async def get_flow_run_logs(flow_run_id: str, limit: int = 100) -> LogsResult:
             logs = await client.read_logs(
                 log_filter=log_filter,
                 limit=limit,
-                sort="TIMESTAMP_ASC",
+                sort=LogSort.TIMESTAMP_ASC,
             )
 
             # Convert to LogEntry format
