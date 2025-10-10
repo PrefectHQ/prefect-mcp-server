@@ -50,3 +50,11 @@ async def test_flow(prefect_client: PrefectClient) -> UUID:
 
     flow_id = await prefect_client.create_flow(my_test_flow)
     return flow_id
+
+
+@pytest.fixture(autouse=True)
+def use_hosted_docs_mcp(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Use the hosted docs MCP server."""
+    monkeypatch.setenv(
+        "PREFECT_DOCS_MCP_URL", "https://prefect-docs-mcp.fastmcp.app/mcp"
+    )
