@@ -6,6 +6,7 @@ from uuid import UUID
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from prefect.client.orchestration import get_client
 from prefect.client.schemas.filters import DeploymentFilter, DeploymentFilterId
+from prefect.client.schemas.sorting import FlowRunSort
 
 from prefect_mcp_server._prefect_client.work_pools import get_work_pools
 from prefect_mcp_server.types import (
@@ -95,7 +96,7 @@ async def get_deployments(
                 flow_runs = await client.read_flow_runs(
                     deployment_filter=deployment_filter_for_runs,
                     limit=len(deployment_ids) * 5,  # consider making this a setting
-                    sort="START_TIME_DESC",
+                    sort=FlowRunSort.START_TIME_DESC,
                 )
 
                 # Group runs by deployment
@@ -143,15 +144,16 @@ async def get_deployments(
                 tag_limits: list[GlobalConcurrencyLimitInfo] = []
                 for tag_limit in tag_concurrency_limits:
                     if tag_limit.tag and tag_limit.tag in deployment.tags:
+                        tag_active_slots_count = len(tag_limit.active_slots)
                         tag_limits.append(
                             {
                                 "id": str(tag_limit.id),
                                 "name": f"tag:{tag_limit.tag}",
                                 "limit": tag_limit.concurrency_limit,
-                                "active": tag_limit.active,
-                                "active_slots": tag_limit.active_slots,
+                                "active": tag_active_slots_count > 0,
+                                "active_slots": tag_active_slots_count,
                                 "slot_decay_per_second": 0.0,  # Tag limits don't have decay
-                                "over_limit": tag_limit.active_slots
+                                "over_limit": tag_active_slots_count
                                 >= tag_limit.concurrency_limit,
                             }
                         )

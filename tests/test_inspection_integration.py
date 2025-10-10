@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest  # for pytest.skip
 from prefect import flow, task
 from prefect.client.orchestration import get_client
+from prefect.client.schemas.sorting import FlowRunSort
 
 from prefect_mcp_server._prefect_client import (
     get_automations,
@@ -70,7 +71,9 @@ async def test_flow_and_task_runs():
 
     async with get_client() as client:
         # Get the flow run we just created
-        flow_runs = await client.read_flow_runs(limit=1, sort="START_TIME_DESC")
+        flow_runs = await client.read_flow_runs(
+            limit=1, sort=FlowRunSort.START_TIME_DESC
+        )
 
         if not flow_runs:
             pytest.skip("No flow runs available for testing")
