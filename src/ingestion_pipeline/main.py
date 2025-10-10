@@ -6,7 +6,7 @@ To run locally:
 ```bash
 export TURBOPUFFER_API_KEY=your-api-key
 export OPENAI_API_KEY=your-api-key
-uv run -m injestion_pipeline.main
+uv run -m ingestion_pipeline.main
 ```
 """
 
