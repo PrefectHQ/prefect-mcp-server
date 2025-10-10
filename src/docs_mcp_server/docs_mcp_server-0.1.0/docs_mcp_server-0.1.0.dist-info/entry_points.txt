@@ -1,2 +1,0 @@
-[console_scripts]
-docs-mcp-server = docs_mcp_server.__main__:main
