@@ -1,0 +1,10 @@
+[project]
+name = "ingestion-pipeline"
+version = "0.1.0"
+description = "Pipeline to load Prefect docs content to a Turbopuffer vector database"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "prefect>=3.4.22",
+    "raggy>=0.3.5",
+]
