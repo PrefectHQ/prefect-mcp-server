@@ -69,8 +69,8 @@ extend-select = ["I", "UP"]
 
 [tool.uv.workspace]
 members = [
-    "src/docs_mcp_server",
-    "src/ingestion_pipeline",
+    "packages/docs_mcp_server",
+    "packages/ingestion_pipeline",
 ]
 # "__init__.py" = ["F401", "I001", "RUF013"]
 # "src/prefect_mcp_server/__init__.py" = ["E402"]
