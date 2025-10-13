@@ -107,9 +107,8 @@ def test_logfire_settings_defaults() -> None:
 
 def test_logfire_settings_with_token() -> None:
     """Test LogfireSettings with token."""
-    from pydantic import SecretStr
-
     from docs_mcp_server._settings import LogfireSettings
+    from pydantic import SecretStr
 
     settings = LogfireSettings(token=SecretStr("test-token"))
     assert isinstance(settings.token, SecretStr)
