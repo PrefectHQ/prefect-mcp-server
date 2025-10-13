@@ -6,7 +6,6 @@ import json
 from typing import Annotated, Any
 
 import logfire
-from docs_mcp_server._settings import settings
 from fastmcp import FastMCP
 from openai import AsyncOpenAI, OpenAIError
 from pydantic import Field
@@ -18,6 +17,8 @@ from turbopuffer import (
     PermissionDeniedError,
 )
 from turbopuffer.types.row import Row
+
+from ._settings import settings
 
 logfire.configure(
     service_name="prefect-docs-mcp",
