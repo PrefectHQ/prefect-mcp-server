@@ -46,6 +46,7 @@ Provider defaults:
 | eval | description | status | issue |
 |------|-------------|--------|-------|
 | **test_last_failing_flow_run** | verifies agent can identify and describe the last failing flow run | ✅ implemented | - |
+| **test_list_flows** | verifies agent can list flows in the workspace | ✅ implemented | - |
 | **test_flow_run_failure_reason** | verifies agent can identify why a flow run failed | ✅ implemented | [#38](https://github.com/PrefectHQ/prefect-mcp-server/issues/38) |
 | **late_runs/test_unhealthy_work_pool** | verifies agent can diagnose late runs caused by unhealthy work pools (no workers) | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
 | **late_runs/test_work_pool_concurrency** | verifies agent can diagnose late runs caused by work pool concurrency limits | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |

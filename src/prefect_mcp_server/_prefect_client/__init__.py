@@ -9,6 +9,7 @@ from prefect_mcp_server._prefect_client.flow_runs import (
     get_flow_run_logs,
     get_flow_runs,
 )
+from prefect_mcp_server._prefect_client.flows import get_flows
 from prefect_mcp_server._prefect_client.identity import get_identity
 from prefect_mcp_server._prefect_client.rate_limits import get_rate_limits
 from prefect_mcp_server._prefect_client.task_runs import get_task_run, get_task_runs
@@ -22,6 +23,7 @@ __all__ = [
     "get_flow_run",
     "get_flow_run_logs",
     "get_flow_runs",
+    "get_flows",
     "get_identity",
     "get_rate_limits",
     "get_task_run",

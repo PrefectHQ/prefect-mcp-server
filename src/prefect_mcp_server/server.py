@@ -17,6 +17,7 @@ from prefect_mcp_server.types import (
     DeploymentsResult,
     EventsResult,
     FlowRunsResult,
+    FlowsResult,
     IdentityResult,
     LogsResult,
     RateLimitsResult,
@@ -141,6 +142,43 @@ async def get_deployments(
         - Production deployments: get_deployments(filter={"tags": {"all_": ["production"]}})
     """
     return await _prefect_client.get_deployments(
+        filter=filter,
+        limit=limit,
+    )
+
+
+@mcp.tool
+async def get_flows(
+    filter: Annotated[
+        dict[str, Any] | None,
+        Field(
+            description="JSON filter object for advanced querying. Supports all Prefect FlowFilter fields.",
+            examples=[
+                {"name": {"like_": "etl-%"}},
+                {"tags": {"all_": ["production"]}},
+            ],
+        ),
+    ] = None,
+    limit: Annotated[
+        int, Field(description="Maximum number of flows to return", ge=1, le=200)
+    ] = 50,
+) -> FlowsResult:
+    """Get flows with optional filters.
+
+    Returns a list of flows registered in the workspace.
+
+    Filter operators:
+    - any_: Match any value in list
+    - like_: SQL LIKE pattern matching
+    - all_: Match all values
+
+    Examples:
+        - List all flows: get_flows()
+        - Get specific flow: get_flows(filter={"id": {"any_": ["<flow-id>"]}})
+        - Flows by name pattern: get_flows(filter={"name": {"like_": "etl-%"}})
+        - Flows by tags: get_flows(filter={"tags": {"all_": ["production"]}})
+    """
+    return await _prefect_client.get_flows(
         filter=filter,
         limit=limit,
     )
