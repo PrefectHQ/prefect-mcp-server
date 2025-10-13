@@ -26,7 +26,7 @@ repos:
     rev: v2.3.0
     hooks:
       - id: codespell
-        args: [--skip, "tests/cassettes/**"]
+        args: [--skip, "**/cassettes/**"]
 
   - repo: local
     hooks:
