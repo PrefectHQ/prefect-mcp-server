@@ -26,6 +26,25 @@ class GlobalConcurrencyLimitsResult(TypedDict):
     error: str | None
 
 
+class FlowDetail(TypedDict):
+    """Flow information."""
+
+    id: str
+    name: str
+    created: str | None
+    updated: str | None
+    tags: list[str]
+
+
+class FlowsResult(TypedDict):
+    """Result of listing flows."""
+
+    success: bool
+    count: int
+    flows: list[FlowDetail]
+    error: str | None
+
+
 class DeploymentsResult(TypedDict):
     """Result of listing deployments."""
 
