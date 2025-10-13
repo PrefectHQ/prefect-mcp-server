@@ -73,14 +73,12 @@ async def deployment_with_late_runs(
 
 
 @pytest.fixture
-def cancel_agent(prefect_mcp_server: MCPServer, reasoning_model: str) -> Agent:
-    """Agent that can cancel flow runs using prefect CLI."""
+def prefect_reasoning_agent(
+    prefect_mcp_server: MCPServer, reasoning_model: str
+) -> Agent:
     return Agent(
-        name="Flow Run Cancellation Agent",
-        instructions=(
-            "you can use the prefect CLI to cancel flow runs. "
-            "remember to actually cancel the runs, don't just tell the user what to do."
-        ),
+        name="Prefect Assistant",
+        instructions="Take action on the user's behalf with the Prefect CLI.",
         toolsets=[prefect_mcp_server],
         tools=[run_shell_command],
         model=reasoning_model,
@@ -88,7 +86,7 @@ def cancel_agent(prefect_mcp_server: MCPServer, reasoning_model: str) -> Agent:
 
 
 async def test_cancel_all_late_runs_for_deployment(
-    cancel_agent: Agent,
+    prefect_reasoning_agent: Agent,
     deployment_with_late_runs: CancelScenario,
     evaluate_response: Callable[[str, str], Awaitable[None]],
     tool_call_spy: ToolCallSpy,
@@ -98,8 +96,8 @@ async def test_cancel_all_late_runs_for_deployment(
     deployment_name = deployment_with_late_runs.deployment_name
     flow_run_ids = deployment_with_late_runs.flow_run_ids
 
-    async with cancel_agent:
-        result = await cancel_agent.run(
+    async with prefect_reasoning_agent:
+        result = await prefect_reasoning_agent.run(
             f"""I have a deployment called '{deployment_name}' that has several late flow runs.
             please cancel ALL of the late runs for this deployment using the prefect CLI."""
         )
