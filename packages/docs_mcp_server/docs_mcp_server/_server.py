@@ -18,7 +18,7 @@ from turbopuffer import (
 )
 from turbopuffer.types.row import Row
 
-from ._settings import settings
+from docs_mcp_server._settings import settings
 
 logfire.configure(
     service_name="prefect-docs-mcp",
