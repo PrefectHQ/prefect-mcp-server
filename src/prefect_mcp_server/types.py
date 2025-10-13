@@ -27,7 +27,7 @@ class GlobalConcurrencyLimitsResult(TypedDict):
 
 
 class FlowDetail(TypedDict):
-    """Minimal flow information."""
+    """Flow information."""
 
     id: str
     name: str

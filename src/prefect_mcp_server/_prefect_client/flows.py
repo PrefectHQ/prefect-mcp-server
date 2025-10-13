@@ -4,6 +4,7 @@ from typing import Any
 
 import prefect.main  # noqa: F401
 from prefect import get_client
+from prefect.client.schemas.filters import FlowFilter
 
 from prefect_mcp_server.types import FlowsResult
 
@@ -14,12 +15,15 @@ async def get_flows(
 ) -> FlowsResult:
     """Get flows with optional filters.
 
-    Returns a list of flows matching the filters.
+    Returns a list of flows registered in the workspace.
+    To get a specific flow by ID, use filter={"id": {"any_": ["<flow-id>"]}}
+
+    Args:
+        filter: JSON-like dict that gets converted to FlowFilter
+        limit: Maximum number of flows to return
     """
     try:
         async with get_client() as client:
-            from prefect.client.schemas.filters import FlowFilter
-
             # Build filter from JSON if provided
             flow_filter = None
             if filter:
