@@ -15,7 +15,8 @@ import hashlib
 import json
 import os
 import re
-from typing import Any
+from collections.abc import AsyncGenerator
+from typing import TypedDict
 
 import httpx
 from defusedxml import ElementTree
@@ -25,6 +26,17 @@ from semantic_text_splitter import MarkdownSplitter
 from turbopuffer import AsyncTurbopuffer
 
 PREFECT_DOCS_SITEMAP_URL = "https://docs.prefect.io/sitemap.xml"
+
+
+class DocumentChunk(TypedDict):
+    """Structure of a document chunk for Turbopuffer."""
+
+    id: str
+    vector: list[float]
+    text: str
+    title: str
+    link: str
+    metadata: str  # JSON-serialized metadata dict
 
 
 @task(
@@ -46,8 +58,16 @@ async def fetch_sitemap_urls(sitemap_url: str) -> list[str]:
         namespace = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
         urls = [loc.text for loc in root.findall(".//ns:loc", namespace) if loc.text]
 
-        print(f"✓ Found {len(urls)} URLs in sitemap")
-        return urls
+        # Deduplicate URLs (sitemap may contain duplicates)
+        unique_urls = list(dict.fromkeys(urls))
+
+        if len(urls) != len(unique_urls):
+            print(
+                f"⚠️  Removed {len(urls) - len(unique_urls)} duplicate URLs from sitemap"
+            )
+
+        print(f"✓ Found {len(unique_urls)} unique URLs in sitemap")
+        return unique_urls
 
 
 @task(
@@ -85,14 +105,29 @@ async def fetch_page_content(url: str) -> dict[str, str] | None:
 
 @task(log_prints=True)
 async def chunk_markdown(
-    page: dict[str, str], chunk_size: int = 1000
-) -> list[dict[str, Any]]:
-    """Chunk markdown content semantically while preserving structure."""
+    page: dict[str, str], chunk_size: int = 3000, min_chunk_size: int = 200
+) -> list[DocumentChunk]:
+    """Chunk markdown content semantically while preserving structure.
+
+    Args:
+        page: Page content and metadata
+        chunk_size: Target maximum size for chunks in characters
+        min_chunk_size: Minimum size for chunks (filters out tiny header-only chunks)
+    """
     splitter = MarkdownSplitter(chunk_size)
-    chunks = splitter.chunks(page["content"])
+    raw_chunks = splitter.chunks(page["content"])
+
+    # Filter out chunks that are too small (usually just headers)
+    chunks = [chunk for chunk in raw_chunks if len(chunk.strip()) >= min_chunk_size]
+
+    if len(raw_chunks) != len(chunks):
+        print(
+            f"  Filtered out {len(raw_chunks) - len(chunks)} tiny chunks "
+            f"(< {min_chunk_size} chars)"
+        )
 
     # Create chunk documents with metadata
-    documents: list[dict[str, Any]] = []
+    documents: list[DocumentChunk] = []
     for i, chunk in enumerate(chunks):
         # Generate stable ID from URL and chunk index
         chunk_id = hashlib.sha256(f"{page['url']}:chunk:{i}".encode()).hexdigest()[:16]
@@ -125,8 +160,8 @@ async def chunk_markdown(
     log_prints=True,
 )
 async def generate_embeddings_batch(
-    documents: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
+    documents: list[DocumentChunk],
+) -> list[DocumentChunk]:
     """Generate embeddings for a batch of document chunks using OpenAI."""
     print(f"Generating embeddings for {len(documents)} chunks...")
     async with AsyncOpenAI() as client:
@@ -171,7 +206,7 @@ async def process_document_stream(
     chunk_size: int,
     page_batch_size: int = 50,
     embedding_batch_size: int = 100,
-):
+) -> AsyncGenerator[list[DocumentChunk], None]:
     """Process documents in batches using async generator pattern."""
     total_pages = 0
     total_chunks = 0
@@ -231,7 +266,7 @@ async def refresh_tpuf_namespace(
     *,
     namespace: str,
     reset: bool = False,
-    chunk_size: int = 1000,
+    chunk_size: int = 3000,
     page_batch_size: int = 50,
     embedding_batch_size: int = 100,
     upsert_batch_size: int = 1000,
@@ -268,7 +303,7 @@ async def refresh_tpuf_namespace(
         print("=" * 60)
 
         total_upserted = 0
-        pending_documents: list[dict[str, Any]] = []
+        pending_documents: list[DocumentChunk] = []
 
         async for document_batch in process_document_stream(
             urls,
@@ -287,7 +322,7 @@ async def refresh_tpuf_namespace(
                     f"Upserting batch of {len(upsert_batch)} chunks to Turbopuffer..."
                 )
                 response = await ns.write(
-                    upsert_rows=upsert_batch,
+                    upsert_rows=upsert_batch,  # type: ignore[arg-type]
                     distance_metric="cosine_distance",
                 )
                 batch_affected = response.rows_affected or len(upsert_batch)
@@ -298,7 +333,7 @@ async def refresh_tpuf_namespace(
         if pending_documents:
             print(f"Upserting final batch of {len(pending_documents)} chunks...")
             response = await ns.write(
-                upsert_rows=pending_documents,
+                upsert_rows=pending_documents,  # type: ignore[arg-type]
                 distance_metric="cosine_distance",
             )
             batch_affected = response.rows_affected or len(pending_documents)
