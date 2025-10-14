@@ -30,6 +30,8 @@ logfire.configure(
 
 # instrument ALL OpenAI clients to capture token usage automatically
 logfire.instrument_openai(AsyncOpenAI)
+logfire.instrument_mcp()
+logfire.instrument_httpx()
 
 app = FastMCP("Prefect Docs MCP", version="0.1.0")
 
