@@ -162,7 +162,7 @@ async def search_prefect(
                 )
                 title = data.get("title") or (metadata or {}).get("title")
                 link = data.get("link") or (metadata or {}).get("link")
-                logfire.info(f"title: {title}, link: {link}, metadata: {metadata}")
+                logfire.info("Data for row", data=data)
                 if title:
                     result_payload["title"] = title
                 if link:
