@@ -57,14 +57,8 @@ class DocsMCPSettings(BaseSettings):
         le=20,
         description="Default number of results to return from the vector store.",
     )
-    max_tokens: int = Field(
-        default=900,
-        ge=100,
-        le=2000,
-        description="Maximum number of tokens to include when concatenating excerpts (deprecated - kept for backwards compatibility).",
-    )
     include_attributes: Sequence[str] = Field(
-        default_factory=lambda: ["text", "title", "link", "metadata"],
+        default_factory=lambda: ["text", "title", "link"],
         description=(
             "Optional TurboPuffer attribute names to request alongside text. "
             "If an attribute is missing, the server falls back to the default response."

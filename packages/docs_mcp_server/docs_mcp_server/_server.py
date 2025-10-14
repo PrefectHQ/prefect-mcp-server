@@ -74,7 +74,7 @@ async def search_prefect(
         raise ValueError("Query must not be empty.")
 
     result_limit = top_k or settings.top_k
-    include_attributes = settings.include_attributes
+    include_attributes = list(dict.fromkeys(settings.include_attributes))
 
     with logfire.span(
         "search_prefect",
@@ -162,7 +162,6 @@ async def search_prefect(
                 )
                 title = data.get("title") or (metadata or {}).get("title")
                 link = data.get("link") or (metadata or {}).get("link")
-                logfire.info("Data for row", data=data)
                 if title:
                     result_payload["title"] = title
                 if link:
@@ -190,7 +189,6 @@ async def search_prefect(
 def row_to_dict(row: Row) -> dict[str, Any]:
     """normalize turbopuffer row objects to plain dictionaries."""
 
-    logfire.info("Row", row=row)
     data = row.model_dump(mode="python")
     if row.model_extra:
         data.update(row.model_extra)
