@@ -132,7 +132,6 @@ async def chunk_markdown(
         # Generate stable ID from URL and chunk index
         chunk_id = hashlib.sha256(f"{page['url']}:chunk:{i}".encode()).hexdigest()[:16]
 
-        # Serialize metadata to JSON string (Turbopuffer expects this)
         metadata_dict = {
             "chunk_index": i,
             "total_chunks": len(chunks),
