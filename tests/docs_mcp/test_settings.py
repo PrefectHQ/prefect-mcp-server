@@ -17,7 +17,7 @@ def test_docs_mcp_settings_defaults() -> None:
     settings = DocsMCPSettings()
 
     assert settings.top_k == 5
-    assert settings.include_attributes == []
+    assert settings.include_attributes == ["text", "title", "link"]
     assert settings.turbopuffer.namespace == "docs-v1"
     assert settings.logfire.environment == "local"
     assert settings.logfire.send_to_logfire == "if-token-present"
