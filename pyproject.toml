@@ -45,7 +45,6 @@ packages = ["src/prefect_mcp_server"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 pythonpath = ["src"]
-env = ["PREFECT_DOCS_MCP_URL=https://prefect-docs-mcp.fastmcp.app/mcp"]
 
 
 [tool.ty.src]

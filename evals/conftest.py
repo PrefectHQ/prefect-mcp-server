@@ -152,8 +152,6 @@ def prefect_mcp_server(tool_call_spy: ToolCallSpy) -> Generator[MCPServer, None,
         env = {}
         if api_url:
             env["PREFECT_API_URL"] = api_url
-        # Use good docs MCP for evals
-        env["PREFECT_DOCS_MCP_URL"] = "https://prefect-docs-mcp.fastmcp.app/mcp"
         yield MCPServerStdio(
             command="uv",
             args=["run", "-m", "prefect_mcp_server"],

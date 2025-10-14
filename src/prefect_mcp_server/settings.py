@@ -15,7 +15,7 @@ class DocsMcpSettings(BaseSettings):
     )
 
     url: str = Field(
-        default="https://docs.prefect.io/mcp",
+        default="https://prefect-docs.fastmcp.app/mcp",
         description="URL for the Prefect docs MCP server to proxy",
     )
 
