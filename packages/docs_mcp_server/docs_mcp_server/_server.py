@@ -74,7 +74,7 @@ async def search_prefect(
         raise ValueError("Query must not be empty.")
 
     result_limit = top_k or settings.top_k
-    include_attributes = list(dict.fromkeys(settings.include_attributes)) or ["text"]
+    include_attributes = settings.include_attributes
 
     with logfire.span(
         "search_prefect",

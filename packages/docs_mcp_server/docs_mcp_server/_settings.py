@@ -64,7 +64,7 @@ class DocsMCPSettings(BaseSettings):
         description="Maximum number of tokens to include when concatenating excerpts (deprecated - kept for backwards compatibility).",
     )
     include_attributes: Sequence[str] = Field(
-        default_factory=list,
+        default_factory=lambda: ["text", "title", "link", "metadata"],
         description=(
             "Optional TurboPuffer attribute names to request alongside text. "
             "If an attribute is missing, the server falls back to the default response."
