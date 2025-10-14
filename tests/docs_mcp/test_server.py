@@ -29,7 +29,7 @@ def mock_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def docs_mcp_server() -> FastMCP:
     """Defers the import of the docs MCP server to avoid settings errors."""
-    from docs_mcp_server._server import docs_mcp
+    from docs_mcp_server._server import app as docs_mcp
 
     return docs_mcp
 

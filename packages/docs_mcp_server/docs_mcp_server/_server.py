@@ -31,7 +31,7 @@ logfire.configure(
 # instrument ALL OpenAI clients to capture token usage automatically
 logfire.instrument_openai(AsyncOpenAI)
 
-docs_mcp = FastMCP("Prefect Docs MCP", version="0.1.0")
+app = FastMCP("Prefect Docs MCP", version="0.1.0")
 
 
 def _build_response(
@@ -48,7 +48,7 @@ def _build_response(
     return payload
 
 
-@docs_mcp.tool
+@app.tool
 async def search_prefect(
     query: Annotated[
         str,
