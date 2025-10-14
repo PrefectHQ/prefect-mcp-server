@@ -17,7 +17,6 @@ def test_docs_mcp_settings_defaults() -> None:
     settings = DocsMCPSettings()
 
     assert settings.top_k == 5
-    assert settings.max_tokens == 900
     assert settings.include_attributes == []
     assert settings.turbopuffer.namespace == "docs-v1"
     assert settings.logfire.environment == "local"
@@ -45,25 +44,6 @@ def test_docs_mcp_settings_top_k_validation() -> None:
 
     with pytest.raises(ValidationError):
         DocsMCPSettings(top_k=-1)
-
-
-def test_docs_mcp_settings_max_tokens_validation() -> None:
-    """Test that max_tokens is validated correctly."""
-    from docs_mcp_server._settings import DocsMCPSettings
-
-    # Valid values
-    settings = DocsMCPSettings(max_tokens=100)
-    assert settings.max_tokens == 100
-
-    settings = DocsMCPSettings(max_tokens=2000)
-    assert settings.max_tokens == 2000
-
-    # Invalid values should raise ValidationError
-    with pytest.raises(ValidationError):
-        DocsMCPSettings(max_tokens=99)
-
-    with pytest.raises(ValidationError):
-        DocsMCPSettings(max_tokens=2001)
 
 
 def test_docs_mcp_settings_include_attributes() -> None:
@@ -156,11 +136,9 @@ def test_settings_env_prefix(monkeypatch: pytest.MonkeyPatch) -> None:
     from docs_mcp_server._settings import DocsMCPSettings
 
     monkeypatch.setenv("PREFECT_DOCS_MCP_TOP_K", "10")
-    monkeypatch.setenv("PREFECT_DOCS_MCP_MAX_TOKENS", "1500")
 
     settings = DocsMCPSettings()
     assert settings.top_k == 10
-    assert settings.max_tokens == 1500
 
 
 def test_logfire_settings_env_prefix(monkeypatch: pytest.MonkeyPatch) -> None:
