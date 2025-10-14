@@ -114,17 +114,8 @@ async def chunk_markdown(
         chunk_size: Target maximum size for chunks in characters
         min_chunk_size: Minimum size for chunks (filters out tiny header-only chunks)
     """
-    splitter = MarkdownSplitter(chunk_size)
-    raw_chunks = splitter.chunks(page["content"])
-
-    # Filter out chunks that are too small (usually just headers)
-    chunks = [chunk for chunk in raw_chunks if len(chunk.strip()) >= min_chunk_size]
-
-    if len(raw_chunks) != len(chunks):
-        print(
-            f"  Filtered out {len(raw_chunks) - len(chunks)} tiny chunks "
-            f"(< {min_chunk_size} chars)"
-        )
+    splitter = MarkdownSplitter((min_chunk_size, chunk_size))
+    chunks = splitter.chunks(page["content"])
 
     # Create chunk documents with metadata
     documents: list[DocumentChunk] = []
