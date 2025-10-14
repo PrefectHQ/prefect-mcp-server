@@ -190,6 +190,7 @@ async def search_prefect(
 def row_to_dict(row: Row) -> dict[str, Any]:
     """normalize turbopuffer row objects to plain dictionaries."""
 
+    logfire.info("Row", row=row)
     data = row.model_dump(mode="python")
     if row.model_extra:
         data.update(row.model_extra)
