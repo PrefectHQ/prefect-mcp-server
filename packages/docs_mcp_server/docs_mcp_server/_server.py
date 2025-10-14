@@ -7,7 +7,6 @@ from typing import Annotated, Any
 
 import logfire
 from fastmcp import FastMCP
-from fastmcp.server.middleware import Middleware, MiddlewareContext
 from openai import AsyncOpenAI, OpenAIError
 from pydantic import Field
 from turbopuffer import (
@@ -31,22 +30,9 @@ logfire.configure(
 
 # instrument ALL OpenAI clients to capture token usage automatically
 logfire.instrument_openai(AsyncOpenAI)
-logfire.instrument_mcp()
 
 
-class LogfireFlushMiddleware(Middleware):
-    """Middleware to flush Logfire after the request is processed."""
-
-    async def __call__(self, context: MiddlewareContext[Any], call_next: Any):
-        try:
-            return await call_next(context)
-        finally:
-            logfire.force_flush()
-
-
-app = FastMCP(
-    "Prefect Docs MCP", version="0.1.0", middleware=[LogfireFlushMiddleware()]
-)
+app = FastMCP("Prefect Docs MCP", version="0.1.0")
 
 
 def _build_response(
@@ -196,6 +182,7 @@ async def search_prefect(
 
         response = _build_response(query, results)
 
+    logfire.force_flush()
     return response
 
 
