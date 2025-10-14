@@ -6,5 +6,9 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "prefect>=3.4.22",
-    "raggy>=0.3.5",
+    "httpx>=0.27.0",
+    "semantic-text-splitter>=0.28.0",
+    "openai>=1.0.0",
+    "turbopuffer>=0.1.0",
+    "defusedxml>=0.7.0",
 ]
