@@ -106,27 +106,54 @@ async def fetch_page_content(url: str) -> dict[str, str] | None:
 
 @task(log_prints=True)
 async def chunk_markdown(
-    page: dict[str, str], chunk_size: int = 3000, max_chunk_size: int = 4000
+    page: dict[str, str],
+    chunk_size: int = 3000,
+    max_chunk_size: int = 4000,
+    min_chunk_size: int = 200,
 ) -> list[DocumentChunk]:
     """Chunk markdown content semantically while preserving structure.
 
     Args:
         page: Page content and metadata
         chunk_size: Target maximum size for chunks in characters
-        min_chunk_size: Minimum size for chunks (filters out tiny header-only chunks)
+        max_chunk_size: Maximum size for chunks in characters
+        min_chunk_size: Minimum size for chunks - smaller chunks are merged forward
     """
     splitter = MarkdownSplitter((chunk_size, max_chunk_size))
-    chunks = splitter.chunks(page["content"])
+    raw_chunks = splitter.chunks(page["content"])
+
+    # Merge small chunks forward to avoid header-only chunks
+    merged_chunks: list[str] = []
+    i = 0
+    while i < len(raw_chunks):
+        current = raw_chunks[i]
+
+        # If chunk is too small, keep merging forward until we hit min size or run out
+        if len(current) < min_chunk_size and i + 1 < len(raw_chunks):
+            merged = current
+            j = i + 1
+            # Keep merging until we reach min size or run out of chunks
+            while len(merged) < min_chunk_size and j < len(raw_chunks):
+                merged = merged + "\n\n" + raw_chunks[j]
+                j += 1
+            merged_chunks.append(merged)
+            i = j  # Skip all the chunks we merged
+        else:
+            merged_chunks.append(current)
+            i += 1
+
+    chunks_before = len(raw_chunks)
+    chunks_after = len(merged_chunks)
 
     # Create chunk documents with metadata
     documents: list[DocumentChunk] = []
-    for i, chunk in enumerate(chunks):
+    for i, chunk in enumerate(merged_chunks):
         # Generate stable ID from URL and chunk index
         chunk_id = hashlib.sha256(f"{page['url']}:chunk:{i}".encode()).hexdigest()[:16]
 
         metadata_dict = {
             "chunk_index": i,
-            "total_chunks": len(chunks),
+            "total_chunks": len(merged_chunks),
             "source_url": page["url"],
         }
 
@@ -141,7 +168,13 @@ async def chunk_markdown(
             }
         )
 
-    print(f"✓ Chunked '{page['title']}' into {len(chunks)} chunks")
+    if chunks_before != chunks_after:
+        print(
+            f"✓ Chunked '{page['title']}' into {chunks_after} chunks (merged {chunks_before - chunks_after} small chunks)"
+        )
+    else:
+        print(f"✓ Chunked '{page['title']}' into {chunks_after} chunks")
+
     return documents
 
 
@@ -203,6 +236,7 @@ async def fetch_pages_batch(urls: list[str]) -> list[dict[str, str]]:
 async def process_document_stream(
     urls: list[str],
     chunk_size: int,
+    min_chunk_size: int = 200,
     page_batch_size: int = 50,
     embedding_batch_size: int = 100,
 ) -> AsyncGenerator[list[DocumentChunk], None]:
@@ -217,6 +251,7 @@ async def process_document_stream(
     print(f"Page batch size: {page_batch_size}")
     print(f"Embedding batch size: {embedding_batch_size}")
     print(f"Chunk size: {chunk_size} characters")
+    print(f"Min chunk size: {min_chunk_size} characters")
     print("=" * 60)
 
     # Process pages in batches to avoid holding everything in memory
@@ -231,7 +266,8 @@ async def process_document_stream(
         # Chunk pages
         print(f"Chunking {len(pages)} pages...")
         chunk_coroutines = [
-            chunk_markdown(page, chunk_size=chunk_size) for page in pages
+            chunk_markdown(page, chunk_size=chunk_size, min_chunk_size=min_chunk_size)
+            for page in pages
         ]
         chunks_lists = await asyncio.gather(*chunk_coroutines)
         flat_chunks = [chunk for sublist in chunks_lists for chunk in sublist]
@@ -266,6 +302,7 @@ async def refresh_tpuf_namespace(
     namespace: str = "TESTING-docs-v1",
     reset: bool = False,
     chunk_size: int = 3000,
+    min_chunk_size: int = 200,
     page_batch_size: int = 50,
     embedding_batch_size: int = 100,
     upsert_batch_size: int = 1000,
@@ -314,6 +351,7 @@ async def refresh_tpuf_namespace(
         async for document_batch in process_document_stream(
             urls,
             chunk_size=chunk_size,
+            min_chunk_size=min_chunk_size,
             page_batch_size=page_batch_size,
             embedding_batch_size=embedding_batch_size,
         ):
