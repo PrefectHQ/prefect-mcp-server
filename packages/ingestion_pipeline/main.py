@@ -106,7 +106,7 @@ async def fetch_page_content(url: str) -> dict[str, str] | None:
 
 @task(log_prints=True)
 async def chunk_markdown(
-    page: dict[str, str], chunk_size: int = 3000, min_chunk_size: int = 200
+    page: dict[str, str], chunk_size: int = 3000, max_chunk_size: int = 4000
 ) -> list[DocumentChunk]:
     """Chunk markdown content semantically while preserving structure.
 
@@ -115,7 +115,7 @@ async def chunk_markdown(
         chunk_size: Target maximum size for chunks in characters
         min_chunk_size: Minimum size for chunks (filters out tiny header-only chunks)
     """
-    splitter = MarkdownSplitter((min_chunk_size, chunk_size))
+    splitter = MarkdownSplitter((chunk_size, max_chunk_size))
     chunks = splitter.chunks(page["content"])
 
     # Create chunk documents with metadata
