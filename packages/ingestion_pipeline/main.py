@@ -16,12 +16,13 @@ import json
 import os
 import re
 from collections.abc import AsyncGenerator
-from typing import TypedDict
+from typing import TypedDict, cast
 
 import httpx
 from defusedxml import ElementTree
 from openai import AsyncOpenAI
 from prefect import flow, task
+from prefect.blocks.system import Secret
 from semantic_text_splitter import MarkdownSplitter
 from turbopuffer import AsyncTurbopuffer
 
@@ -151,21 +152,21 @@ async def chunk_markdown(
 )
 async def generate_embeddings_batch(
     documents: list[DocumentChunk],
+    openai_client: AsyncOpenAI,
 ) -> list[DocumentChunk]:
     """Generate embeddings for a batch of document chunks using OpenAI."""
     print(f"Generating embeddings for {len(documents)} chunks...")
-    async with AsyncOpenAI() as client:
-        texts = [doc["text"] for doc in documents]
+    texts = [doc["text"] for doc in documents]
 
-        response = await client.embeddings.create(
-            input=texts,
-            model="text-embedding-3-small",
-            timeout=60,
-        )
+    response = await openai_client.embeddings.create(
+        input=texts,
+        model="text-embedding-3-small",
+        timeout=60,
+    )
 
-        # Add embeddings to documents
-        for doc, embedding_data in zip(documents, response.data):
-            doc["vector"] = embedding_data.embedding
+    # Add embeddings to documents
+    for doc, embedding_data in zip(documents, response.data):
+        doc["vector"] = embedding_data.embedding
 
     print(f"✓ Generated {len(documents)} embeddings (model: text-embedding-3-small)")
     return documents
@@ -210,35 +211,46 @@ async def process_document_stream(
     print(f"Chunk size: {chunk_size} characters")
     print("=" * 60)
 
-    # Process pages in batches to avoid holding everything in memory
-    for i in range(0, len(urls), page_batch_size):
-        batch_num = i // page_batch_size + 1
-        batch_urls = urls[i : i + page_batch_size]
-        print(f"--- Processing page batch {batch_num}/{total_batches} ---")
+    try:
+        secret_block = await Secret.load("docs-mcp-openai-api-key")
+        api_key = cast(str, secret_block.get())
+    except Exception:
+        api_key = os.getenv("OPENAI_API_KEY")
 
-        pages = await fetch_pages_batch(batch_urls)
-        total_pages += len(pages)
+    assert api_key is not None, "OPENAI_API_KEY is not set"
 
-        # Chunk pages
-        print(f"Chunking {len(pages)} pages...")
-        chunk_coroutines = [
-            chunk_markdown(page, chunk_size=chunk_size) for page in pages
-        ]
-        chunks_lists = await asyncio.gather(*chunk_coroutines)
-        flat_chunks = [chunk for sublist in chunks_lists for chunk in sublist]
-        print(f"✓ Created {len(flat_chunks)} chunks from batch {batch_num}")
+    async with AsyncOpenAI(api_key=api_key) as openai_client:
+        # Process pages in batches to avoid holding everything in memory
+        for i in range(0, len(urls), page_batch_size):
+            batch_num = i // page_batch_size + 1
+            batch_urls = urls[i : i + page_batch_size]
+            print(f"--- Processing page batch {batch_num}/{total_batches} ---")
 
-        # Process chunks in embedding batches
-        num_embedding_batches = (
-            len(flat_chunks) + embedding_batch_size - 1
-        ) // embedding_batch_size
-        print(f"Processing {num_embedding_batches} embedding batch(es)...")
+            pages = await fetch_pages_batch(batch_urls)
+            total_pages += len(pages)
 
-        for j in range(0, len(flat_chunks), embedding_batch_size):
-            embedding_batch = flat_chunks[j : j + embedding_batch_size]
-            documents = await generate_embeddings_batch(embedding_batch)
-            total_chunks += len(documents)
-            yield documents
+            # Chunk pages
+            print(f"Chunking {len(pages)} pages...")
+            chunk_coroutines = [
+                chunk_markdown(page, chunk_size=chunk_size) for page in pages
+            ]
+            chunks_lists = await asyncio.gather(*chunk_coroutines)
+            flat_chunks = [chunk for sublist in chunks_lists for chunk in sublist]
+            print(f"✓ Created {len(flat_chunks)} chunks from batch {batch_num}")
+
+            # Process chunks in embedding batches
+            num_embedding_batches = (
+                len(flat_chunks) + embedding_batch_size - 1
+            ) // embedding_batch_size
+            print(f"Processing {num_embedding_batches} embedding batch(es)...")
+
+            for j in range(0, len(flat_chunks), embedding_batch_size):
+                embedding_batch = flat_chunks[j : j + embedding_batch_size]
+                documents = await generate_embeddings_batch(
+                    embedding_batch, openai_client
+                )
+                total_chunks += len(documents)
+                yield documents
 
     print("=" * 60)
     print("✓ Stream processing complete!")
@@ -261,18 +273,25 @@ async def refresh_tpuf_namespace(
     embedding_batch_size: int = 100,
     upsert_batch_size: int = 1000,
 ):
-    """Flow updating vectorstore with info from the Prefect docs."""
+    """Flow updating Turbopuffer vector store with info from the Prefect docs."""
     print("=" * 60)
     print(f"Starting ingestion pipeline for namespace: {namespace}")
     print("=" * 60)
 
     # Fetch sitemap
     urls = await fetch_sitemap_urls(PREFECT_DOCS_SITEMAP_URL)
+    try:
+        secret_block = await Secret.load("docs-mcp-turbopuffer-api-key")
+        api_key = cast(str, secret_block.get())
+    except Exception:
+        api_key = os.getenv("TURBOPUFFER_API_KEY")
+
+    assert api_key is not None, "TURBOPUFFER_API_KEY is not set"
 
     # Initialize turbopuffer client
     print(f"Connecting to Turbopuffer namespace '{namespace}'...")
     async with AsyncTurbopuffer(
-        api_key=os.getenv("TURBOPUFFER_API_KEY"),
+        api_key=api_key,
         region=os.getenv("TURBOPUFFER_REGION", "api"),
     ) as client:
         ns = client.namespace(namespace)

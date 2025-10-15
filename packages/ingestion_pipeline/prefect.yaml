@@ -1,0 +1,42 @@
+# Welcome to your prefect.yaml file! You can use this file for storing and managing
+# configuration for deploying your flows. We recommend committing this file to source
+# control along with your flow code.
+
+# Generic metadata about this project
+name: ingestion_pipeline
+prefect-version: 3.4.20
+
+# build section allows you to manage and build docker images
+build: null
+
+# push section allows you to manage if and how this project is uploaded to remote locations
+push: null
+
+# pull section allows you to provide instructions for cloning this project in remote locations
+pull:
+  - prefect.deployments.steps.git_clone:
+      repository: https://github.com/PrefectHQ/prefect-mcp-server.git
+      branch: chore/ingestion-deployment
+  - prefect.deployments.steps.run_shell_script:
+      env: UV_SYSTEM_PYTHON=1
+      script: uv sync --frozen --package ingestion-pipeline
+  - prefect.deployments.steps.set_working_directory:
+      directory: packages/ingestion_pipeline
+
+# the deployments section allows you to provide configuration for deploying flows
+deployments:
+  - name: default
+    version: null
+    tags: []
+    concurrency_limit: null
+    description: Flow updating Turbopuffer vectors tore with info from the Prefect docs.
+    entrypoint: main.py:refresh_tpuf_namespace
+    parameters: {}
+    work_pool:
+      name: kubernetes-prd-internal-tools
+      job_variables: {}
+    schedules:
+      - interval: 3600.0
+        anchor_date: "2025-10-15T17:58:45.124243+00:00"
+        timezone: UTC
+        active: true
