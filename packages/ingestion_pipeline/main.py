@@ -152,17 +152,25 @@ async def chunk_markdown(
 )
 async def generate_embeddings_batch(
     documents: list[DocumentChunk],
-    openai_client: AsyncOpenAI,
 ) -> list[DocumentChunk]:
     """Generate embeddings for a batch of document chunks using OpenAI."""
     print(f"Generating embeddings for {len(documents)} chunks...")
     texts = [doc["text"] for doc in documents]
 
-    response = await openai_client.embeddings.create(
-        input=texts,
-        model="text-embedding-3-small",
-        timeout=60,
-    )
+    try:
+        secret_block = await Secret.load("docs-mcp-openai-api-key")
+        api_key = cast(str, secret_block.get())
+    except Exception:
+        api_key = os.getenv("OPENAI_API_KEY")
+
+    assert api_key is not None, "OPENAI_API_KEY is not set"
+
+    async with AsyncOpenAI(api_key=api_key) as openai_client:
+        response = await openai_client.embeddings.create(
+            input=texts,
+            model="text-embedding-3-small",
+            timeout=60,
+        )
 
     # Add embeddings to documents
     for doc, embedding_data in zip(documents, response.data):
@@ -211,46 +219,35 @@ async def process_document_stream(
     print(f"Chunk size: {chunk_size} characters")
     print("=" * 60)
 
-    try:
-        secret_block = await Secret.load("docs-mcp-openai-api-key")
-        api_key = cast(str, secret_block.get())
-    except Exception:
-        api_key = os.getenv("OPENAI_API_KEY")
+    # Process pages in batches to avoid holding everything in memory
+    for i in range(0, len(urls), page_batch_size):
+        batch_num = i // page_batch_size + 1
+        batch_urls = urls[i : i + page_batch_size]
+        print(f"--- Processing page batch {batch_num}/{total_batches} ---")
 
-    assert api_key is not None, "OPENAI_API_KEY is not set"
+        pages = await fetch_pages_batch(batch_urls)
+        total_pages += len(pages)
 
-    async with AsyncOpenAI(api_key=api_key) as openai_client:
-        # Process pages in batches to avoid holding everything in memory
-        for i in range(0, len(urls), page_batch_size):
-            batch_num = i // page_batch_size + 1
-            batch_urls = urls[i : i + page_batch_size]
-            print(f"--- Processing page batch {batch_num}/{total_batches} ---")
+        # Chunk pages
+        print(f"Chunking {len(pages)} pages...")
+        chunk_coroutines = [
+            chunk_markdown(page, chunk_size=chunk_size) for page in pages
+        ]
+        chunks_lists = await asyncio.gather(*chunk_coroutines)
+        flat_chunks = [chunk for sublist in chunks_lists for chunk in sublist]
+        print(f"✓ Created {len(flat_chunks)} chunks from batch {batch_num}")
 
-            pages = await fetch_pages_batch(batch_urls)
-            total_pages += len(pages)
+        # Process chunks in embedding batches
+        num_embedding_batches = (
+            len(flat_chunks) + embedding_batch_size - 1
+        ) // embedding_batch_size
+        print(f"Processing {num_embedding_batches} embedding batch(es)...")
 
-            # Chunk pages
-            print(f"Chunking {len(pages)} pages...")
-            chunk_coroutines = [
-                chunk_markdown(page, chunk_size=chunk_size) for page in pages
-            ]
-            chunks_lists = await asyncio.gather(*chunk_coroutines)
-            flat_chunks = [chunk for sublist in chunks_lists for chunk in sublist]
-            print(f"✓ Created {len(flat_chunks)} chunks from batch {batch_num}")
-
-            # Process chunks in embedding batches
-            num_embedding_batches = (
-                len(flat_chunks) + embedding_batch_size - 1
-            ) // embedding_batch_size
-            print(f"Processing {num_embedding_batches} embedding batch(es)...")
-
-            for j in range(0, len(flat_chunks), embedding_batch_size):
-                embedding_batch = flat_chunks[j : j + embedding_batch_size]
-                documents = await generate_embeddings_batch(
-                    embedding_batch, openai_client
-                )
-                total_chunks += len(documents)
-                yield documents
+        for j in range(0, len(flat_chunks), embedding_batch_size):
+            embedding_batch = flat_chunks[j : j + embedding_batch_size]
+            documents = await generate_embeddings_batch(embedding_batch)
+            total_chunks += len(documents)
+            yield documents
 
     print("=" * 60)
     print("✓ Stream processing complete!")
@@ -266,7 +263,7 @@ async def process_document_stream(
 )
 async def refresh_tpuf_namespace(
     *,
-    namespace: str,
+    namespace: str = "TESTING-docs-v1",
     reset: bool = False,
     chunk_size: int = 3000,
     page_batch_size: int = 50,
