@@ -16,7 +16,6 @@ push: null
 pull:
   - prefect.deployments.steps.git_clone:
       repository: https://github.com/PrefectHQ/prefect-mcp-server.git
-      branch: chore/ingestion-deployment
   - prefect.deployments.steps.set_working_directory:
       directory: "{{directory}}/packages/ingestion_pipeline"
   - prefect.deployments.steps.run_shell_script:
