@@ -22,6 +22,9 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Deploy ingestion workflow
+        env:
+          PREFECT_API_URL: ${{ secrets.PREFECT_PRD_PRODUCT_ENGINEERING_WORKSPACE_API_URL }}
+          PREFECT_API_KEY: ${{ secrets.PREFECT_PRD_PRODUCT_ENGINEERING_WORKSPACE_API_KEY }}
         run: |
           cd packages/ingestion_pipeline
           uv run prefect deploy -n load-prefect-docs-to-turbopuffer

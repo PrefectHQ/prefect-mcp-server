@@ -108,7 +108,7 @@ async def fetch_page_content(url: str) -> dict[str, str] | None:
 async def chunk_markdown(
     page: dict[str, str],
     chunk_size: int = 3000,
-    max_chunk_size: int = 4000,
+    max_chunk_size: int = 3800,
     min_chunk_size: int = 200,
 ) -> list[DocumentChunk]:
     """Chunk markdown content semantically while preserving structure.
