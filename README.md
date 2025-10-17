@@ -37,13 +37,13 @@ When running the MCP server locally (via stdio transport), it will automatically
 ```bash
 # minimal setup - inherits from local prefect profile
 claude mcp add prefect \
-  -- uvx prefect-mcp-server@git+https://github.com/prefecthq/prefect-mcp-server.git
+  -- uvx --from prefect-mcp prefect-mcp-server
 
 # or explicitly set credentials
 claude mcp add prefect \
   -e PREFECT_API_URL=https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID] \
   -e PREFECT_API_KEY=your-cloud-api-key \
-  -- uvx prefect-mcp-server@git+https://github.com/prefecthq/prefect-mcp-server.git
+  -- uvx --from prefect-mcp prefect-mcp-server
 ```
 
 > [!NOTE]
