@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "packages/ingestion_pipeline/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy ingestion workflow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Deploy ingestion workflow
+        env:
+          PREFECT_API_URL: ${{ secrets.PREFECT_PRD_PRODUCT_ENGINEERING_WORKSPACE_API_URL }}
+          PREFECT_API_KEY: ${{ secrets.PREFECT_PRD_PRODUCT_ENGINEERING_WORKSPACE_API_KEY }}
+        run: |
+          cd packages/ingestion_pipeline
+          uv run prefect deploy -n load-prefect-docs-to-turbopuffer

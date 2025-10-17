@@ -1,0 +1,26 @@
+build: null
+
+push: null
+
+pull:
+  - prefect.deployments.steps.git_clone:
+      repository: https://github.com/PrefectHQ/prefect-mcp-server.git
+  - prefect.deployments.steps.set_working_directory:
+      directory: "{{directory}}/packages/ingestion_pipeline"
+  - prefect.deployments.steps.run_shell_script:
+      env:
+        UV_SYSTEM_PYTHON: "1"
+      script: uv pip install .
+
+deployments:
+  - name: load-prefect-docs-to-turbopuffer
+    concurrency_limit: 1
+    description: Flow updating Turbopuffer vectors tore with info from the Prefect docs.
+    entrypoint: main.py:refresh_tpuf_namespace
+    parameters:
+      namespace: "docs-v1"
+    work_pool:
+      name: kubernetes-prd-internal-tools
+    schedules:
+      - cron: "0 9 * * *"
+        timezone: America/Chicago
