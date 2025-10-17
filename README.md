@@ -98,4 +98,4 @@ just test
 
 ---
 
-mcp-name: io.github.prefecthq/prefect-mcp-server
+mcp-name: io.github.PrefectHQ/prefect-mcp-server
