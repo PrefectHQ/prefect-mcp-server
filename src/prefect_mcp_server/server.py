@@ -50,40 +50,6 @@ mcp.mount(docs_proxy, prefix="docs")
 cloud_mcp = FastMCP("Prefect Cloud Tools")
 
 
-# Prompts - guidance for LLM interactions
-@mcp.prompt
-def debug_flow_run(
-    flow_run_id: str | None = None,
-) -> str:
-    """Generate debugging guidance for troubleshooting Prefect flow runs.
-
-    Provides structured steps for investigating a specific flow run failure
-    or general debugging guidance if no flow run ID is provided.
-
-    Args:
-        flow_run_id: UUID of a specific flow run to debug (optional)
-    """
-    from prefect_mcp_server._prompts import create_debug_prompt
-
-    return create_debug_prompt(flow_run_id=flow_run_id)
-
-
-@mcp.prompt
-def debug_deployment(
-    deployment_id: str,
-) -> str:
-    """Debug deployment issues, especially concurrency-related problems.
-
-    Provides systematic checks for why deployments might have stuck or pending runs.
-
-    Args:
-        deployment_id: UUID of the deployment to debug
-    """
-    from prefect_mcp_server._prompts import create_deployment_debug_prompt
-
-    return create_deployment_debug_prompt(deployment_id=deployment_id)
-
-
 # Tools
 @mcp.tool
 async def get_identity() -> IdentityResult:

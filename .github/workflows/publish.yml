@@ -25,3 +25,14 @@ jobs:
 
       - name: Publish to PyPI
         run: uv publish -v dist/*
+
+      - name: install mcp publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/download/v1.2.3/mcp-publisher_1.2.3_linux_amd64.tar.gz" | tar xz
+          sudo mv mcp-publisher /usr/local/bin/
+
+      - name: login to mcp registry (github oidc)
+        run: mcp-publisher login github-oidc
+
+      - name: publish to mcp registry
+        run: mcp-publisher publish

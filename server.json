@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.prefecthq/prefect-mcp-server",
+  "title": "Prefect MCP Server",
+  "description": "MCP server for Prefect. Monitor workflows, debug failures, and inspect deployments, flow runs, and automations.",
+  "version": "0.0.1-beta.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "prefect-mcp",
+      "version": "0.0.1-beta.1",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
