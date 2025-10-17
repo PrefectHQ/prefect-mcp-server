@@ -95,3 +95,7 @@ just test
 - [FastMCP Cloud](https://fastmcp.cloud) - deploy your MCP server to the cloud
 - [Prefect](https://github.com/prefecthq/prefect) - the easiest way to build workflows
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) - one of the best MCP clients
+
+---
+
+mcp-name: io.github.prefecthq/prefect-mcp-server
