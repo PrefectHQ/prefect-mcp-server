@@ -111,9 +111,10 @@ class ToolCallSpy:
             spy.assert_tool_was_called("get_flow_runs")
             ```
         """
-        assert any(call["name"] == tool_name for call in self.calls), f"Tool {
-            tool_name
-        } was not called. Called tools: {[call['name'] for call in self.calls]}"
+        assert any(call["name"] == tool_name for call in self.calls), (
+            f"Tool {tool_name} was not called. "
+            f"Called tools: {[call['name'] for call in self.calls]}"
+        )
 
     def assert_tools_were_called(self, tool_names: list[str]) -> None:
         """Assert that all specified tools were called at least once.
