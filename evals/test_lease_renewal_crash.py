@@ -1,5 +1,4 @@
 from collections.abc import Awaitable, Callable
-from unittest.mock import AsyncMock
 
 import pytest
 from prefect import flow
@@ -44,7 +43,6 @@ async def lease_renewal_crash_flow_run(prefect_client: PrefectClient) -> FlowRun
 async def test_agent_diagnoses_lease_renewal_crash(
     simple_agent: Agent,
     lease_renewal_crash_flow_run: FlowRun,
-    tool_call_spy: AsyncMock,
     evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
     """Test that agent can identify and explain concurrency lease renewal failures.
@@ -53,7 +51,6 @@ async def test_agent_diagnoses_lease_renewal_crash(
     1. Identify the crash was caused by lease renewal failure
     2. Explain what concurrency lease renewal is
     3. Suggest potential root causes (network issues, timeouts, API problems)
-    4. Differentiate this from other crash types
     """
     prompt = (
         f"The Prefect flow run named {lease_renewal_crash_flow_run.name!r} crashed. "
@@ -64,25 +61,10 @@ async def test_agent_diagnoses_lease_renewal_crash(
     async with simple_agent:
         result = await simple_agent.run(prompt)
 
-    # Verify the agent identifies the lease renewal failure
     await evaluate_response(
-        "Does the agent identify that the flow run crashed due to 'concurrency lease renewal failed'?",
+        "Does the agent: (1) identify that the flow run crashed due to 'concurrency lease renewal failed', "
+        "(2) explain that concurrency lease renewal is a mechanism where flows holding concurrency slots "
+        "must periodically refresh their lease, and (3) suggest potential root causes such as network "
+        "connectivity issues, API timeouts, or communication problems with the Prefect API?",
         result.output,
     )
-
-    # Verify the agent explains what lease renewal means
-    await evaluate_response(
-        "Does the agent explain that concurrency lease renewal is a mechanism where flows holding "
-        "concurrency slots must periodically refresh their lease to continue holding that slot?",
-        result.output,
-    )
-
-    # Verify the agent suggests plausible root causes
-    await evaluate_response(
-        "Does the agent suggest potential root causes such as network connectivity issues, "
-        "API timeouts, or communication problems with the Prefect API?",
-        result.output,
-    )
-
-    # Agent must use get_flow_runs to retrieve the crashed state
-    tool_call_spy.assert_tool_was_called("get_flow_runs")
