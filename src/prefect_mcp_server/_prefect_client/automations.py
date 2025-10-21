@@ -4,7 +4,6 @@ from typing import Any
 from uuid import UUID
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
-
 from prefect_mcp_server.types import AutomationsResult
 
 

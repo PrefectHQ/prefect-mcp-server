@@ -4,10 +4,10 @@ from typing import Any
 from uuid import UUID
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
-from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect.client.schemas.filters import DeploymentFilter, DeploymentFilterId
 from prefect.client.schemas.sorting import FlowRunSort
 
+from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server._prefect_client.work_pools import get_work_pools
 from prefect_mcp_server.types import (
     DeploymentDetail,
