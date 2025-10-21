@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
-from prefect.client.orchestration import get_client
+from prefect_mcp_server._prefect_client.client import get_prefect_client
 
 from prefect_mcp_server.types import (
     ConcurrencyLimitInfo,
@@ -15,7 +15,7 @@ from prefect_mcp_server.types import (
 async def fetch_dashboard() -> DashboardResult:
     """Fetch dashboard overview data from Prefect."""
     try:
-        async with get_client() as client:
+        async with get_prefect_client() as client:
             from prefect.client.schemas.filters import (
                 FlowRunFilter,
                 FlowRunFilterStartTime,

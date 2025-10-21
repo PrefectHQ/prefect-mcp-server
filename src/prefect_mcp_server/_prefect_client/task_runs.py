@@ -3,7 +3,7 @@
 from typing import Any
 from uuid import UUID
 
-from prefect.client.orchestration import get_client
+from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect.client.schemas.sorting import TaskRunSort
 
 from prefect_mcp_server.types import TaskRunDetail, TaskRunResult
@@ -11,7 +11,7 @@ from prefect_mcp_server.types import TaskRunDetail, TaskRunResult
 
 async def get_task_run(task_run_id: str) -> TaskRunResult:
     """Get detailed information about a specific task run."""
-    async with get_client() as client:
+    async with get_prefect_client() as client:
         try:
             task_run = await client.read_task_run(UUID(task_run_id))
 
@@ -104,7 +104,7 @@ async def get_task_runs(
     Returns a list of task runs matching the filters.
     To get a specific task run by ID, use filter={"id": {"any_": ["<task-run-id>"]}}
     """
-    async with get_client() as client:
+    async with get_prefect_client() as client:
         try:
             from prefect.client.schemas.filters import TaskRunFilter
 

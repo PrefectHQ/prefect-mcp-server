@@ -3,8 +3,8 @@
 from datetime import datetime, timedelta, timezone
 
 from prefect.client.cloud import get_cloud_client
-from prefect.client.orchestration import get_client
 
+from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server.types import (
     KeyThrottlingDetail,
     RateLimitsResult,
@@ -49,7 +49,7 @@ async def get_rate_limits(
         consecutive stretch of throttling
     """
     try:
-        async with get_client() as client:
+        async with get_prefect_client() as client:
             api_url = str(client.api_url)
 
             # Extract account_id from Cloud API URL
