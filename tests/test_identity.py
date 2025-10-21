@@ -18,7 +18,7 @@ async def test_get_identity_oss() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.identity.get_client"
+            "prefect_mcp_server._prefect_client.identity.get_prefect_client"
         ) as mock_get_client,
         patch(
             "prefect_mcp_server._prefect_client.identity.determine_server_type"
@@ -76,7 +76,7 @@ async def test_get_identity_cloud_basic() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.identity.get_client"
+            "prefect_mcp_server._prefect_client.identity.get_prefect_client"
         ) as mock_get_client,
         patch(
             "prefect_mcp_server._prefect_client.identity.get_cloud_client"
@@ -156,7 +156,7 @@ async def test_get_identity_cloud_with_account_details() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.identity.get_client"
+            "prefect_mcp_server._prefect_client.identity.get_prefect_client"
         ) as mock_get_client,
         patch(
             "prefect_mcp_server._prefect_client.identity.get_cloud_client"
@@ -195,7 +195,7 @@ async def test_get_identity_cloud_with_account_details() -> None:
 async def test_get_identity_handles_errors() -> None:
     """Test get_identity handles errors gracefully."""
     with patch(
-        "prefect_mcp_server._prefect_client.identity.get_client"
+        "prefect_mcp_server._prefect_client.identity.get_prefect_client"
     ) as mock_get_client:
         mock_get_client.return_value.__aenter__.side_effect = Exception(
             "Connection failed"

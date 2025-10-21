@@ -1,11 +1,11 @@
 """helper for creating prefect clients with per-request credentials."""
 
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
+import httpx
 from prefect.client.orchestration import PrefectClient, get_client
-from prefect.settings import PREFECT_API_KEY, PREFECT_API_URL
 
 logger = logging.getLogger(__name__)
 
@@ -47,16 +47,7 @@ async def get_prefect_client() -> AsyncIterator[PrefectClient]:
         api_key = credentials.get("api_key")
         auth_string = credentials.get("auth_string")
 
-        import sys
-
-        print(
-            f"[CLIENT] Using per-request credentials: api_url={api_url}",
-            file=sys.stderr,
-            flush=True,
-        )
-        logger.debug(
-            "Using per-request credentials from context: api_url=%s", api_url
-        )
+        logger.debug("Using per-request credentials from context: api_url=%s", api_url)
 
         # create client with overridden settings
         client_kwargs = {}
@@ -66,8 +57,6 @@ async def get_prefect_client() -> AsyncIterator[PrefectClient]:
             client_kwargs["api_key"] = api_key
         elif auth_string:
             # for oss servers with basic auth
-            import httpx
-
             client_kwargs["httpx_settings"] = {
                 "auth": httpx.BasicAuth(
                     username=auth_string.split(":")[0],

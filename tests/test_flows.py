@@ -23,7 +23,7 @@ async def test_get_flows_success():
     mock_flow_2.updated = MagicMock(isoformat=lambda: "2024-01-04T00:00:00")
 
     with patch(
-        "prefect_mcp_server._prefect_client.flows.get_client"
+        "prefect_mcp_server._prefect_client.flows.get_prefect_client"
     ) as mock_get_client:
         mock_client = AsyncMock()
         mock_client.read_flows = AsyncMock(return_value=[mock_flow_1, mock_flow_2])
@@ -51,7 +51,7 @@ async def test_get_flows_with_filter():
     mock_flow.updated = MagicMock(isoformat=lambda: "2024-01-02T00:00:00")
 
     with patch(
-        "prefect_mcp_server._prefect_client.flows.get_client"
+        "prefect_mcp_server._prefect_client.flows.get_prefect_client"
     ) as mock_get_client:
         mock_client = AsyncMock()
         mock_client.read_flows = AsyncMock(return_value=[mock_flow])
@@ -68,7 +68,7 @@ async def test_get_flows_with_filter():
 async def test_get_flows_empty():
     """Test flow retrieval with no results."""
     with patch(
-        "prefect_mcp_server._prefect_client.flows.get_client"
+        "prefect_mcp_server._prefect_client.flows.get_prefect_client"
     ) as mock_get_client:
         mock_client = AsyncMock()
         mock_client.read_flows = AsyncMock(return_value=[])
@@ -85,7 +85,7 @@ async def test_get_flows_empty():
 async def test_get_flows_error():
     """Test flow retrieval with error."""
     with patch(
-        "prefect_mcp_server._prefect_client.flows.get_client"
+        "prefect_mcp_server._prefect_client.flows.get_prefect_client"
     ) as mock_get_client:
         mock_client = AsyncMock()
         mock_client.read_flows = AsyncMock(

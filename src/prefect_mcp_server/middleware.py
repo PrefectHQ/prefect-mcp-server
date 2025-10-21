@@ -31,9 +31,6 @@ class PrefectAuthMiddleware(Middleware):
         call_next: CallNext[mt.CallToolRequestParams, Any],
     ) -> Any:
         """extract credentials from headers on each tool call."""
-        import sys
-
-        print("[MIDDLEWARE] on_call_tool called!", file=sys.stderr, flush=True)
         fastmcp_ctx = context.fastmcp_context
 
         if fastmcp_ctx:
@@ -54,13 +51,6 @@ class PrefectAuthMiddleware(Middleware):
                     credentials["auth_string"] = auth_string
 
                 if credentials:
-                    import sys
-
-                    print(
-                        f"[MIDDLEWARE] Extracted credentials: api_url={api_url}",
-                        file=sys.stderr,
-                        flush=True,
-                    )
                     logger.debug(
                         "Extracted Prefect credentials from HTTP headers: api_url=%s",
                         api_url,
