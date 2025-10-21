@@ -1,6 +1,13 @@
-"""Prefect client module for the MCP server."""
+"""Prefect client module for the MCP server.
+
+note: other modules in this package should be updated to use
+`get_prefect_client()` instead of `get_client()` to support
+per-request authentication via http headers. see identity.py
+for an example of the migration.
+"""
 
 from prefect_mcp_server._prefect_client.automations import get_automations
+from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server._prefect_client.dashboard import fetch_dashboard
 from prefect_mcp_server._prefect_client.deployments import get_deployments
 from prefect_mcp_server._prefect_client.events import fetch_events
@@ -25,6 +32,7 @@ __all__ = [
     "get_flow_runs",
     "get_flows",
     "get_identity",
+    "get_prefect_client",
     "get_rate_limits",
     "get_task_run",
     "get_task_runs",

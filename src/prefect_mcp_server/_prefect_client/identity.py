@@ -2,8 +2,8 @@
 
 from prefect.client.base import ServerType, determine_server_type
 from prefect.client.cloud import get_cloud_client
-from prefect.client.orchestration import get_client
 
+from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server.types import (
     CloudIdentityInfo,
     IdentityResult,
@@ -15,7 +15,7 @@ from prefect_mcp_server.types import (
 async def get_identity() -> IdentityResult:
     """Get identity and connection information for the current Prefect instance."""
     try:
-        async with get_client() as client:
+        async with get_prefect_client() as client:
             api_url = str(client.api_url)
 
             # If it's Prefect Cloud, build CloudIdentityInfo
