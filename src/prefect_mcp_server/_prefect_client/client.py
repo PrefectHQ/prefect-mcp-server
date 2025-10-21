@@ -1,10 +1,13 @@
 """helper for creating prefect clients with per-request credentials."""
 
+import logging
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from prefect.client.orchestration import PrefectClient, get_client
 from prefect.settings import PREFECT_API_KEY, PREFECT_API_URL
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -30,9 +33,9 @@ async def get_prefect_client() -> AsyncIterator[PrefectClient]:
     # try to get credentials from fastmcp context (set by middleware)
     credentials = None
     try:
-        from fastmcp import Context
+        from fastmcp.server.dependencies import get_context
 
-        ctx = Context.get()
+        ctx = get_context()
         credentials = ctx.get_state("prefect_credentials")
     except (RuntimeError, AttributeError):
         # not in a request context or context doesn't have get_state
@@ -43,6 +46,17 @@ async def get_prefect_client() -> AsyncIterator[PrefectClient]:
         api_url = credentials.get("api_url")
         api_key = credentials.get("api_key")
         auth_string = credentials.get("auth_string")
+
+        import sys
+
+        print(
+            f"[CLIENT] Using per-request credentials: api_url={api_url}",
+            file=sys.stderr,
+            flush=True,
+        )
+        logger.debug(
+            "Using per-request credentials from context: api_url=%s", api_url
+        )
 
         # create client with overridden settings
         client_kwargs = {}
@@ -62,8 +76,10 @@ async def get_prefect_client() -> AsyncIterator[PrefectClient]:
             }
 
         async with PrefectClient(**client_kwargs) as client:
+            logger.debug("Created Prefect client with URL: %s", client.api_url)
             yield client
     else:
         # fall back to global config (environment vars or profile)
+        logger.debug("No per-request credentials, using environment defaults")
         async with get_client() as client:
             yield client
