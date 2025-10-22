@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta, timezone
 
 from prefect.client.cloud import get_cloud_client
+from prefect.settings import PREFECT_API_KEY, PREFECT_API_URL, temporary_settings
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server.types import (
@@ -49,141 +50,166 @@ async def get_rate_limits(
         consecutive stretch of throttling
     """
     try:
-        async with get_prefect_client() as client:
-            api_url = str(client.api_url)
+        # Check if we have per-request credentials from context
+        credentials = None
+        try:
+            from fastmcp.server.dependencies import get_context
 
-            # Extract account_id from Cloud API URL
-            # Format: https://api.prefect.cloud/api/accounts/{account_id}/workspaces/{workspace_id}
-            parts = api_url.split("/")
-            account_idx = parts.index("accounts") + 1
-            account_id = parts[account_idx]
+            ctx = get_context()
+            credentials = ctx.get_state("prefect_credentials")
+        except (RuntimeError, AttributeError):
+            pass
 
-            # Set defaults matching API defaults
-            if since is None:
-                since = datetime.now(timezone.utc) - timedelta(days=3)
-            if until is None:
-                until = datetime.now(timezone.utc) - timedelta(minutes=1)
+        # Use temporary_settings to override Prefect's global settings if we have per-request credentials
+        settings_updates = {}
+        if credentials:
+            if credentials.get("api_url"):
+                settings_updates[PREFECT_API_URL] = credentials["api_url"]
+            if credentials.get("api_key"):
+                settings_updates[PREFECT_API_KEY] = credentials["api_key"]
 
-            cloud_client = get_cloud_client(infer_cloud_url=True)
-            async with cloud_client:
-                # Query all keys in one request
-                params = {
-                    "since": since.isoformat(),
-                    "until": until.isoformat(),
-                    "keys": DEFAULT_KEYS,
-                }
+        with temporary_settings(updates=settings_updates if settings_updates else None):
+            async with get_prefect_client() as client:
+                api_url = str(client.api_url)
 
-                response = await cloud_client.get(
-                    f"/accounts/{account_id}/rate-limits/usage",
-                    params=params,
-                )
+                # Extract account_id from Cloud API URL
+                # Format: https://api.prefect.cloud/api/accounts/{account_id}/workspaces/{workspace_id}
+                parts = api_url.split("/")
+                account_idx = parts.index("accounts") + 1
+                account_id = parts[account_idx]
 
-                minutes = response.get("minutes", [])
-                keys_data = response.get("keys", {})
+                # Set defaults matching API defaults
+                if since is None:
+                    since = datetime.now(timezone.utc) - timedelta(days=3)
+                if until is None:
+                    until = datetime.now(timezone.utc) - timedelta(minutes=1)
 
-                if not minutes:
-                    return {
-                        "success": True,
-                        "account_id": str(response.get("account")),
-                        "since": response.get("since"),
-                        "until": response.get("until"),
-                        "summary": {
-                            "total_throttling_periods": 0,
-                            "affected_keys": [],
-                            "first_throttled_at": None,
-                            "last_throttled_at": None,
-                            "total_minutes_throttled": 0,
-                        },
-                        "throttling_periods": [],
-                        "error": None,
+                cloud_client = get_cloud_client(infer_cloud_url=True)
+                async with cloud_client:
+                    # Query all keys in one request
+                    params = {
+                        "since": since.isoformat(),
+                        "until": until.isoformat(),
+                        "keys": DEFAULT_KEYS,
                     }
 
-                # Build timestamp -> operation groups map
-                # The API returns one minutes array, but each key may have different lengths
-                # We need to safely index into each key's arrays
-                throttled_by_timestamp: dict[str, dict[str, int]] = {}
-
-                for key_name, key_data in keys_data.items():
-                    requested = key_data.get("requested", [])
-                    granted = key_data.get("granted", [])
-
-                    # Process only valid indices for this key
-                    for i in range(min(len(requested), len(granted), len(minutes))):
-                        if requested[i] > granted[i]:
-                            timestamp = minutes[i]
-                            if timestamp not in throttled_by_timestamp:
-                                throttled_by_timestamp[timestamp] = {}
-                            throttled_by_timestamp[timestamp][key_name] = (
-                                requested[i] - granted[i]
-                            )
-
-                # Group consecutive throttled timestamps into periods
-                throttling_periods: list[ThrottlingPeriod] = []
-                if throttled_by_timestamp:
-                    sorted_timestamps = sorted(throttled_by_timestamp.keys())
-                    period_timestamps = [sorted_timestamps[0]]
-
-                    for i in range(1, len(sorted_timestamps)):
-                        current_ts = sorted_timestamps[i]
-                        prev_ts = sorted_timestamps[i - 1]
-
-                        # Parse timestamps to check if consecutive minutes (within 61 seconds)
-                        current_dt = datetime.fromisoformat(
-                            current_ts.replace("Z", "+00:00")
-                        )
-                        prev_dt = datetime.fromisoformat(prev_ts.replace("Z", "+00:00"))
-                        time_diff = (current_dt - prev_dt).total_seconds()
-
-                        if time_diff <= 61:
-                            # Consecutive - add to current period
-                            period_timestamps.append(current_ts)
-                        else:
-                            # Non-consecutive - close current period and start new one
-                            throttling_periods.append(
-                                _create_period_from_timestamps(
-                                    throttled_by_timestamp, period_timestamps
-                                )
-                            )
-                            period_timestamps = [current_ts]
-
-                    # Add final period
-                    throttling_periods.append(
-                        _create_period_from_timestamps(
-                            throttled_by_timestamp, period_timestamps
-                        )
+                    response = await cloud_client.get(
+                        f"/accounts/{account_id}/rate-limits/usage",
+                        params=params,
                     )
 
-                # Compute summary
-                all_affected_keys = sorted(
-                    {
-                        key
-                        for minute_keys in throttled_by_timestamp.values()
-                        for key in minute_keys.keys()
+                    minutes = response.get("minutes", [])
+                    keys_data = response.get("keys", {})
+
+                    if not minutes:
+                        return {
+                            "success": True,
+                            "account_id": str(response.get("account")),
+                            "since": response.get("since"),
+                            "until": response.get("until"),
+                            "summary": {
+                                "total_throttling_periods": 0,
+                                "affected_keys": [],
+                                "first_throttled_at": None,
+                                "last_throttled_at": None,
+                                "total_minutes_throttled": 0,
+                            },
+                            "throttling_periods": [],
+                            "error": None,
+                        }
+
+                    # Build timestamp -> operation groups map
+                    # The API returns one minutes array, but each key may have different lengths
+                    # We need to safely index into each key's arrays
+                    throttled_by_timestamp: dict[str, dict[str, int]] = {}
+
+                    for key_name, key_data in keys_data.items():
+                        requested = key_data.get("requested", [])
+                        granted = key_data.get("granted", [])
+
+                        # Process only valid indices for this key
+                        for i in range(min(len(requested), len(granted), len(minutes))):
+                            if requested[i] > granted[i]:
+                                timestamp = minutes[i]
+                                if timestamp not in throttled_by_timestamp:
+                                    throttled_by_timestamp[timestamp] = {}
+                                throttled_by_timestamp[timestamp][key_name] = (
+                                    requested[i] - granted[i]
+                                )
+
+                    # Group consecutive throttled timestamps into periods
+                    throttling_periods: list[ThrottlingPeriod] = []
+                    if throttled_by_timestamp:
+                        sorted_timestamps = sorted(throttled_by_timestamp.keys())
+                        period_timestamps = [sorted_timestamps[0]]
+
+                        for i in range(1, len(sorted_timestamps)):
+                            current_ts = sorted_timestamps[i]
+                            prev_ts = sorted_timestamps[i - 1]
+
+                            # Parse timestamps to check if consecutive minutes (within 61 seconds)
+                            current_dt = datetime.fromisoformat(
+                                current_ts.replace("Z", "+00:00")
+                            )
+                            prev_dt = datetime.fromisoformat(
+                                prev_ts.replace("Z", "+00:00")
+                            )
+                            time_diff = (current_dt - prev_dt).total_seconds()
+
+                            if time_diff <= 61:
+                                # Consecutive - add to current period
+                                period_timestamps.append(current_ts)
+                            else:
+                                # Non-consecutive - close current period and start new one
+                                throttling_periods.append(
+                                    _create_period_from_timestamps(
+                                        throttled_by_timestamp, period_timestamps
+                                    )
+                                )
+                                period_timestamps = [current_ts]
+
+                        # Add final period
+                        throttling_periods.append(
+                            _create_period_from_timestamps(
+                                throttled_by_timestamp, period_timestamps
+                            )
+                        )
+
+                    # Compute summary
+                    all_affected_keys = sorted(
+                        {
+                            key
+                            for minute_keys in throttled_by_timestamp.values()
+                            for key in minute_keys.keys()
+                        }
+                    )
+                    total_throttled_minutes = len(throttled_by_timestamp)
+
+                    summary: RateLimitSummary = {
+                        "total_throttling_periods": len(throttling_periods),
+                        "affected_keys": all_affected_keys,
+                        "first_throttled_at": (
+                            throttling_periods[0]["start"]
+                            if throttling_periods
+                            else None
+                        ),
+                        "last_throttled_at": (
+                            throttling_periods[-1]["end"]
+                            if throttling_periods
+                            else None
+                        ),
+                        "total_minutes_throttled": total_throttled_minutes,
                     }
-                )
-                total_throttled_minutes = len(throttled_by_timestamp)
 
-                summary: RateLimitSummary = {
-                    "total_throttling_periods": len(throttling_periods),
-                    "affected_keys": all_affected_keys,
-                    "first_throttled_at": (
-                        throttling_periods[0]["start"] if throttling_periods else None
-                    ),
-                    "last_throttled_at": (
-                        throttling_periods[-1]["end"] if throttling_periods else None
-                    ),
-                    "total_minutes_throttled": total_throttled_minutes,
-                }
-
-                return {
-                    "success": True,
-                    "account_id": account_id,
-                    "since": since.isoformat(),
-                    "until": until.isoformat(),
-                    "summary": summary,
-                    "throttling_periods": throttling_periods,
-                    "error": None,
-                }
+                    return {
+                        "success": True,
+                        "account_id": account_id,
+                        "since": since.isoformat(),
+                        "until": until.isoformat(),
+                        "summary": summary,
+                        "throttling_periods": throttling_periods,
+                        "error": None,
+                    }
     except Exception as e:
         return {
             "success": False,
