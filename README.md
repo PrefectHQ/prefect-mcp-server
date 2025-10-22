@@ -40,7 +40,39 @@ For centrally-hosted deployments where multiple users connect to the same MCP se
 - `X-Prefect-Api-Key`: Prefect Cloud API key
 - `X-Prefect-Api-Auth-String`: Basic auth credentials for OSS (format: `username:password`)
 
-**Example using Python with FastMCP client:**
+**Claude Code CLI:**
+
+```bash
+claude mcp add-json prefect '{
+  "type": "http",
+  "url": "https://your-server.fastmcp.app/mcp",
+  "headers": {
+    "X-Prefect-Api-Url": "https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID]",
+    "X-Prefect-Api-Key": "your-api-key"
+  }
+}'
+```
+
+**Claude Desktop app:**
+
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "prefect": {
+      "type": "http",
+      "url": "https://your-server.fastmcp.app/mcp",
+      "headers": {
+        "X-Prefect-Api-Url": "https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID]",
+        "X-Prefect-Api-Key": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+**Python with FastMCP client:**
 
 ```python
 from fastmcp.client import Client
@@ -58,6 +90,9 @@ async with client:
     result = await client.call_tool("get_identity", {})
     print(result)
 ```
+
+> [!TIP]
+> Find your Prefect Cloud credentials in your dashboard or in `~/.prefect/profiles.toml`
 
 > [!NOTE]
 > When HTTP headers are provided, they take precedence over environment variables. If no headers are present, the server falls back to using the configured environment variables.
