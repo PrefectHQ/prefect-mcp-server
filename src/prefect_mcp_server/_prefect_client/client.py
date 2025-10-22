@@ -5,9 +5,26 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import httpx
+from prefect.client.cloud import CloudClient, get_cloud_client
 from prefect.client.orchestration import PrefectClient, get_client
 
 logger = logging.getLogger(__name__)
+
+
+def _get_credentials() -> dict[str, str] | None:
+    """extract credentials from fastmcp context if available.
+
+    returns:
+        dict with 'api_url', 'api_key', and/or 'auth_string' keys, or None
+    """
+    try:
+        from fastmcp.server.dependencies import get_context
+
+        ctx = get_context()
+        return ctx.get_state("prefect_credentials")
+    except (RuntimeError, AttributeError):
+        # not in a request context or context doesn't have get_state
+        return None
 
 
 @asynccontextmanager
@@ -30,16 +47,7 @@ async def get_prefect_client() -> AsyncIterator[PrefectClient]:
         async with get_prefect_client() as client:
             result = await client.read_flows()
     """
-    # try to get credentials from fastmcp context (set by middleware)
-    credentials = None
-    try:
-        from fastmcp.server.dependencies import get_context
-
-        ctx = get_context()
-        credentials = ctx.get_state("prefect_credentials")
-    except (RuntimeError, AttributeError):
-        # not in a request context or context doesn't have get_state
-        pass
+    credentials = _get_credentials()
 
     # if we have per-request credentials, create a client with them
     if credentials:
@@ -71,4 +79,52 @@ async def get_prefect_client() -> AsyncIterator[PrefectClient]:
         # fall back to global config (environment vars or profile)
         logger.debug("No per-request credentials, using environment defaults")
         async with get_client() as client:
+            yield client
+
+
+@asynccontextmanager
+async def get_prefect_cloud_client() -> AsyncIterator[CloudClient]:
+    """get a cloud client using credentials from context or environment.
+
+    similar to get_prefect_client, this extracts credentials from context
+    and passes them directly to CloudClient constructor. if no credentials
+    are in context, falls back to global configuration.
+
+    yields:
+        a configured cloud client
+
+    example:
+        async with get_prefect_cloud_client() as cloud_client:
+            me_data = await cloud_client.get("/me/")
+    """
+    credentials = _get_credentials()
+
+    if credentials:
+        api_url = credentials.get("api_url")
+        api_key = credentials.get("api_key")
+
+        # both api_url and api_key are required for cloud client
+        if not api_url or not api_key:
+            logger.warning(
+                "Incomplete credentials in context (api_url=%s, api_key=%s), falling back to environment",
+                api_url,
+                bool(api_key),
+            )
+            async with get_cloud_client() as client:
+                yield client
+            return
+
+        logger.debug(
+            "Using per-request credentials for CloudClient: api_url=%s", api_url
+        )
+
+        # CloudClient can accept the full api_url as host and will extract
+        # account_id/workspace_id via regex internally
+        async with CloudClient(host=api_url, api_key=api_key) as client:
+            logger.debug("Created CloudClient with host: %s", client._client.base_url)
+            yield client
+    else:
+        # fall back to global config
+        logger.debug("No per-request credentials, using environment defaults")
+        async with get_cloud_client() as client:
             yield client

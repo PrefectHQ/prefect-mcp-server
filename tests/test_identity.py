@@ -79,14 +79,15 @@ async def test_get_identity_cloud_basic() -> None:
             "prefect_mcp_server._prefect_client.identity.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.identity.get_cloud_client"
+            "prefect_mcp_server._prefect_client.identity.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
         patch(
             "prefect_mcp_server._prefect_client.identity.determine_server_type"
         ) as mock_determine,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
         mock_determine.return_value = ServerType.CLOUD
 
         result = await get_identity()
@@ -159,14 +160,15 @@ async def test_get_identity_cloud_with_account_details() -> None:
             "prefect_mcp_server._prefect_client.identity.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.identity.get_cloud_client"
+            "prefect_mcp_server._prefect_client.identity.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
         patch(
             "prefect_mcp_server._prefect_client.identity.determine_server_type"
         ) as mock_determine,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
         mock_determine.return_value = ServerType.CLOUD
 
         result = await get_identity()
