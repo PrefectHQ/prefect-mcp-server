@@ -4,10 +4,10 @@ from typing import Any
 from uuid import UUID
 
 import prefect.main  # noqa: F401
-from prefect import get_client
 from prefect.client.schemas.filters import LogFilter, LogFilterFlowRunId
 from prefect.client.schemas.sorting import FlowRunSort, LogSort
 
+from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server.types import LogEntry, LogsResult
 
 # Log level mapping from Python logging levels to readable names
@@ -40,7 +40,7 @@ async def get_flow_run(
     Returns:
         Dictionary containing flow run details and optionally logs
     """
-    async with get_client() as client:
+    async with get_prefect_client() as client:
         try:
             # Fetch the flow run
             flow_run = await client.read_flow_run(UUID(flow_run_id))
@@ -168,7 +168,7 @@ async def get_flow_runs(
         filter: JSON-like dict that gets converted to FlowRunFilter
         limit: Maximum number of flow runs to return
     """
-    async with get_client() as client:
+    async with get_prefect_client() as client:
         try:
             from prefect.client.schemas.filters import FlowRunFilter
 
@@ -309,7 +309,7 @@ async def get_flow_run_logs(flow_run_id: str, limit: int = 100) -> LogsResult:
     Returns:
         LogsResult with just the logs, no flow run details
     """
-    async with get_client() as client:
+    async with get_prefect_client() as client:
         try:
             # Fetch logs directly
             log_filter = LogFilter(

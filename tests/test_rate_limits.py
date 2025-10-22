@@ -28,14 +28,15 @@ async def test_get_rate_limits_empty_response() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_cloud_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
 
         result = await get_rate_limits()
 
@@ -76,14 +77,15 @@ async def test_get_rate_limits_single_key_no_overages() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_cloud_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
 
         result = await get_rate_limits()
 
@@ -128,14 +130,15 @@ async def test_get_rate_limits_single_key_with_overages() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_cloud_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
 
         result = await get_rate_limits()
 
@@ -198,14 +201,15 @@ async def test_get_rate_limits_multiple_keys_separate_overages() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_cloud_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
 
         result = await get_rate_limits()
 
@@ -277,14 +281,15 @@ async def test_get_rate_limits_multiple_keys_overlapping_overages() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_cloud_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
 
         result = await get_rate_limits()
 
@@ -362,14 +367,15 @@ async def test_get_rate_limits_mixed_separate_and_overlapping() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_cloud_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
 
         result = await get_rate_limits()
 
@@ -438,14 +444,15 @@ async def test_get_rate_limits_mismatched_array_lengths() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_cloud_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
 
         result = await get_rate_limits()
 
@@ -503,14 +510,15 @@ async def test_get_rate_limits_with_custom_timerange() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_cloud_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
 
         since = datetime(2025, 9, 30, tzinfo=timezone.utc)
         until = datetime(2025, 10, 1, tzinfo=timezone.utc)
@@ -563,14 +571,15 @@ async def test_get_rate_limits_multiple_keys_separate_periods() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_cloud_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
 
         result = await get_rate_limits()
 
@@ -639,14 +648,15 @@ async def test_get_rate_limits_key_arrays_shorter_than_minutes() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_cloud_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
 
         result = await get_rate_limits()
 
@@ -696,14 +706,15 @@ async def test_get_rate_limits_single_minute_throttling() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_cloud_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
 
         result = await get_rate_limits()
 
@@ -757,14 +768,15 @@ async def test_get_rate_limits_consecutive_period_boundary() -> None:
 
     with (
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
         ) as mock_get_client,
         patch(
-            "prefect_mcp_server._prefect_client.rate_limits.get_cloud_client"
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
 
         result = await get_rate_limits()
 
@@ -790,7 +802,7 @@ async def test_get_rate_limits_consecutive_period_boundary() -> None:
 async def test_get_rate_limits_handles_errors() -> None:
     """Test get_rate_limits handles errors gracefully."""
     with patch(
-        "prefect_mcp_server._prefect_client.rate_limits.get_client"
+        "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
     ) as mock_get_client:
         mock_get_client.return_value.__aenter__.side_effect = Exception(
             "Connection failed"

@@ -3,9 +3,9 @@
 from typing import Any
 
 import prefect.main  # noqa: F401
-from prefect import get_client
 from prefect.client.schemas.filters import FlowFilter
 
+from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server.types import FlowsResult
 
 
@@ -23,7 +23,7 @@ async def get_flows(
         limit: Maximum number of flows to return
     """
     try:
-        async with get_client() as client:
+        async with get_prefect_client() as client:
             # Build filter from JSON if provided
             flow_filter = None
             if filter:

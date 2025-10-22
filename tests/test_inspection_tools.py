@@ -41,7 +41,7 @@ async def test_get_deployments_success():
     mock_flow_run.start_time = MagicMock(isoformat=lambda: "2024-01-01T00:01:00")
 
     with patch(
-        "prefect_mcp_server._prefect_client.deployments.get_client"
+        "prefect_mcp_server._prefect_client.deployments.get_prefect_client"
     ) as mock_get_client:
         # Create a mock flow for name fetching
         mock_flow = MagicMock()
@@ -88,7 +88,7 @@ async def test_get_deployments_success():
 async def test_get_deployments_not_found():
     """Test deployment not found scenario."""
     with patch(
-        "prefect_mcp_server._prefect_client.deployments.get_client"
+        "prefect_mcp_server._prefect_client.deployments.get_prefect_client"
     ) as mock_get_client:
         mock_client = AsyncMock()
         mock_client.read_deployments = AsyncMock(
@@ -129,7 +129,7 @@ async def test_get_task_run_success():
     mock_task_run.max_retries = 3
 
     with patch(
-        "prefect_mcp_server._prefect_client.task_runs.get_client"
+        "prefect_mcp_server._prefect_client.task_runs.get_prefect_client"
     ) as mock_get_client:
         mock_client = AsyncMock()
         mock_client.read_task_run = AsyncMock(return_value=mock_task_run)

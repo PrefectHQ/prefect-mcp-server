@@ -10,6 +10,7 @@ from prefect.client.base import ServerType, determine_server_type
 from pydantic import Field
 
 from prefect_mcp_server import _prefect_client
+from prefect_mcp_server.middleware import PrefectAuthMiddleware
 from prefect_mcp_server.settings import settings
 from prefect_mcp_server.types import (
     AutomationsResult,
@@ -38,6 +39,9 @@ except ImportError:
     pass
 
 mcp = FastMCP("Prefect MCP Server")
+
+# add middleware for per-request authentication via http headers
+mcp.add_middleware(PrefectAuthMiddleware())
 
 # Mount the Prefect docs MCP server to expose its tools
 docs_proxy = FastMCP.as_proxy(

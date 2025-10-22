@@ -1,0 +1,20 @@
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+
+# install git for setuptools-scm
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# copy project files including git metadata for version detection
+COPY .git .git
+COPY pyproject.toml uv.lock README.md ./
+COPY src ./src
+
+# install dependencies
+RUN uv sync --frozen
+
+# expose port for http transport
+EXPOSE 8765
+
+# run mcp server with http transport
+CMD ["uv", "run", "fastmcp", "run", "src/prefect_mcp_server/server.py", "--transport", "http", "--host", "0.0.0.0", "--port", "8765"]
