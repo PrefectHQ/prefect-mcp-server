@@ -30,7 +30,8 @@ claude mcp add prefect --transport http https://your-server-name.fastmcp.app/mcp
 > [!NOTE]
 > When deploying to FastMCP Cloud, environment variables are configured on the FastMCP Cloud server itself, not in your client configuration. FastMCP's authentication secures access to your MCP server, while the MCP server uses your Prefect API key to access your Prefect instance.
 
-### Multi-tenant deployments with HTTP headers
+<details>
+<summary>Multi-tenant deployments with HTTP headers</summary>
 
 For centrally-hosted deployments where multiple users connect to the same MCP server instance, credentials can be passed via HTTP headers instead of environment variables. This enables each user to authenticate with their own Prefect workspace.
 
@@ -60,6 +61,8 @@ async with client:
 
 > [!NOTE]
 > When HTTP headers are provided, they take precedence over environment variables. If no headers are present, the server falls back to using the configured environment variables.
+
+</details>
 
 ### run locally
 
