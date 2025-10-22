@@ -30,6 +30,37 @@ claude mcp add prefect --transport http https://your-server-name.fastmcp.app/mcp
 > [!NOTE]
 > When deploying to FastMCP Cloud, environment variables are configured on the FastMCP Cloud server itself, not in your client configuration. FastMCP's authentication secures access to your MCP server, while the MCP server uses your Prefect API key to access your Prefect instance.
 
+### Multi-tenant deployments with HTTP headers
+
+For centrally-hosted deployments where multiple users connect to the same MCP server instance, credentials can be passed via HTTP headers instead of environment variables. This enables each user to authenticate with their own Prefect workspace.
+
+**Supported headers:**
+- `X-Prefect-Api-Url`: Prefect API URL (required for both Cloud and OSS)
+- `X-Prefect-Api-Key`: Prefect Cloud API key
+- `X-Prefect-Api-Auth-String`: Basic auth credentials for OSS (format: `username:password`)
+
+**Example using Python with FastMCP client:**
+
+```python
+from fastmcp.client import Client
+from fastmcp.client.transports import StreamableHttpTransport
+
+headers = {
+    "X-Prefect-Api-Url": "https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID]",
+    "X-Prefect-Api-Key": "your-api-key",
+}
+
+transport = StreamableHttpTransport(url="https://your-server.fastmcp.app/mcp", headers=headers)
+client = Client(transport=transport)
+
+async with client:
+    result = await client.call_tool("get_identity", {})
+    print(result)
+```
+
+> [!NOTE]
+> When HTTP headers are provided, they take precedence over environment variables. If no headers are present, the server falls back to using the configured environment variables.
+
 ### run locally
 
 When running the MCP server locally (via stdio transport), it will automatically use your local Prefect configuration from `~/.prefect/profiles.toml` if available.
