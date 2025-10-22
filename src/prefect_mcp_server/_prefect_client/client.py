@@ -1,6 +1,7 @@
 """helper for creating prefect clients with per-request credentials."""
 
 import logging
+import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -123,9 +124,11 @@ async def get_prefect_cloud_client() -> AsyncIterator[CloudClient]:
             "Using per-request credentials for CloudClient: api_url=%s", api_url
         )
 
-        # CloudClient can accept the full api_url as host and will extract
-        # account_id/workspace_id via regex internally
-        async with CloudClient(host=api_url, api_key=api_key) as client:
+        # extract cloud host from full workspace url
+        # e.g. https://api.prefect.cloud/api/accounts/.../workspaces/... -> https://api.prefect.cloud/api
+        host = re.sub(r"accounts/(.{36})/workspaces/(.{36})", "", api_url)
+
+        async with CloudClient(host=host, api_key=api_key) as client:
             logger.debug("Created CloudClient with host: %s", client._client.base_url)
             yield client
     else:
