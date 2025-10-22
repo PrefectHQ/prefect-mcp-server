@@ -22,8 +22,11 @@ def _get_credentials() -> dict[str, str] | None:
 
         ctx = get_context()
         return ctx.get_state("prefect_credentials")
-    except (RuntimeError, AttributeError):
-        # not in a request context or context doesn't have get_state
+    except RuntimeError:
+        # get_context() raises RuntimeError when called outside request context (e.g., stdio transport)
+        return None
+    except AttributeError:
+        # context object may not have get_state method in some fastmcp versions
         return None
 
 

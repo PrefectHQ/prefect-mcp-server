@@ -1,10 +1,4 @@
-"""Prefect client module for the MCP server.
-
-note: other modules in this package should be updated to use
-`get_prefect_client()` instead of `get_client()` to support
-per-request authentication via http headers. see identity.py
-for an example of the migration.
-"""
+"""Prefect client module for the MCP server."""
 
 from prefect_mcp_server._prefect_client.automations import get_automations
 from prefect_mcp_server._prefect_client.client import get_prefect_client

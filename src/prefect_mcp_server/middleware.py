@@ -57,8 +57,9 @@ class PrefectAuthMiddleware(Middleware):
                     )
 
             except RuntimeError:
-                # not in http transport mode (e.g., stdio)
-                # will fall back to environment variables via prefect's global config
+                # get_http_headers() raises RuntimeError when using stdio transport
+                # instead of http - this is expected and we continue without credentials
+                # to allow fallback to environment variables
                 pass
 
             # store in context if we found credentials
