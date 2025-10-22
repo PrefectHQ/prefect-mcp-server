@@ -2,30 +2,24 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from prefect.client.base import ServerType
-
 from prefect_mcp_server._prefect_client.identity import get_identity
 
 
 async def test_get_identity_oss() -> None:
     """Test get_identity returns OSS information correctly."""
     mock_client = AsyncMock()
-    mock_client.api_url = "http://localhost:4200/api"
+    mock_client.api_url = (
+        "http://localhost:4200/api"  # OSS url without accounts/workspaces
+    )
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.text = '"2.14.0"'
     mock_client._client.get = AsyncMock(return_value=mock_response)
 
-    with (
-        patch(
-            "prefect_mcp_server._prefect_client.identity.get_prefect_client"
-        ) as mock_get_client,
-        patch(
-            "prefect_mcp_server._prefect_client.identity.determine_server_type"
-        ) as mock_determine,
-    ):
+    with patch(
+        "prefect_mcp_server._prefect_client.identity.get_prefect_client"
+    ) as mock_get_client:
         mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_determine.return_value = ServerType.SERVER
 
         result = await get_identity()
 
@@ -81,14 +75,10 @@ async def test_get_identity_cloud_basic() -> None:
         patch(
             "prefect_mcp_server._prefect_client.identity.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
-        patch(
-            "prefect_mcp_server._prefect_client.identity.determine_server_type"
-        ) as mock_determine,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
         mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
         mock_get_cloud_client.return_value.__aexit__.return_value = None
-        mock_determine.return_value = ServerType.CLOUD
 
         result = await get_identity()
     if not result["success"]:
@@ -162,14 +152,10 @@ async def test_get_identity_cloud_with_account_details() -> None:
         patch(
             "prefect_mcp_server._prefect_client.identity.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
-        patch(
-            "prefect_mcp_server._prefect_client.identity.determine_server_type"
-        ) as mock_determine,
     ):
         mock_get_client.return_value.__aenter__.return_value = mock_client
         mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
         mock_get_cloud_client.return_value.__aexit__.return_value = None
-        mock_determine.return_value = ServerType.CLOUD
 
         result = await get_identity()
 
