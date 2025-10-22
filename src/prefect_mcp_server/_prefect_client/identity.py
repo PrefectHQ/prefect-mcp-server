@@ -1,7 +1,5 @@
 """Identity and connection information for Prefect MCP server."""
 
-from prefect.client.base import ServerType, determine_server_type
-
 from prefect_mcp_server._prefect_client.client import (
     get_prefect_client,
     get_prefect_cloud_client,
@@ -20,8 +18,12 @@ async def get_identity() -> IdentityResult:
         async with get_prefect_client() as client:
             api_url = str(client.api_url)
 
+            # determine server type from the actual api_url, not global settings
+            # cloud urls contain "/accounts/" and "/workspaces/"
+            is_cloud = "/accounts/" in api_url and "/workspaces/" in api_url
+
             # If it's Prefect Cloud, build CloudIdentityInfo
-            if determine_server_type() == ServerType.CLOUD:
+            if is_cloud:
                 # Use the CloudClient to access cloud-specific endpoints
                 async with get_prefect_cloud_client() as cloud_client:
                     # Get user info from /me/ endpoint
