@@ -106,8 +106,8 @@ async def test_middleware_handles_stdio_mode():
     with patch(
         "prefect_mcp_server.middleware.get_http_headers"
     ) as mock_get_http_headers:
-        # Simulate stdio mode where get_http_headers raises RuntimeError
-        mock_get_http_headers.side_effect = RuntimeError("Not in HTTP transport mode")
+        # Simulate stdio mode where get_http_headers returns empty dict
+        mock_get_http_headers.return_value = {}
 
         result = await middleware.on_call_tool(mock_context, mock_call_next)
 
@@ -197,7 +197,7 @@ async def test_get_prefect_client_fallback_to_environment():
     with (
         patch(
             "fastmcp.server.dependencies.get_context",
-            side_effect=RuntimeError("No context available"),
+            side_effect=RuntimeError("No active context found."),
         ),
         patch(
             "prefect_mcp_server._prefect_client.client.get_client"

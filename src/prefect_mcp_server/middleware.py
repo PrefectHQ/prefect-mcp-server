@@ -36,31 +36,25 @@ class PrefectAuthMiddleware(Middleware):
         if fastmcp_ctx:
             credentials: dict[str, str | None] = {}
 
-            # try to extract from http headers first
-            try:
-                headers = get_http_headers(include_all=True)
-                api_url = headers.get("x-prefect-api-url")
-                api_key = headers.get("x-prefect-api-key")
-                auth_string = headers.get("x-prefect-api-auth-string")
+            # extract from http headers if available
+            # get_http_headers() returns empty dict when not in http transport (e.g., stdio)
+            headers = get_http_headers(include_all=True)
+            api_url = headers.get("x-prefect-api-url")
+            api_key = headers.get("x-prefect-api-key")
+            auth_string = headers.get("x-prefect-api-auth-string")
 
-                if api_url:
-                    credentials["api_url"] = api_url
-                if api_key:
-                    credentials["api_key"] = api_key
-                if auth_string:
-                    credentials["auth_string"] = auth_string
+            if api_url:
+                credentials["api_url"] = api_url
+            if api_key:
+                credentials["api_key"] = api_key
+            if auth_string:
+                credentials["auth_string"] = auth_string
 
-                if credentials:
-                    logger.debug(
-                        "Extracted Prefect credentials from HTTP headers: api_url=%s",
-                        api_url,
-                    )
-
-            except RuntimeError:
-                # get_http_headers() raises RuntimeError when using stdio transport
-                # instead of http - this is expected and we continue without credentials
-                # to allow fallback to environment variables
-                pass
+            if credentials:
+                logger.debug(
+                    "Extracted Prefect credentials from HTTP headers: api_url=%s",
+                    api_url,
+                )
 
             # store in context if we found credentials
             # the absence of credentials means we'll use environment/profile defaults
