@@ -54,7 +54,7 @@ class ProviderConfig(NamedTuple):
 PROVIDER_CONFIGS: dict[str, ProviderConfig] = {
     "anthropic": ProviderConfig(
         api_key_env="ANTHROPIC_API_KEY",
-        simple_model="anthropic:claude-3-5-sonnet-latest",
+        simple_model="anthropic:claude-3-7-sonnet-20250219",
         reasoning_model="anthropic:claude-sonnet-4-20250514",
     ),
     "openai": ProviderConfig(
