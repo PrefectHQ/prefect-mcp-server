@@ -54,9 +54,11 @@ Provider defaults:
 | **late_runs/test_deployment_concurrency** | verifies agent can diagnose late runs caused by deployment concurrency limits | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
 | **late_runs/test_tag_concurrency** | verifies agent can diagnose late runs caused by tag-based concurrency limits | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
 | **late_runs/test_cancel_late_runs** | verifies agent can cancel all late runs for a deployment using the prefect CLI | ✅ implemented | - |
-| **test_create_reactive_automation** | verifies agent can create reactive automations | ✅ implemented | [#47](https://github.com/PrefectHQ/prefect-mcp-server/pull/47) |
+| **automations/test_create_reactive_automation** | verifies agent can create reactive automations | ✅ implemented | [#47](https://github.com/PrefectHQ/prefect-mcp-server/pull/47) |
+| **automations/test_create_proactive_automation** | verifies agent can create proactive automations | ✅ implemented | - |
+| **automations/test_debug_automation_not_firing** | verifies agent can debug why an automation didn't fire due to threshold mismatch | ✅ implemented | [#62](https://github.com/PrefectHQ/prefect-mcp-server/issues/62) |
+| **automations/test_debug_action_validation_failure** | verifies agent can identify parameter type mismatches between Jinja templates and deployment schemas | ✅ implemented | [#97](https://github.com/PrefectHQ/prefect-mcp-server/issues/97) |
 | **test_trigger_deployment_run** | verifies agent can trigger deployment runs with custom parameters | ✅ implemented | - |
-| **test_debug_automation_not_firing** | verifies agent can debug why an automation didn't fire due to threshold mismatch | ✅ implemented | [#62](https://github.com/PrefectHQ/prefect-mcp-server/issues/62) |
 | **rate_limits/test_cloud_direct** | verifies agent can diagnose rate limiting when user asks about 429 errors (Cloud) | ✅ implemented | [#46](https://github.com/PrefectHQ/prefect-mcp-server/issues/46) |
 | **rate_limits/test_cloud_no_throttling** | verifies agent correctly rules out rate limiting when no throttling occurred (Cloud) | ✅ implemented | [#46](https://github.com/PrefectHQ/prefect-mcp-server/issues/46) |
 | **rate_limits/test_cloud_correlate_logs** | verifies agent can correlate 429 warnings in flow logs with rate limit data (Cloud) | ✅ implemented | [#46](https://github.com/PrefectHQ/prefect-mcp-server/issues/46) |
