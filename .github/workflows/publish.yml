@@ -20,6 +20,30 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
+      - name: Validate server.json version matches tag
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME}"
+          SERVER_VERSION=$(jq -r '.version' server.json)
+          PACKAGE_VERSION=$(jq -r '.packages[0].version' server.json)
+
+          echo "Git tag: $TAG_VERSION"
+          echo "server.json version: $SERVER_VERSION"
+          echo "server.json package version: $PACKAGE_VERSION"
+
+          if [ "$TAG_VERSION" != "$SERVER_VERSION" ]; then
+            echo "❌ Version mismatch: Git tag ($TAG_VERSION) != server.json version ($SERVER_VERSION)"
+            echo "Update server.json version to match the tag before releasing."
+            exit 1
+          fi
+
+          if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "❌ Version mismatch: Git tag ($TAG_VERSION) != server.json package version ($PACKAGE_VERSION)"
+            echo "Update server.json packages[0].version to match the tag before releasing."
+            exit 1
+          fi
+
+          echo "✅ All versions match: $TAG_VERSION"
+
       - name: Build
         run: uv build
 
