@@ -3,8 +3,7 @@
 from typing import Any
 from uuid import UUID
 
-from prefect.client.orchestration import get_client
-
+from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server.types import AutomationsResult
 
 
@@ -13,7 +12,7 @@ async def get_automations(
     limit: int = 100,
 ) -> AutomationsResult:
     """Get automations with optional filters."""
-    async with get_client() as client:
+    async with get_prefect_client() as client:
         try:
             # If filter contains an ID, fetch specific automation(s)
             if filter and "id" in filter and "any_" in filter["id"]:

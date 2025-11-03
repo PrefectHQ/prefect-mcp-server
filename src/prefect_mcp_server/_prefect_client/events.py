@@ -3,8 +3,7 @@
 from datetime import datetime, timezone
 from typing import Any
 
-from prefect.client.orchestration import get_client
-
+from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server.settings import settings
 from prefect_mcp_server.types import EventInfo, EventsResult
 
@@ -73,7 +72,7 @@ async def fetch_events(
         occurred_before: ISO 8601 timestamp to filter events before
     """
     try:
-        async with get_client() as client:
+        async with get_prefect_client() as client:
             # Build the filter
             filter_dict = {}
             if event_prefix:

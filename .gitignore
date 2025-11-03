@@ -35,3 +35,6 @@ server-info.json
 .DS_Store
 Thumbs.db
 automation.yaml
+
+# Node modules and caches
+node_modules/

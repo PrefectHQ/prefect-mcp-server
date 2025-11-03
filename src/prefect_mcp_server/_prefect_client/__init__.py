@@ -1,6 +1,7 @@
 """Prefect client module for the MCP server."""
 
 from prefect_mcp_server._prefect_client.automations import get_automations
+from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server._prefect_client.dashboard import fetch_dashboard
 from prefect_mcp_server._prefect_client.deployments import get_deployments
 from prefect_mcp_server._prefect_client.events import fetch_events
@@ -25,6 +26,7 @@ __all__ = [
     "get_flow_runs",
     "get_flows",
     "get_identity",
+    "get_prefect_client",
     "get_rate_limits",
     "get_task_run",
     "get_task_runs",

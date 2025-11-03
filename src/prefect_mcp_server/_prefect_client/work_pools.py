@@ -3,16 +3,16 @@
 from typing import Any
 
 from httpx import HTTPStatusError
-from prefect.client.orchestration import get_client
 from prefect.exceptions import ObjectNotFound
 
+from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server.types import WorkPoolDetail, WorkPoolResult, WorkQueueInfo
 
 
 async def get_work_pool(work_pool_name: str) -> WorkPoolResult:
     """Get detailed information about a work pool including concurrency limits."""
     try:
-        async with get_client() as client:
+        async with get_prefect_client() as client:
             # Get work pool details
             work_pool = await client.read_work_pool(work_pool_name=work_pool_name)
 
@@ -85,7 +85,7 @@ async def get_work_pools(
     To get a specific work pool by name, use filter={"name": {"any_": ["<pool-name>"]}}
     """
     try:
-        async with get_client() as client:
+        async with get_prefect_client() as client:
             from prefect.client.schemas.filters import WorkPoolFilter
 
             # Build filter from JSON if provided
