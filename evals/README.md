@@ -38,7 +38,7 @@ REASONING_AGENT_MODEL=anthropic:claude-opus-4-1-20250805 just evals
 ```
 
 Provider defaults:
-- **anthropic** (default): simple=claude-3-5-sonnet-latest, reasoning=claude-sonnet-4-20250514
+- **anthropic** (default): simple=claude-haiku-4-5, reasoning=claude-sonnet-4-5
 - **openai**: simple=gpt-4o, reasoning=gpt-4.1
 
 ## current evals

@@ -6,11 +6,11 @@ Environment Variables:
         - "openai": Use OpenAI models (requires OPENAI_API_KEY)
 
     SIMPLE_AGENT_MODEL: Override default simple agent model
-        - Default for anthropic: "anthropic:claude-3-5-sonnet-latest"
+        - Default for anthropic: "anthropic:claude-haiku-4-5"
         - Default for openai: "openai:gpt-4o"
 
     REASONING_AGENT_MODEL: Override default reasoning agent model
-        - Default for anthropic: "anthropic:claude-sonnet-4-20250514"
+        - Default for anthropic: "anthropic:claude-sonnet-4-5"
         - Default for openai: "openai:gpt-4.1"
 
     EVALUATOR_MODEL: Override default evaluator model (default: "anthropic:claude-opus-4-1-20250805")
@@ -54,8 +54,8 @@ class ProviderConfig(NamedTuple):
 PROVIDER_CONFIGS: dict[str, ProviderConfig] = {
     "anthropic": ProviderConfig(
         api_key_env="ANTHROPIC_API_KEY",
-        simple_model="anthropic:claude-3-5-sonnet-latest",
-        reasoning_model="anthropic:claude-sonnet-4-20250514",
+        simple_model="anthropic:claude-haiku-4-5",
+        reasoning_model="anthropic:claude-sonnet-4-5",
     ),
     "openai": ProviderConfig(
         api_key_env="OPENAI_API_KEY",
@@ -110,7 +110,7 @@ def simple_model() -> str:
     """Model for straightforward diagnostic tasks.
 
     Provider-specific defaults:
-    - anthropic: claude-3-5-sonnet-latest
+    - anthropic: claude-haiku-4-5
     - openai: gpt-4o
 
     Override with SIMPLE_AGENT_MODEL environment variable.
@@ -171,7 +171,7 @@ def simple_agent(prefect_mcp_server: MCPServer, simple_model: str) -> Agent:
     - Finding failed flows by status
     - Basic infrastructure health checks
 
-    This agent uses the simple model (default: claude-3-5-sonnet-latest)
+    This agent uses the simple model (default: claude-haiku-4-5)
     which is efficient for direct diagnostic tasks.
     """
     return Agent(
