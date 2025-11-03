@@ -1,5 +1,7 @@
 """Type definitions for Prefect MCP server."""
 
+from __future__ import annotations
+
 from typing import Annotated, Any
 
 from pydantic import Field
@@ -42,15 +44,6 @@ class FlowsResult(TypedDict):
     success: bool
     count: int
     flows: list[FlowDetail]
-    error: str | None
-
-
-class DeploymentsResult(TypedDict):
-    """Result of listing deployments."""
-
-    success: bool
-    count: int
-    deployments: list["DeploymentDetail"]
     error: str | None
 
 
@@ -185,16 +178,6 @@ class RunDeploymentResult(TypedDict):
     error_type: str | None
 
 
-class LogEntry(TypedDict):
-    """A single log entry from a flow or task run."""
-
-    timestamp: str | None
-    level: int
-    level_name: str
-    message: str
-    name: str
-
-
 class LogsResult(TypedDict):
     """Result of fetching logs for a flow run."""
 
@@ -203,71 +186,6 @@ class LogsResult(TypedDict):
     logs: list[LogEntry]
     truncated: bool
     limit: int
-    error: str | None
-
-
-class FlowRunDetail(TypedDict):
-    """Detailed flow run information with inlined relationships."""
-
-    id: str
-    name: str | None
-    flow_name: str | None
-    state_type: str | None
-    state_name: Annotated[
-        str | None,
-        Field(description="Current state name. 'Late' means scheduled but not started"),
-    ]
-    state_message: str | None
-    created: str | None
-    updated: str | None
-    start_time: str | None
-    end_time: str | None
-    duration: float | None
-    parameters: dict[str, Any] | None
-    tags: list[str] | None
-    deployment_id: str | None
-    work_queue_name: str | None
-    infrastructure_pid: str | None
-    parent_task_run_id: str | None
-    deployment: "DeploymentDetail | None"  # Inlined deployment details
-    work_pool: "WorkPoolDetail | None"  # Inlined work pool details
-
-
-class LogEntry(TypedDict):
-    """Log entry from flow run."""
-
-    timestamp: str | None
-    level: int | None
-    level_name: str | None  # Human-readable log level (INFO, ERROR, etc)
-    message: str
-    name: str | None
-
-
-class LogSummary(TypedDict):
-    """Summary of log retrieval."""
-
-    returned_logs: int
-    truncated: bool
-    limit: int
-
-
-class FlowRunResult(TypedDict, total=False):
-    """Result of getting flow run details."""
-
-    success: bool
-    flow_run: FlowRunDetail | None
-    logs: list[LogEntry]  # Only present if include_logs=True
-    log_summary: LogSummary | None  # Only present if logs were truncated
-    error: str | None
-    log_error: str | None  # Only present if log fetch failed
-
-
-class FlowRunsResult(TypedDict):
-    """Result of listing flow runs."""
-
-    success: bool
-    count: int
-    flow_runs: list[FlowRunDetail]
     error: str | None
 
 
@@ -310,9 +228,83 @@ class DeploymentDetail(TypedDict):
             description="Concurrency options including collision_strategy (ENQUEUE or CANCEL_NEW)."
         ),
     ]
-    work_pool: "WorkPoolDetail | None"  # Inlined work pool details
+    work_pool: WorkPoolDetail | None  # Inlined work pool details
     pull_steps: NotRequired[list[dict[str, Any]]]
     entrypoint: NotRequired[str]
+
+
+class DeploymentsResult(TypedDict):
+    """Result of listing deployments."""
+
+    success: bool
+    count: int
+    deployments: list[DeploymentDetail]
+    error: str | None
+
+
+class FlowRunDetail(TypedDict):
+    """Detailed flow run information with inlined relationships."""
+
+    id: str
+    name: str | None
+    flow_name: str | None
+    state_type: str | None
+    state_name: Annotated[
+        str | None,
+        Field(description="Current state name. 'Late' means scheduled but not started"),
+    ]
+    state_message: str | None
+    created: str | None
+    updated: str | None
+    start_time: str | None
+    end_time: str | None
+    duration: float | None
+    parameters: dict[str, Any] | None
+    tags: list[str] | None
+    deployment_id: str | None
+    work_queue_name: str | None
+    infrastructure_pid: str | None
+    parent_task_run_id: str | None
+    deployment: DeploymentDetail | None  # Inlined deployment details
+    work_pool: WorkPoolDetail | None  # Inlined work pool details
+
+
+class LogEntry(TypedDict):
+    """Log entry from flow run."""
+
+    timestamp: str | None
+    level: int | None
+    level_name: str | None  # Human-readable log level (INFO, ERROR, etc)
+    message: str
+    name: str | None
+
+
+class LogSummary(TypedDict):
+    """Summary of log retrieval."""
+
+    returned_logs: int
+    truncated: bool
+    limit: int
+
+
+class FlowRunResult(TypedDict, total=False):
+    """Result of getting flow run details."""
+
+    success: bool
+    flow_run: FlowRunDetail | None
+    logs: list[LogEntry]  # Only present if include_logs=True
+    log_summary: LogSummary | None  # Only present if logs were truncated
+    error: str | None
+    log_error: str | None  # Only present if log fetch failed
+
+
+class FlowRunsResult(TypedDict):
+    """Result of listing flow runs."""
+
+    success: bool
+    count: int
+    flow_runs: list[FlowRunDetail]
+    error: str | None
 
 
 class TaskRunDetail(TypedDict):
