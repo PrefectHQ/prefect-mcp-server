@@ -6,6 +6,7 @@ from pydantic import TypeAdapter
 from prefect_mcp_server.types import (
     AutomationsResult,
     DashboardResult,
+    DeploymentDeletionResult,
     DeploymentsResult,
     EventsResult,
     FlowRunsResult,
@@ -24,6 +25,7 @@ from prefect_mcp_server.types import (
         AutomationsResult,
         DashboardResult,
         DeploymentsResult,
+        DeploymentDeletionResult,
         EventsResult,
         FlowRunsResult,
         FlowsResult,

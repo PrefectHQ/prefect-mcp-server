@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Annotated, Any, Literal
+from uuid import UUID
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from fastmcp import FastMCP
@@ -15,6 +16,7 @@ from prefect_mcp_server.settings import settings
 from prefect_mcp_server.types import (
     AutomationsResult,
     DashboardResult,
+    DeploymentDeletionResult,
     DeploymentsResult,
     EventsResult,
     FlowRunsResult,
@@ -115,6 +117,22 @@ async def get_deployments(
         filter=filter,
         limit=limit,
     )
+
+
+@mcp.tool
+async def delete_deployment(
+    deployment_id: Annotated[
+        UUID, Field(description="The id of the deployment to delete")
+    ],
+) -> DeploymentDeletionResult:
+    """Delete a specific deployment given its id.
+
+    Returns the deployment deletion operation's result.
+
+    Examples:
+        - Delete specific deployment: delete_deployment(deployment_id="<deployment-id>")
+    """
+    return await _prefect_client.delete_deployment(deployment_id=deployment_id)
 
 
 @mcp.tool

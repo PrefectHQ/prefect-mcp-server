@@ -242,6 +242,13 @@ class DeploymentsResult(TypedDict):
     error: str | None
 
 
+class DeploymentDeletionResult(TypedDict):
+    """Result of deleting a deployment"""
+
+    success: bool
+    error: str | None
+
+
 class FlowRunDetail(TypedDict):
     """Detailed flow run information with inlined relationships."""
 
