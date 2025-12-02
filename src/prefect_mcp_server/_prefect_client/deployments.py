@@ -6,10 +6,12 @@ from uuid import UUID
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from prefect.client.schemas.filters import DeploymentFilter, DeploymentFilterId
 from prefect.client.schemas.sorting import FlowRunSort
+from prefect.exceptions import ObjectNotFound
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server._prefect_client.work_pools import get_work_pools
 from prefect_mcp_server.types import (
+    DeploymentDeletionResult,
     DeploymentDetail,
     DeploymentsResult,
     GlobalConcurrencyLimitInfo,
@@ -239,3 +241,21 @@ async def get_deployments(
             "deployments": [],
             "error": f"Failed to fetch deployments: {str(e)}",
         }
+
+
+async def delete_deployment(deployment_id: UUID) -> DeploymentDeletionResult:
+    """Delete a deployment by its id
+
+    Returns the operation's result
+    """
+    error: str | None = None
+    try:
+        async with get_prefect_client() as client:
+            await client.delete_deployment(deployment_id=deployment_id)
+            return {"success": True, "error": None}
+    except ObjectNotFound:
+        error = f"The deployment {deployment_id} doesn't exist"
+    except Exception as e:
+        error = f"Failed to delete deployment {deployment_id}: {str(e)}"
+
+    return {"success": False, "error": error}

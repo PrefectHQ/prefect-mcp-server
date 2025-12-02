@@ -84,6 +84,29 @@ async def test_get_deployments_with_test_data(
         assert data["deployments"][0]["name"] == "test-deployment-0"
 
 
+async def test_delete_deployment_with_test_data(
+    prefect_mcp_server: FastMCP, prefect_client: PrefectClient, test_flow: UUID
+):
+    """Test deleting deployment returns deletion result"""
+    deployment_id = await prefect_client.create_deployment(
+        flow_id=test_flow,
+        name="test-deployment",
+        description="Test deployment",
+        tags=["test", "deployment"],
+    )
+    async with Client(prefect_mcp_server) as client:
+        result = await client.call_tool(
+            "delete_deployment", {"deployment_id": deployment_id}
+        )
+
+        assert hasattr(result, "structured_content")
+        # FastMCP wraps the result in a 'result' key
+        data = result.structured_content.get("result") or result.structured_content
+
+        assert data["success"] is True
+        assert data["error"] is None
+
+
 async def test_identity_tool(prefect_mcp_server: FastMCP) -> None:
     """Test the identity tool exists and works correctly."""
     async with Client(prefect_mcp_server) as client:

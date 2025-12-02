@@ -4,7 +4,10 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
+from prefect.exceptions import ObjectNotFound
+
 from prefect_mcp_server._prefect_client import (
+    delete_deployment,
     get_deployments,
     get_task_run,
 )
@@ -143,3 +146,43 @@ async def test_get_task_run_success():
         assert result["task_run"]["state_name"] == "Completed"
         assert result["task_run"]["duration"] == 30.0  # 30 seconds
         assert result["error"] is None
+
+
+async def test_delete_deployment_success():
+    with patch(
+        "prefect_mcp_server._prefect_client.deployments.get_prefect_client"
+    ) as mock_get_client:
+        mock_client = AsyncMock()
+        mock_client.delete_deployment = AsyncMock()
+        mock_get_client.return_value.__aenter__.return_value = mock_client
+
+        deployment_id = uuid4()
+
+        result = await delete_deployment(deployment_id=deployment_id)
+
+        assert result["success"] is True
+        assert result["error"] is None
+
+        mock_client.delete_deployment.assert_called_once_with(
+            deployment_id=deployment_id
+        )
+
+
+async def test_delete_deployment_not_found():
+    with patch(
+        "prefect_mcp_server._prefect_client.deployments.get_prefect_client"
+    ) as mock_get_client:
+        mock_client = AsyncMock()
+        mock_client.delete_deployment = AsyncMock(side_effect=ObjectNotFound)
+        mock_get_client.return_value.__aenter__.return_value = mock_client
+
+        deployment_id = uuid4()
+
+        result = await delete_deployment(deployment_id=deployment_id)
+
+        assert result["success"] is False
+        assert result["error"] is not None
+
+        mock_client.delete_deployment.assert_called_once_with(
+            deployment_id=deployment_id
+        )
