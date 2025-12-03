@@ -61,10 +61,10 @@ async def test_get_deployments_with_test_data(
         data = result.structured_content.get("result") or result.structured_content
 
         assert data["success"] is True
-        assert data["count"] == 3
-        assert len(data["deployments"]) == 3
+        assert data["data"]["count"] == 3
+        assert len(data["data"]["deployments"]) == 3
 
-        deployment_names = [d["name"] for d in data["deployments"]]
+        deployment_names = [d["name"] for d in data["data"]["deployments"]]
         assert "test-deployment-0" in deployment_names
         assert "test-deployment-1" in deployment_names
         assert "test-deployment-2" in deployment_names
@@ -79,9 +79,9 @@ async def test_get_deployments_with_test_data(
         data = result.structured_content.get("result") or result.structured_content
 
         assert data["success"] is True
-        assert "deployments" in data
-        assert len(data["deployments"]) == 1
-        assert data["deployments"][0]["name"] == "test-deployment-0"
+        assert "deployments" in data["data"]
+        assert len(data["data"]["deployments"]) == 1
+        assert data["data"]["deployments"][0]["name"] == "test-deployment-0"
 
 
 async def test_identity_tool(prefect_mcp_server: FastMCP) -> None:
@@ -149,10 +149,10 @@ async def test_read_events_tool(prefect_mcp_server: FastMCP) -> None:
 
         # Should return the expected structure
         assert "success" in data
-        assert "events" in data
-        assert isinstance(data["events"], list)
-        assert "total" in data
-        assert isinstance(data["total"], int)
+        assert "events" in data["data"]
+        assert isinstance(data["data"]["events"], list)
+        assert "total" in data["data"]
+        assert isinstance(data["data"]["total"], int)
 
 
 async def test_get_object_schema_tool(prefect_mcp_server: FastMCP) -> None:

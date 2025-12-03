@@ -9,9 +9,9 @@ from prefect.client.schemas.sorting import FlowRunSort
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server._prefect_client.work_pools import get_work_pools
+from prefect_mcp_server.filtering import ToolResult
 from prefect_mcp_server.types import (
     DeploymentDetail,
-    DeploymentsResult,
     GlobalConcurrencyLimitInfo,
 )
 
@@ -37,7 +37,7 @@ async def fetch_flow_names(client, flow_ids: list[UUID]) -> dict[UUID, str | Non
 async def get_deployments(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-) -> DeploymentsResult:
+) -> ToolResult:
     """Get deployments with optional filters.
 
     Returns a list of deployments matching the filters.
@@ -75,9 +75,9 @@ async def get_deployments(
                     filter={"name": {"any_": work_pool_names}},
                     limit=len(work_pool_names),
                 )
-                if work_pools_result["success"]:
+                if work_pools_result["success"] and work_pools_result.get("data"):
                     work_pools_map = {
-                        wp["name"]: wp for wp in work_pools_result["work_pools"]
+                        wp["name"]: wp for wp in work_pools_result["data"]["work_pools"]
                     }
 
             # Batch fetch tag-based concurrency limits (old API) for all deployments
@@ -228,14 +228,12 @@ async def get_deployments(
 
             return {
                 "success": True,
-                "count": len(deployment_list),
-                "deployments": deployment_list,
+                "data": {"count": len(deployment_list), "deployments": deployment_list},
                 "error": None,
             }
     except Exception as e:
         return {
             "success": False,
-            "count": 0,
-            "deployments": [],
+            "data": None,
             "error": f"Failed to fetch deployments: {str(e)}",
         }

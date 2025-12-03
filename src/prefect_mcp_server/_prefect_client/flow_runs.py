@@ -8,7 +8,8 @@ from prefect.client.schemas.filters import LogFilter, LogFilterFlowRunId
 from prefect.client.schemas.sorting import FlowRunSort, LogSort
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
-from prefect_mcp_server.types import LogEntry, LogsResult
+from prefect_mcp_server.filtering import ToolResult
+from prefect_mcp_server.types import LogEntry
 
 # Log level mapping from Python logging levels to readable names
 LOG_LEVEL_NAMES = {
@@ -158,7 +159,7 @@ async def get_flow_run(
 async def get_flow_runs(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-) -> dict[str, Any]:
+) -> ToolResult:
     """Get flow runs with optional filters.
 
     Returns a list of flow runs matching the filters.
@@ -203,8 +204,8 @@ async def get_flow_runs(
                 # Fetch all deployments in one call using filter
                 result = await get_deployments(filter={"id": {"any_": deployment_ids}})
 
-                if result.get("success"):
-                    for deployment in result["deployments"]:
+                if result.get("success") and result.get("data"):
+                    for deployment in result["data"]["deployments"]:
                         deployment_cache[deployment["id"]] = deployment
 
             # Batch fetch work pools
@@ -285,21 +286,19 @@ async def get_flow_runs(
 
             return {
                 "success": True,
-                "count": len(flow_run_list),
-                "flow_runs": flow_run_list,
+                "data": {"count": len(flow_run_list), "flow_runs": flow_run_list},
                 "error": None,
             }
 
         except Exception as e:
             return {
                 "success": False,
-                "count": 0,
-                "flow_runs": [],
+                "data": None,
                 "error": f"Failed to fetch flow runs: {str(e)}",
             }
 
 
-async def get_flow_run_logs(flow_run_id: str, limit: int = 100) -> LogsResult:
+async def get_flow_run_logs(flow_run_id: str, limit: int = 100) -> ToolResult:
     """Get only the logs for a flow run.
 
     Args:
@@ -339,19 +338,18 @@ async def get_flow_run_logs(flow_run_id: str, limit: int = 100) -> LogsResult:
 
             return {
                 "success": True,
-                "flow_run_id": flow_run_id,
-                "logs": log_entries,
-                "truncated": len(log_entries) >= limit,
-                "limit": limit,
+                "data": {
+                    "flow_run_id": flow_run_id,
+                    "logs": log_entries,
+                    "truncated": len(log_entries) >= limit,
+                    "limit": limit,
+                },
                 "error": None,
             }
 
         except Exception as e:
             return {
                 "success": False,
-                "flow_run_id": flow_run_id,
-                "logs": [],
-                "truncated": False,
-                "limit": limit,
+                "data": None,
                 "error": f"Failed to fetch logs: {str(e)}",
             }

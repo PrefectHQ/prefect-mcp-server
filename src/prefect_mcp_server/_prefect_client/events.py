@@ -4,8 +4,9 @@ from datetime import datetime, timezone
 from typing import Any
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
+from prefect_mcp_server.filtering import ToolResult
 from prefect_mcp_server.settings import settings
-from prefect_mcp_server.types import EventInfo, EventsResult
+from prefect_mcp_server.types import EventInfo
 
 
 def _format_event(event: dict[str, Any]) -> EventInfo:
@@ -62,7 +63,7 @@ async def fetch_events(
     event_prefix: str | None = None,
     occurred_after: str | None = None,
     occurred_before: str | None = None,
-) -> EventsResult:
+) -> ToolResult:
     """Fetch events from Prefect using the REST API.
 
     Args:
@@ -107,16 +108,16 @@ async def fetch_events(
 
             return {
                 "success": True,
-                "count": len(formatted_events),
-                "events": formatted_events,
+                "data": {
+                    "count": len(formatted_events),
+                    "events": formatted_events,
+                    "total": data.get("total", 0),
+                },
                 "error": None,
-                "total": data.get("total", 0),
             }
     except Exception as e:
         return {
             "success": False,
-            "count": 0,
-            "events": [],
+            "data": None,
             "error": f"Failed to fetch events: {str(e)}",
-            "total": 0,
         }

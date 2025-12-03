@@ -6,10 +6,11 @@ from httpx import HTTPStatusError
 from prefect.exceptions import ObjectNotFound
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
-from prefect_mcp_server.types import WorkPoolDetail, WorkPoolResult, WorkQueueInfo
+from prefect_mcp_server.filtering import ToolResult
+from prefect_mcp_server.types import WorkPoolDetail, WorkQueueInfo
 
 
-async def get_work_pool(work_pool_name: str) -> WorkPoolResult:
+async def get_work_pool(work_pool_name: str) -> dict[str, Any]:
     """Get detailed information about a work pool including concurrency limits."""
     try:
         async with get_prefect_client() as client:
@@ -78,7 +79,7 @@ async def get_work_pool(work_pool_name: str) -> WorkPoolResult:
 async def get_work_pools(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-) -> dict[str, Any]:
+) -> ToolResult:
     """Get work pools with optional filters.
 
     Returns a list of work pools matching the filters.
@@ -140,15 +141,13 @@ async def get_work_pools(
 
             return {
                 "success": True,
-                "count": len(work_pool_list),
-                "work_pools": work_pool_list,
+                "data": {"count": len(work_pool_list), "work_pools": work_pool_list},
                 "error": None,
             }
 
     except Exception as e:
         return {
             "success": False,
-            "count": 0,
-            "work_pools": [],
+            "data": None,
             "error": f"Failed to fetch work pools: {str(e)}",
         }

@@ -70,9 +70,9 @@ async def test_get_deployments_success():
             )
 
             assert result["success"] is True
-            assert result["deployments"] is not None
-            assert len(result["deployments"]) == 1
-            deployment = result["deployments"][0]
+            assert result["data"]["deployments"] is not None
+            assert len(result["data"]["deployments"]) == 1
+            deployment = result["data"]["deployments"][0]
             assert deployment["name"] == "test-deployment"
             assert deployment["flow_name"] == "test-flow"
             assert len(deployment["recent_runs"]) == 1
@@ -101,8 +101,8 @@ async def test_get_deployments_not_found():
         result = await get_deployments(filter={"id": {"any_": [str(uuid4())]}})
 
         assert result["success"] is True  # Should succeed with empty list
-        assert result["deployments"] == []
-        assert result["count"] == 0
+        assert result["data"]["deployments"] == []
+        assert result["data"]["count"] == 0
         assert result["error"] is None
 
 
