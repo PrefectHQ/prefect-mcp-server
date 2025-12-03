@@ -2,15 +2,33 @@
 
 Adds a `jmespath` parameter to tools that allows filtering/transforming results
 before returning them, reducing response size for large datasets.
+
+All filterable tools return a standard ToolResult type with {success, data, error}.
+The jmespath filter applies to the `data` field, keeping the schema consistent.
 """
 
 import inspect
 from functools import wraps
 from typing import Annotated, Any
 
-import jmespath
-import jmespath.exceptions
+import jmespath as jmespath_lib
+from jmespath.exceptions import JMESPathError
 from pydantic import Field
+from typing_extensions import TypedDict
+
+
+class ToolResult(TypedDict):
+    """Standard result wrapper for all filterable tools.
+
+    Using a consistent wrapper allows jmespath filtering to work
+    without breaking schema validation - the filter transforms
+    the `data` field while keeping the wrapper structure intact.
+    """
+
+    success: bool
+    data: Any  # the actual content - original or filtered
+    error: str | None
+
 
 # type alias for the jmespath parameter with description
 JmespathParam = Annotated[
@@ -25,53 +43,57 @@ JmespathParam = Annotated[
 ]
 
 
-def apply_filter(data: Any, filter_expr: str | None) -> Any:
-    """Apply jmespath filter to data.
-
-    When a filter is applied, returns just the filtered result.
-    Providing a filter opts out of the original response schema.
-    """
-    if not filter_expr:
-        return data
-    try:
-        return jmespath.search(filter_expr, data)
-    except jmespath.exceptions.JMESPathError as e:
-        return {"_filter_error": str(e), "_jmespath": filter_expr}
-
-
 def filterable(fn):
-    """Decorator that adds a `jmespath` parameter to a tool.
+    """Decorator that adds jmespath filtering to a tool.
 
-    The jmespath parameter accepts a JMESPath expression that filters/transforms
-    the result before returning it. When a filter is provided, the response
-    is just the filtered result (opting out of the original typed schema).
+    The decorated tool must return a ToolResult dict with {success, data, error}.
+    The jmespath filter applies to the `data` field.
 
     Usage:
         @mcp.tool
         @filterable
-        async def get_logs(flow_run_id: str) -> dict:
-            return {"logs": [...]}
+        async def get_logs(flow_run_id: str) -> ToolResult:
+            logs = await fetch_logs(flow_run_id)
+            return {"success": True, "data": {"logs": logs}, "error": None}
 
-        # Without filter - get everything (original schema)
+        # Without filter - get everything
         await get_logs(flow_run_id="...")
+        # Returns: {"success": true, "data": {"logs": [...]}, "error": null}
 
-        # With filter - get just the filtered result
-        await get_logs(flow_run_id="...", jmespath="logs[?level_name == 'ERROR']")
+        # With filter - get filtered data
+        await get_logs(flow_run_id="...", jmespath="logs[*].message")
+        # Returns: {"success": true, "data": ["msg1", "msg2"], "error": null}
     """
     if inspect.iscoroutinefunction(fn):
 
         @wraps(fn)
-        async def async_wrapper(*args, jmespath: str | None = None, **kwargs) -> Any:
+        async def async_wrapper(
+            *args, jmespath: str | None = None, **kwargs
+        ) -> ToolResult:
             result = await fn(*args, **kwargs)
-            return apply_filter(result, jmespath)
+
+            if jmespath and result.get("success"):
+                try:
+                    filtered = jmespath_lib.search(jmespath, result["data"])
+                    return {"success": True, "data": filtered, "error": None}
+                except JMESPathError as e:
+                    return {"success": False, "data": None, "error": str(e)}
+            return result
 
         wrapper = async_wrapper
     else:
 
         @wraps(fn)
-        def sync_wrapper(*args, jmespath: str | None = None, **kwargs) -> Any:
+        def sync_wrapper(*args, jmespath: str | None = None, **kwargs) -> ToolResult:
             result = fn(*args, **kwargs)
-            return apply_filter(result, jmespath)
+
+            if jmespath and result.get("success"):
+                try:
+                    filtered = jmespath_lib.search(jmespath, result["data"])
+                    return {"success": True, "data": filtered, "error": None}
+                except JMESPathError as e:
+                    return {"success": False, "data": None, "error": str(e)}
+            return result
 
         wrapper = sync_wrapper
 
@@ -88,12 +110,11 @@ def filterable(fn):
     )
     wrapper.__signature__ = sig.replace(parameters=params)
 
-    # Update annotations - change return type to Any to opt out of schema validation
-    # when filtering is used
+    # Update annotations with jmespath param and ToolResult return type
     wrapper.__annotations__ = {
         **{k: v for k, v in fn.__annotations__.items() if k != "return"},
         "jmespath": JmespathParam,
-        "return": Any,
+        "return": ToolResult,
     }
 
     return wrapper

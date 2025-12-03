@@ -6,13 +6,13 @@ import prefect.main  # noqa: F401
 from prefect.client.schemas.filters import FlowFilter
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
-from prefect_mcp_server.types import FlowsResult
+from prefect_mcp_server.filtering import ToolResult
 
 
 async def get_flows(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-) -> FlowsResult:
+) -> ToolResult:
     """Get flows with optional filters.
 
     Returns a list of flows registered in the workspace.
@@ -50,14 +50,12 @@ async def get_flows(
 
             return {
                 "success": True,
-                "count": len(flow_list),
-                "flows": flow_list,
+                "data": {"count": len(flow_list), "flows": flow_list},
                 "error": None,
             }
     except Exception as e:
         return {
             "success": False,
-            "count": 0,
-            "flows": [],
+            "data": None,
             "error": f"Failed to fetch flows: {str(e)}",
         }
