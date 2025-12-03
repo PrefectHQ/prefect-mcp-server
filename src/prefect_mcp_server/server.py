@@ -10,6 +10,7 @@ from prefect.client.base import ServerType, determine_server_type
 from pydantic import Field
 
 from prefect_mcp_server import _prefect_client
+from prefect_mcp_server.filtering import filterable
 from prefect_mcp_server.middleware import PrefectAuthMiddleware
 from prefect_mcp_server.settings import settings
 from prefect_mcp_server.types import (
@@ -77,6 +78,7 @@ async def get_dashboard() -> DashboardResult:
 
 
 @mcp.tool
+@filterable
 async def get_deployments(
     filter: Annotated[
         dict[str, Any] | None,
@@ -118,6 +120,7 @@ async def get_deployments(
 
 
 @mcp.tool
+@filterable
 async def get_flows(
     filter: Annotated[
         dict[str, Any] | None,
@@ -155,6 +158,7 @@ async def get_flows(
 
 
 @mcp.tool
+@filterable
 async def get_flow_runs(
     filter: Annotated[
         dict[str, Any] | None,
@@ -203,6 +207,7 @@ async def get_flow_runs(
 
 
 @mcp.tool
+@filterable
 async def get_flow_run_logs(
     flow_run_id: Annotated[
         str,
@@ -223,11 +228,14 @@ async def get_flow_run_logs(
     Examples:
         - Get logs: get_flow_run_logs(flow_run_id="...")
         - Get more logs: get_flow_run_logs(flow_run_id="...", limit=500)
+        - Just messages: get_flow_run_logs(..., jmespath="logs[*].message")
+        - Only errors: get_flow_run_logs(..., jmespath="logs[?level_name == 'ERROR']")
     """
     return await _prefect_client.get_flow_run_logs(flow_run_id, limit=limit)
 
 
 @mcp.tool
+@filterable
 async def get_task_runs(
     filter: Annotated[
         dict[str, Any] | None,
@@ -270,6 +278,7 @@ async def get_task_runs(
 
 
 @mcp.tool
+@filterable
 async def get_work_pools(
     filter: Annotated[
         dict[str, Any] | None,
@@ -308,6 +317,7 @@ async def get_work_pools(
 
 
 @mcp.tool
+@filterable
 async def read_events(
     event_type_prefix: Annotated[
         str | None,
@@ -361,6 +371,7 @@ async def read_events(
 
 
 @mcp.tool
+@filterable
 async def get_automations(
     filter: Annotated[
         dict[str, Any] | None,
