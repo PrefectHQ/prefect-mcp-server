@@ -128,7 +128,7 @@ jobs:
         run: |
           # Run pytest and capture exit code
           # Exit codes: 0=pass, 1=test failures (acceptable), 3+=collection/setup errors (should fail)
-          uv run --frozen pytest -n 2 evals --junit-xml=evals-results.xml --tb=short || EXIT_CODE=$?
+          uv run --frozen pytest -n auto evals --junit-xml=evals-results.xml --tb=short || EXIT_CODE=$?
 
           # If no exit code set, tests passed
           if [ -z "$EXIT_CODE" ]; then
