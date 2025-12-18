@@ -1,0 +1,19 @@
+{
+  "name": "prefect",
+  "description": "Prefect workflow orchestration - read-only MCP server for diagnostics, CLI skill for mutations",
+  "author": {
+    "name": "Prefect Technologies",
+    "email": "help@prefect.io",
+    "url": "https://github.com/prefecthq"
+  },
+  "repository": "https://github.com/prefecthq/prefect-mcp-server",
+  "keywords": [
+    "prefect",
+    "workflows",
+    "orchestration",
+    "data-pipelines",
+    "flow-runs",
+    "observability"
+  ],
+  "mcpServers": "./.mcp.json"
+}
