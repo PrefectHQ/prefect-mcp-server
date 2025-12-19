@@ -1,0 +1,15 @@
+{
+  "name": "prefect",
+  "owner": {
+    "name": "Prefect Technologies",
+    "email": "help@prefect.io"
+  },
+  "plugins": [
+    {
+      "name": "prefect",
+      "description": "Prefect workflow orchestration - read-only MCP server for diagnostics, CLI skill for mutations",
+      "source": "./",
+      "skills": ["./skills/cli"]
+    }
+  ]
+}
