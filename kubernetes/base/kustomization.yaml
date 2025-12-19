@@ -1,0 +1,194 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: mcp-server
+
+resources:
+  - namespace.yaml
+  - networkpolicy.yaml
+  - honeycomb-secret.yaml
+  - prefect-api-key-secret.yaml
+  - https://github.com/translucent-ai/kubernetes-resources//base/backend-template
+
+patches:
+  - target:
+      kind: Deployment
+      name: to-be-kustomized
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: prefect-mcp-server
+      - op: replace
+        path: /spec/selector/matchLabels/app
+        value: prefect-mcp-server
+      - op: replace
+        path: /spec/template/metadata/labels/app
+        value: prefect-mcp-server
+      - op: replace
+        path: /spec/template/spec/containers/0/name
+        value: prefect-mcp-server
+      - op: replace
+        path: /spec/template/spec/containers/0/ports/0/containerPort
+        value: 8080
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe/httpGet/port
+        value: 8080
+      - op: add
+        path: /spec/template/spec/containers/0/livenessProbe/httpGet/path
+        value: /healthz
+      - op: add
+        path: /spec/template/spec/containers/0/livenessProbe/timeoutSeconds
+        value: 10
+      - op: add
+        path: /spec/template/spec/containers/0/livenessProbe/periodSeconds
+        value: 30
+      - op: add
+        path: /spec/template/spec/containers/0/livenessProbe/initialDelaySeconds
+        value: 10
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe/httpGet/port
+        value: 8080
+      - op: add
+        path: /spec/template/spec/containers/0/readinessProbe/httpGet/path
+        value: /healthz
+      - op: add
+        path: /spec/template/spec/containers/0/readinessProbe/timeoutSeconds
+        value: 10
+      - op: add
+        path: /spec/template/spec/containers/0/readinessProbe/periodSeconds
+        value: 15
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 250m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 512Mi
+      - op: remove
+        path: /spec/template/spec/containers/0/resources/limits
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: add
+        path: /spec/template/spec/containers/0/env
+        value:
+          - name: PORT
+            value: "8080"
+          - name: PREFECT_API_URL
+            value: "https://api.prefect.cloud/api/accounts/aa4dbf21-6e5e-4105-b6c4-5d64216a7a5a/workspaces/62856747-7675-419d-827d-20aa5712ba77"
+          - name: PREFECT_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: prefect-api-key
+                key: key
+          - name: TRANSLUCENT_APP
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.annotations['translucent.co/app']
+          - name: TRANSLUCENT_ENV
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.annotations['translucent.co/env']
+          - name: TRANSLUCENT_KIND
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.annotations['translucent.co/kind']
+          - name: TRANSLUCENT_REGION
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.annotations['translucent.co/region']
+          - name: TRANSLUCENT_REPO
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.annotations['translucent.co/repo']
+          - name: TRANSLUCENT_VERSION
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.annotations['translucent.co/version']
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: "http://prefect-mcp-server-otel-collector:4318"
+      - op: add
+        path: /spec/template/spec/serviceAccountName
+        value: prefect-mcp-server
+      - op: add
+        path: /spec/template/spec/securityContext
+        value:
+          runAsNonRoot: true
+          runAsUser: 65532
+          runAsGroup: 65532
+          fsGroup: 65532
+          seccompProfile:
+            type: RuntimeDefault
+      - op: add
+        path: /spec/template/spec/containers/0/securityContext
+        value:
+          runAsNonRoot: true
+          runAsUser: 65532
+          runAsGroup: 65532
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+      - op: add
+        path: /spec/template/spec/volumes
+        value:
+          - name: tmp-dir
+            emptyDir: {}
+      - op: add
+        path: /spec/template/spec/containers/0/volumeMounts
+        value:
+          - name: tmp-dir
+            mountPath: /tmp
+
+  - target:
+      kind: Service
+      name: to-be-kustomized
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: prefect-mcp-server
+      - op: replace
+        path: /spec/selector/app
+        value: prefect-mcp-server
+      - op: replace
+        path: /spec/ports/0/port
+        value: 8080
+      - op: replace
+        path: /spec/ports/0/targetPort
+        value: 8080
+
+  - target:
+      kind: ServiceAccount
+      name: to-be-kustomized
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: prefect-mcp-server
+
+  - target:
+      kind: ExternalSecret
+      name: to-be-kustomized
+    patch: |-
+      apiVersion: external-secrets.io/v1
+      kind: ExternalSecret
+      metadata:
+        name: to-be-kustomized
+      $patch: delete
+
+  - target:
+      kind: OpenTelemetryCollector
+      name: to-be-kustomized
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: prefect-mcp-server-otel
+      - op: add
+        path: /spec/envFrom
+        value:
+          - secretRef:
+              name: honeycomb-app-namespace-api-key
+      - op: add
+        path: /spec/env
+        value:
+          - name: HONEYCOMB_DATASET
+            value: "prefect-mcp-server"

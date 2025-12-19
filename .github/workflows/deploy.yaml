@@ -1,0 +1,24 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  ci:
+    uses: translucent-ai/github-workflows/.github/workflows/python-uv-ci.yml@v2.4.0
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+      pull-requests: write
+    with:
+      app-name: prefect-mcp-server
+      run-type-check: false
+      run-tests: true
+      run-lint: true
+      publish-environments: '["dev"]'
+    secrets:
+      BOT_PAT: ${{ secrets.BOT_PAT }}

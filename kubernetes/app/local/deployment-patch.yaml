@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prefect-mcp-server
+spec:
+  replicas: 1
+  template:
+    spec:
+      # Remove security context for local dev (Dockerfile.dev runs as root)
+      securityContext: null
+      containers:
+        - name: prefect-mcp-server
+          # Remove container security context for local dev
+          securityContext: null
+          # Reduce resources for local development
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          env:
+            - name: ENVIRONMENT
+              value: "local"
+            - name: LOG_LEVEL
+              value: "DEBUG"
+            - name: PORT
+              value: "8080"
+            # Use central OTEL collector in app namespace
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel-collector.app.svc.cluster.local:4318"
+            # Prefect credentials from secret (created by Tiltfile from .env.local)
+            - name: PREFECT_API_URL
+              valueFrom:
+                secretKeyRef:
+                  name: prefect-mcp-server-secrets
+                  key: PREFECT_API_URL
+            - name: PREFECT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: prefect-mcp-server-secrets
+                  key: PREFECT_API_KEY

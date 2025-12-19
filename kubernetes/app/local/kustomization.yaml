@@ -1,0 +1,47 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: mcp-server
+
+resources:
+  - ../../base
+
+patches:
+  - path: deployment-patch.yaml
+    target:
+      kind: Deployment
+      name: prefect-mcp-server
+  # Delete ExternalSecrets (not needed locally - created by Tiltfile)
+  - target:
+      kind: ExternalSecret
+      name: prefect-api-key
+    patch: |-
+      apiVersion: external-secrets.io/v1
+      kind: ExternalSecret
+      metadata:
+        name: prefect-api-key
+      $patch: delete
+  - target:
+      kind: ExternalSecret
+      name: honeycomb-app-namespace-api-key
+    patch: |-
+      apiVersion: external-secrets.io/v1
+      kind: ExternalSecret
+      metadata:
+        name: honeycomb-app-namespace-api-key
+      $patch: delete
+  # Delete OpenTelemetryCollector (use central otel-collector in app namespace)
+  - target:
+      kind: OpenTelemetryCollector
+      name: prefect-mcp-server-otel
+    patch: |-
+      apiVersion: opentelemetry.io/v1beta1
+      kind: OpenTelemetryCollector
+      metadata:
+        name: prefect-mcp-server-otel
+      $patch: delete
+
+images:
+  - name: app
+    newName: prefect-mcp-server
+    newTag: latest

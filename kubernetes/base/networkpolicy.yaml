@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: prefect-mcp-server
+spec:
+  podSelector:
+    matchLabels:
+      app: prefect-mcp-server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: app
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - {}

@@ -1,0 +1,48 @@
+# Development Dockerfile with hot reload support
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv standalone to a globally accessible location
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    cp /root/.local/bin/uv /usr/local/bin/uv && \
+    chmod 755 /usr/local/bin/uv
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install all dependencies including dev dependencies (for watchdog/watchmedo)
+RUN uv sync --all-extras --no-install-project
+
+# Add venv to PATH for runtime
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Set Python path to include the source directories
+ENV PYTHONPATH=/app/src:/app
+
+# Copy the application code
+COPY src/ ./src/
+
+# Expose port for MCP server
+EXPOSE 8080
+
+# Set port environment variable
+ENV PORT=8080
+
+# Use watchmedo to watch for file changes and auto-restart
+# Watches src/ directory for Python file changes
+CMD ["watchmedo", "auto-restart", \
+     "--directory=./src", \
+     "--pattern=*.py", \
+     "--recursive", \
+     "--", \
+     "python", "-m", "prefect_mcp_server"]
