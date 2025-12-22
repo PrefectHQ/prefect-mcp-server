@@ -1,6 +1,3 @@
 {
-  "mcp-server": {
-    "command": "uvx",
-    "args": ["--from", "prefect-mcp", "prefect-mcp-server"]
-  }
+  "mcpServers": {}
 }
