@@ -10,20 +10,13 @@ from prefect.client.base import ServerType, determine_server_type
 from pydantic import Field
 
 from prefect_mcp_server import _prefect_client
+from prefect_mcp_server.filtering import ToolResult, filterable
 from prefect_mcp_server.middleware import PrefectAuthMiddleware
 from prefect_mcp_server.settings import settings
 from prefect_mcp_server.types import (
-    AutomationsResult,
     DashboardResult,
-    DeploymentsResult,
-    EventsResult,
-    FlowRunsResult,
-    FlowsResult,
     IdentityResult,
-    LogsResult,
     RateLimitsResult,
-    TaskRunsResult,
-    WorkPoolsResult,
 )
 
 try:
@@ -77,6 +70,7 @@ async def get_dashboard() -> DashboardResult:
 
 
 @mcp.tool
+@filterable
 async def get_deployments(
     filter: Annotated[
         dict[str, Any] | None,
@@ -92,7 +86,7 @@ async def get_deployments(
     limit: Annotated[
         int, Field(description="Maximum number of deployments to return", ge=1, le=200)
     ] = 50,
-) -> DeploymentsResult:
+) -> ToolResult:
     """Get deployments with optional filters.
 
     Returns a list of deployments and their details matching the filters.
@@ -118,6 +112,7 @@ async def get_deployments(
 
 
 @mcp.tool
+@filterable
 async def get_flows(
     filter: Annotated[
         dict[str, Any] | None,
@@ -132,7 +127,7 @@ async def get_flows(
     limit: Annotated[
         int, Field(description="Maximum number of flows to return", ge=1, le=200)
     ] = 50,
-) -> FlowsResult:
+) -> ToolResult:
     """Get flows with optional filters.
 
     Returns a list of flows registered in the workspace.
@@ -155,6 +150,7 @@ async def get_flows(
 
 
 @mcp.tool
+@filterable
 async def get_flow_runs(
     filter: Annotated[
         dict[str, Any] | None,
@@ -176,7 +172,7 @@ async def get_flow_runs(
     limit: Annotated[
         int, Field(description="Maximum number of flow runs to return", ge=1, le=200)
     ] = 50,
-) -> FlowRunsResult:
+) -> ToolResult:
     """Get flow runs with optional filters.
 
     Returns a list of flow runs and their details matching the filters.
@@ -203,6 +199,7 @@ async def get_flow_runs(
 
 
 @mcp.tool
+@filterable
 async def get_flow_run_logs(
     flow_run_id: Annotated[
         str,
@@ -214,7 +211,7 @@ async def get_flow_run_logs(
     limit: Annotated[
         int, Field(description="Maximum number of log entries to return", ge=1, le=1000)
     ] = 100,
-) -> LogsResult:
+) -> ToolResult:
     """Get execution logs for a flow run.
 
     Retrieves log entries from the flow run execution,
@@ -223,11 +220,14 @@ async def get_flow_run_logs(
     Examples:
         - Get logs: get_flow_run_logs(flow_run_id="...")
         - Get more logs: get_flow_run_logs(flow_run_id="...", limit=500)
+        - Just messages: get_flow_run_logs(..., jmespath="logs[*].message")
+        - Only errors: get_flow_run_logs(..., jmespath="logs[?level_name == 'ERROR']")
     """
     return await _prefect_client.get_flow_run_logs(flow_run_id, limit=limit)
 
 
 @mcp.tool
+@filterable
 async def get_task_runs(
     filter: Annotated[
         dict[str, Any] | None,
@@ -243,7 +243,7 @@ async def get_task_runs(
     limit: Annotated[
         int, Field(description="Maximum number of task runs to return", ge=1, le=200)
     ] = 50,
-) -> TaskRunsResult:
+) -> ToolResult:
     """Get task runs with optional filters.
 
     Returns a list of task runs and their details matching the filters.
@@ -270,6 +270,7 @@ async def get_task_runs(
 
 
 @mcp.tool
+@filterable
 async def get_work_pools(
     filter: Annotated[
         dict[str, Any] | None,
@@ -284,7 +285,7 @@ async def get_work_pools(
     limit: Annotated[
         int, Field(description="Maximum number of work pools to return", ge=1, le=200)
     ] = 50,
-) -> WorkPoolsResult:
+) -> ToolResult:
     """Get work pools with optional filters.
 
     Returns a list of work pools and their details matching the filters.
@@ -308,6 +309,7 @@ async def get_work_pools(
 
 
 @mcp.tool
+@filterable
 async def read_events(
     event_type_prefix: Annotated[
         str | None,
@@ -333,7 +335,7 @@ async def read_events(
             examples=["2024-01-02T00:00:00Z", "2024-12-26T10:30:00Z"],
         ),
     ] = None,
-) -> EventsResult:
+) -> ToolResult:
     """Read and filter events from the Prefect instance.
 
     Provides a structured view of events with filtering capabilities.
@@ -361,6 +363,7 @@ async def read_events(
 
 
 @mcp.tool
+@filterable
 async def get_automations(
     filter: Annotated[
         dict[str, Any] | None,
@@ -376,7 +379,7 @@ async def get_automations(
     limit: Annotated[
         int, Field(description="Maximum number of automations to return", ge=1, le=200)
     ] = 100,
-) -> AutomationsResult:
+) -> ToolResult:
     """Get automations with optional filters.
 
     Returns automations with their complete configurations including:

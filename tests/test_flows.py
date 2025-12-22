@@ -32,12 +32,12 @@ async def test_get_flows_success():
         result = await get_flows()
 
         assert result["success"] is True
-        assert result["count"] == 2
-        assert len(result["flows"]) == 2
-        assert result["flows"][0]["name"] == "test-flow-alpha"
-        assert result["flows"][0]["tags"] == ["production"]
-        assert result["flows"][1]["name"] == "test-flow-beta"
-        assert result["flows"][1]["tags"] == ["test"]
+        assert result["data"]["count"] == 2
+        assert len(result["data"]["flows"]) == 2
+        assert result["data"]["flows"][0]["name"] == "test-flow-alpha"
+        assert result["data"]["flows"][0]["tags"] == ["production"]
+        assert result["data"]["flows"][1]["name"] == "test-flow-beta"
+        assert result["data"]["flows"][1]["tags"] == ["test"]
         assert result["error"] is None
 
 
@@ -60,8 +60,8 @@ async def test_get_flows_with_filter():
         result = await get_flows(filter={"name": {"like_": "etl-%"}})
 
         assert result["success"] is True
-        assert result["count"] == 1
-        assert result["flows"][0]["name"] == "etl-flow"
+        assert result["data"]["count"] == 1
+        assert result["data"]["flows"][0]["name"] == "etl-flow"
         assert result["error"] is None
 
 
@@ -77,8 +77,8 @@ async def test_get_flows_empty():
         result = await get_flows()
 
         assert result["success"] is True
-        assert result["count"] == 0
-        assert result["flows"] == []
+        assert result["data"]["count"] == 0
+        assert result["data"]["flows"] == []
         assert result["error"] is None
 
 
@@ -96,7 +96,6 @@ async def test_get_flows_error():
         result = await get_flows()
 
         assert result["success"] is False
-        assert result["count"] == 0
-        assert result["flows"] == []
+        assert result["data"] is None
         assert result["error"] is not None
         assert "Database connection failed" in result["error"]

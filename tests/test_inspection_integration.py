@@ -43,9 +43,9 @@ async def test_deployment_operations():
         result = await get_deployments(filter={"id": {"any_": [deployment_id]}})
 
         assert result["success"] is True
-        assert result["deployments"] is not None
-        assert len(result["deployments"]) == 1
-        deployment = result["deployments"][0]
+        assert result["data"]["deployments"] is not None
+        assert len(result["data"]["deployments"]) == 1
+        deployment = result["data"]["deployments"][0]
         assert deployment["id"] == deployment_id
         assert deployment["name"] is not None
         assert "parameters" in deployment
@@ -59,8 +59,8 @@ async def test_get_deployment_not_found():
     result = await get_deployments(filter={"id": {"any_": [fake_id]}})
 
     assert result["success"] is True  # Should succeed with empty list
-    assert result["deployments"] == []
-    assert result["count"] == 0
+    assert result["data"]["deployments"] == []
+    assert result["data"]["count"] == 0
     assert result["error"] is None
 
 
@@ -115,13 +115,13 @@ async def test_get_automations():
     result = await get_automations()
 
     assert result["success"] is True
-    assert result["count"] >= 0
-    assert "automations" in result
+    assert result["data"]["count"] >= 0
+    assert "automations" in result["data"]
     assert result["error"] is None
 
     # If we have automations, check their structure
-    if result["count"] > 0:
-        automation = result["automations"][0]
+    if result["data"]["count"] > 0:
+        automation = result["data"]["automations"][0]
         assert "id" in automation
         assert "name" in automation
         assert "enabled" in automation
@@ -143,13 +143,13 @@ async def test_get_automations_with_filter():
         result = await get_automations(filter={"id": {"any_": [target_id]}})
 
         assert result["success"] is True
-        assert result["count"] == 1
-        assert result["automations"][0]["id"] == target_id
+        assert result["data"]["count"] == 1
+        assert result["data"]["automations"][0]["id"] == target_id
 
         # Test filtering by name
         target_name = all_automations[0].name
         result = await get_automations(filter={"name": {"any_": [target_name]}})
 
         assert result["success"] is True
-        assert result["count"] >= 1
-        assert any(a["name"] == target_name for a in result["automations"])
+        assert result["data"]["count"] >= 1
+        assert any(a["name"] == target_name for a in result["data"]["automations"])

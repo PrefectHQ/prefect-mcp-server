@@ -4,13 +4,13 @@ from typing import Any
 from uuid import UUID
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
-from prefect_mcp_server.types import AutomationsResult
+from prefect_mcp_server.filtering import ToolResult
 
 
 async def get_automations(
     filter: dict[str, Any] | None = None,
     limit: int = 100,
-) -> AutomationsResult:
+) -> ToolResult:
     """Get automations with optional filters."""
     async with get_prefect_client() as client:
         try:
@@ -27,8 +27,7 @@ async def get_automations(
                         # Invalid UUID - return helpful error
                         return {
                             "success": False,
-                            "count": 0,
-                            "automations": [],
+                            "data": None,
                             "error": f"Invalid automation ID '{automation_id}' - IDs must be valid UUIDs. If you have an automation name, use filter={{'name': {{'any_': ['{automation_id}']}}}} instead.",
                         }
             # If filter contains a name, use read_automations_by_name
@@ -88,15 +87,13 @@ async def get_automations(
 
             return {
                 "success": True,
-                "count": len(automation_list),
-                "automations": automation_list,
+                "data": {"count": len(automation_list), "automations": automation_list},
                 "error": None,
             }
 
         except Exception as e:
             return {
                 "success": False,
-                "count": 0,
-                "automations": [],
+                "data": None,
                 "error": f"Failed to fetch automations: {str(e)}",
             }
