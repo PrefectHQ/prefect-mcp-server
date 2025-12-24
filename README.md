@@ -121,8 +121,10 @@ claude mcp add prefect \
 > [!TIP]
 > Prefect Cloud users on Team, Pro, and Enterprise plans can use service accounts for API authentication. Pro and Enterprise users can restrict service accounts to read-only access (only `see_*` permissions) since this MCP server requires no write permissions.
 
+### Other MCP Clients
+
 <details>
-<summary>Other MCP Clients</summary>
+<summary>Configuration examples</summary>
 
 This MCP server works with any MCP-compatible client. Here are configuration examples for popular clients:
 
@@ -145,9 +147,52 @@ Add to your Cursor settings (`.cursor/mcp.json`):
 }
 ```
 
-**Windsurf**
+**Codex CLI**
 
-Add to your Windsurf MCP config (`~/.codeium/windsurf/mcp_config.json`):
+Add using the Codex CLI:
+
+```bash
+# minimal setup - inherits from local prefect profile
+codex mcp add prefect -- uvx --from prefect-mcp prefect-mcp-server
+
+# with explicit credentials
+codex mcp add prefect \
+  --env PREFECT_API_URL=https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID] \
+  --env PREFECT_API_KEY=your-api-key \
+  -- uvx --from prefect-mcp prefect-mcp-server
+```
+
+Or edit `~/.codex/config.toml` directly:
+
+```toml
+[mcp.prefect]
+command = "uvx"
+args = ["--from", "prefect-mcp", "prefect-mcp-server"]
+
+[mcp.prefect.env]
+PREFECT_API_URL = "https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID]"
+PREFECT_API_KEY = "your-api-key"
+```
+
+**Gemini CLI**
+
+Add using the Gemini CLI:
+
+```bash
+# minimal setup - inherits from local prefect profile
+gemini mcp add prefect uvx --from prefect-mcp prefect-mcp-server
+
+# with explicit credentials
+gemini mcp add prefect \
+  -e PREFECT_API_URL=https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID] \
+  -e PREFECT_API_KEY=your-api-key \
+  uvx --from prefect-mcp prefect-mcp-server
+
+# HTTP transport - for FastMCP Cloud deployment
+gemini mcp add prefect --transport http https://your-server-name.fastmcp.app/mcp
+```
+
+Or edit `~/.gemini/settings.json` directly:
 
 ```json
 {
@@ -164,7 +209,7 @@ Add to your Windsurf MCP config (`~/.codeium/windsurf/mcp_config.json`):
 }
 ```
 
-**Kiro**
+**[Kiro](https://kiro.dev/docs/mcp/configuration/)**
 
 Add to your Kiro MCP settings (`~/.kiro/settings/mcp.json`):
 
@@ -190,6 +235,25 @@ Add to your VS Code settings (`.vscode/mcp.json`):
 ```json
 {
   "servers": {
+    "prefect": {
+      "command": "uvx",
+      "args": ["--from", "prefect-mcp", "prefect-mcp-server"],
+      "env": {
+        "PREFECT_API_URL": "https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID]",
+        "PREFECT_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+**Windsurf**
+
+Add to your Windsurf MCP config (`~/.codeium/windsurf/mcp_config.json`):
+
+```json
+{
+  "mcpServers": {
     "prefect": {
       "command": "uvx",
       "args": ["--from", "prefect-mcp", "prefect-mcp-server"],
