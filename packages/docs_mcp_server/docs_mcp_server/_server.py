@@ -68,7 +68,7 @@ async def search_prefect(
         ),
     ] = None,
 ) -> dict[str, Any]:
-    """Search the Prefect knowledgebase for documentation on concepts, usage, and best practices."""
+    """Search the Prefect knowledgebase for documentation on concepts, usage examples, and best practices."""
 
     if not query.strip():
         raise ValueError("Query must not be empty.")
