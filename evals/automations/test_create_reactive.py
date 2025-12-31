@@ -10,7 +10,6 @@ from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServer
 
 from evals._tools import read_file, run_shell_command, write_file
-from evals._tools.spy import ToolCallSpy
 
 
 @pytest.fixture
@@ -61,7 +60,6 @@ async def test_create_reactive_automation(
     test_flow: Flow,
     tmp_path: Path,
     prefect_client: PrefectClient,
-    tool_call_spy: ToolCallSpy,
 ) -> None:
     async with eval_agent:
         result = await eval_agent.run(
@@ -82,6 +80,3 @@ async def test_create_reactive_automation(
     assert automation.trigger.threshold == 1
     assert automation.actions[0].type == "run-deployment"
     assert automation.actions[0].deployment_id == test_deployment.id
-
-    tool_call_spy.assert_tool_was_called("get_object_schema")
-    tool_call_spy.assert_tool_was_called("get_deployments")

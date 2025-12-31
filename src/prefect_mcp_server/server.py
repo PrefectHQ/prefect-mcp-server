@@ -62,6 +62,8 @@ def orientation() -> str:
     This is a read-only server. For mutations, use the CLI.
 
     Use the attached docs MCP server to search for documentation on Prefect concepts, usage examples, and best practices.
+
+    Use get_object_schema to get JSON schemas for complex objects like automations.
     """
 
 
