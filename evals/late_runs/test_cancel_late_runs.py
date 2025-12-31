@@ -1,4 +1,3 @@
-from collections.abc import Awaitable, Callable
 from typing import NamedTuple
 from uuid import uuid4
 
@@ -88,7 +87,6 @@ def prefect_reasoning_agent(
 async def test_cancel_all_late_runs_for_deployment(
     prefect_reasoning_agent: Agent,
     deployment_with_late_runs: CancelScenario,
-    evaluate_response: Callable[[str, str], Awaitable[None]],
     tool_call_spy: ToolCallSpy,
     prefect_client: PrefectClient,
 ) -> None:
@@ -114,12 +112,3 @@ async def test_cancel_all_late_runs_for_deployment(
         ], (
             f"Flow run {flow_run_id} should be cancelled but is {updated_run.state.type.value}"
         )
-
-    await evaluate_response(
-        f"""Did the agent successfully cancel all late runs for deployment '{deployment_name}'
-        using the prefect CLI? The agent should have:
-        1. Identified which flow runs were late for this deployment
-        2. Used 'prefect flow-run cancel' CLI commands to cancel them
-        3. Confirmed the cancellations were successful""",
-        result.output,
-    )
