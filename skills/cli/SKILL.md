@@ -91,4 +91,13 @@ prefect automation create --from-file automation.yaml
 
 Use `get_automations()` from the MCP server to inspect existing automation schemas.
 
+## Efficient Inspection
+
+The `get_flow_runs` tool returns summarized data to save tokens:
+- It omits full deployment and work pool schemas.
+- If you see a "Late" run or need concurrency details, follow up with:
+  - `get_work_pools(filter={"name": ...})`
+  - `get_deployments(filter={"id": ...})`
+  - `get_dashboard()`
+
 <!-- ref: https://github.com/pydantic/pydantic-ai/pull/3780 -->
