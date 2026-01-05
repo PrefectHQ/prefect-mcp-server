@@ -19,7 +19,8 @@ def clean_logfire_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("LOGFIRE_CONSOLE", raising=False)
 
 
-def test_docs_mcp_settings_defaults(clean_logfire_env: None) -> None:
+@pytest.mark.usefixtures("clean_logfire_env")
+def test_docs_mcp_settings_defaults() -> None:
     """Test that DocsMCPSettings has sensible defaults."""
     from docs_mcp_server._settings import DocsMCPSettings
 
@@ -83,7 +84,8 @@ def test_turbopuffer_settings_custom_namespace() -> None:
     assert settings.namespace == "custom-namespace"
 
 
-def test_logfire_settings_defaults(clean_logfire_env: None) -> None:
+@pytest.mark.usefixtures("clean_logfire_env")
+def test_logfire_settings_defaults() -> None:
     """Test LogfireSettings defaults."""
     from docs_mcp_server._settings import LogfireSettings
 

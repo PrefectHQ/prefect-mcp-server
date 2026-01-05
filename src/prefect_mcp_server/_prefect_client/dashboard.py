@@ -85,6 +85,7 @@ async def fetch_dashboard() -> DashboardResult:
 
             for pool in work_pools:
                 work_pool_info: WorkPoolInfo = {
+                    "id": str(pool.id),
                     "name": pool.name,
                     "type": pool.type,
                     "is_paused": pool.is_paused,

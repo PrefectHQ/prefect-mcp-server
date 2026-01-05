@@ -101,6 +101,7 @@ class FlowRunStats(TypedDict):
 class WorkPoolInfo(TypedDict):
     """Information about a work pool."""
 
+    id: str
     name: str
     type: str
     is_paused: bool
@@ -114,16 +115,6 @@ class WorkQueueInfo(TypedDict):
     name: str
     concurrency_limit: int | None
     priority: int
-    is_paused: bool
-
-
-class WorkPoolSummary(TypedDict):
-    """Summary of work pool information."""
-
-    id: str
-    name: str
-    type: str
-    status: str | None
     is_paused: bool
 
 
@@ -199,7 +190,7 @@ class LogsResult(TypedDict):
     error: str | None
 
 
-class DeploymentSummary(TypedDict):
+class DeploymentInfo(TypedDict):
     """Summary of deployment information."""
 
     id: str
@@ -286,8 +277,8 @@ class FlowRunDetail(TypedDict):
     work_queue_name: str | None
     infrastructure_pid: str | None
     parent_task_run_id: str | None
-    deployment: DeploymentSummary | None  # Inlined deployment summary
-    work_pool: WorkPoolSummary | None  # Inlined work pool summary
+    deployment: DeploymentInfo | None  # Inlined deployment summary
+    work_pool: WorkPoolInfo | None  # Inlined work pool summary
 
 
 class LogEntry(TypedDict):
