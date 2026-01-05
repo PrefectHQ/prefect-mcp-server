@@ -237,11 +237,28 @@ async def get_flow_runs(
                 # Get inlined deployment and work pool info
                 deployment = None
                 if flow_run.deployment_id:
-                    deployment = deployment_cache.get(str(flow_run.deployment_id))
+                    full_deployment = deployment_cache.get(str(flow_run.deployment_id))
+                    if full_deployment:
+                        deployment = {
+                            "id": full_deployment["id"],
+                            "name": full_deployment["name"],
+                            "description": full_deployment["description"],
+                            "flow_id": full_deployment["flow_id"],
+                            "tags": full_deployment["tags"],
+                            "paused": full_deployment["paused"],
+                        }
 
                 work_pool = None
                 if flow_run.work_pool_name:
-                    work_pool = work_pool_cache.get(flow_run.work_pool_name)
+                    full_work_pool = work_pool_cache.get(flow_run.work_pool_name)
+                    if full_work_pool:
+                        work_pool = {
+                            "id": full_work_pool["id"],
+                            "name": full_work_pool["name"],
+                            "type": full_work_pool["type"],
+                            "status": full_work_pool["status"],
+                            "is_paused": full_work_pool["is_paused"],
+                        }
 
                 flow_run_list.append(
                     {
