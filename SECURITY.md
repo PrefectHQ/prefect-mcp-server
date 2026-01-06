@@ -1,4 +1,4 @@
-# Prefect MCP Server - Security & Usage Answers
+# Prefect MCP Server Security Considerations
 
 ## 1. What Auth patterns does the MCP server support? API key or OAuth?
 
