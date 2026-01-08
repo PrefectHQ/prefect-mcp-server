@@ -7,6 +7,8 @@ description: Prefect CLI commands for mutations. The MCP server is read-only - u
 
 The MCP server is read-only. For mutations, use the CLI.
 
+**Prefer MCP tools for reads** (e.g., `get_flow_runs`, `get_deployments`). They return structured JSON with full UUIDs. Use `prefect api` only if MCP doesn't expose what you need.
+
 ## Critical: Agent-Friendly Usage
 
 The CLI is designed for interactive terminal use. For non-interactive (agent) use:

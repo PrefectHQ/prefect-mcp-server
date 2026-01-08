@@ -9,6 +9,23 @@ An MCP server for interacting with [`prefect`](https://github.com/prefecthq/pref
 
 ## Quick start
 
+### Claude Code plugin (recommended)
+
+The easiest way to get started with Claude Code:
+
+```bash
+# add from marketplace
+/plugin marketplace add prefecthq/prefect-mcp-server
+
+# install the plugin
+/plugin install prefect
+```
+
+This installs both the MCP server (for read-only diagnostics) and a CLI skill (for mutations like triggering deployments or cancelling runs).
+
+> [!NOTE]
+> The plugin uses your local Prefect configuration from `~/.prefect/profiles.toml`. For explicit credentials, use the local uvx setup below.
+
 ### Deploy on FastMCP Cloud
 
 1. Fork this repository on GitHub (`gh repo fork prefecthq/prefect-mcp-server`)
