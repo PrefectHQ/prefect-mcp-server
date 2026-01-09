@@ -17,7 +17,7 @@ from prefect import flow
 from prefect.client.orchestration import PrefectClient
 from prefect.client.schemas.actions import WorkPoolCreate
 from prefect.client.schemas.responses import DeploymentResponse
-from prefect.states import Completed, Running, Scheduled
+from prefect.states import Completed, Running
 from pydantic_ai import Agent
 
 
@@ -58,11 +58,14 @@ async def healthy_deployment(prefect_client: PrefectClient) -> DeploymentRespons
     )
     deployment = await prefect_client.read_deployment(deployment_id)
 
-    # Create flow runs in healthy states (NOT Late)
+    # Create flow runs in unambiguously healthy states
+    # Note: We intentionally omit Scheduled runs because an agent might reasonably
+    # flag "scheduled but not started" as concerning, even though it's not technically
+    # in the "Late" state. Running and Completed are unambiguously healthy.
     healthy_states = [
-        ("scheduled-run", Scheduled()),
         ("running-run", Running()),
-        ("completed-run", Completed()),
+        ("completed-run-1", Completed()),
+        ("completed-run-2", Completed()),
     ]
 
     for name_suffix, state in healthy_states:
