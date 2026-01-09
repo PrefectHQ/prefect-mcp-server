@@ -1,8 +1,12 @@
-"""Negative case eval: agent should correctly identify when there are NO late runs.
+"""Negative case eval: agent should correctly identify when a deployment has NO late runs.
 
 This tests that the agent doesn't hallucinate problems when everything is healthy.
 The blog post "Demystifying Evals for AI Agents" emphasizes balanced problem sets:
 "Test both the cases where a behavior should occur and where it shouldn't."
+
+Note: We scope this to a specific deployment because the test harness is session-scoped
+and other tests may create late runs. This is also more realistic - users often ask
+about specific deployments.
 """
 
 from collections.abc import Awaitable, Callable
@@ -12,13 +16,14 @@ import pytest
 from prefect import flow
 from prefect.client.orchestration import PrefectClient
 from prefect.client.schemas.actions import WorkPoolCreate
+from prefect.client.schemas.responses import DeploymentResponse
 from prefect.states import Completed, Running, Scheduled
 from pydantic_ai import Agent
 
 
 @pytest.fixture
-async def healthy_scenario(prefect_client: PrefectClient) -> dict:
-    """Create a healthy scenario with NO late runs.
+async def healthy_deployment(prefect_client: PrefectClient) -> DeploymentResponse:
+    """Create a healthy deployment with NO late runs.
 
     - Work pool with active workers (READY status)
     - No concurrency limits blocking runs
@@ -51,6 +56,7 @@ async def healthy_scenario(prefect_client: PrefectClient) -> dict:
         name=f"healthy-deployment-{uuid4().hex[:8]}",
         work_pool_name=work_pool_name,
     )
+    deployment = await prefect_client.read_deployment(deployment_id)
 
     # Create flow runs in healthy states (NOT Late)
     healthy_states = [
@@ -59,7 +65,6 @@ async def healthy_scenario(prefect_client: PrefectClient) -> dict:
         ("completed-run", Completed()),
     ]
 
-    flow_runs = []
     for name_suffix, state in healthy_states:
         flow_run = await prefect_client.create_flow_run_from_deployment(
             deployment_id=deployment_id,
@@ -68,35 +73,38 @@ async def healthy_scenario(prefect_client: PrefectClient) -> dict:
         await prefect_client.set_flow_run_state(
             flow_run_id=flow_run.id, state=state, force=True
         )
-        flow_runs.append(flow_run)
 
-    return {
-        "work_pool_name": work_pool_name,
-        "deployment_id": deployment_id,
-        "flow_runs": flow_runs,
-    }
+    return deployment
 
 
-async def test_no_late_runs_healthy_response(
+async def test_no_late_runs_for_deployment(
     simple_agent: Agent,
-    healthy_scenario: dict,
+    healthy_deployment: DeploymentResponse,
     evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
-    """Agent should correctly identify that there are no late runs.
+    """Agent should correctly identify that a specific deployment has no late runs.
 
-    This is a negative case - the agent should NOT hallucinate problems.
+    This is a negative case - the agent should NOT hallucinate problems for this
+    deployment. We scope to a specific deployment because:
+    1. Other tests in the session may create late runs (shared prefect_test_harness)
+    2. This is more realistic - users often ask about specific deployments
     """
+    deployment_name = healthy_deployment.name
+
     async with simple_agent:
         result = await simple_agent.run(
-            "Are any of my flow runs late? Check if there are runs that have "
-            "been scheduled for a while but haven't started executing."
+            f"Are there any late flow runs for the deployment '{deployment_name}'? "
+            "Check if any runs from this deployment have been scheduled for a while "
+            "but haven't started executing."
         )
 
     await evaluate_response(
-        """Does the response correctly indicate that there are NO late runs?
-        The agent should NOT claim there are late runs or concurrency issues
-        when the scenario has only healthy Scheduled, Running, and Completed runs.
-        It's acceptable to say something like "no late runs found" or
-        "your runs appear to be healthy".""",
+        f"""Does the response correctly indicate that deployment '{deployment_name}'
+        has NO late runs? The agent should NOT claim there are late runs for this
+        specific deployment. It's acceptable to say "no late runs found for this
+        deployment" or "runs for {deployment_name} appear healthy".
+
+        Note: The agent may mention late runs from OTHER deployments - that's fine.
+        The key is that it correctly identifies THIS deployment has no late runs.""",
         result.output,
     )
