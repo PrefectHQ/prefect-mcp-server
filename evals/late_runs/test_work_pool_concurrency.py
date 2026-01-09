@@ -11,6 +11,8 @@ from prefect.client.schemas.responses import DeploymentResponse
 from prefect.states import Late
 from pydantic_ai import Agent
 
+from evals._tools.spy import ToolCallSpy
+
 
 class LateRunsScenario(NamedTuple):
     """Container for late runs scenario data."""
@@ -101,6 +103,7 @@ async def test_diagnoses_work_pool_concurrency(
     reasoning_agent: Agent,
     work_pool_concurrency_scenario: LateRunsScenario,
     evaluate_response: Callable[[str, str], Awaitable[None]],
+    tool_call_spy: ToolCallSpy,
 ) -> None:
     """Test agent diagnoses late runs caused by work pool concurrency limit."""
     work_pool_name = work_pool_concurrency_scenario.work_pool.name
@@ -111,6 +114,17 @@ async def test_diagnoses_work_pool_concurrency(
             been scheduled for a while but haven't begun execution."""
         )
 
+    # State verification: agent response must mention the actual work pool name
+    # This catches cases where the LLM evaluation might pass on vague responses
+    assert work_pool_name in result.output, (
+        f"Response must mention the specific work pool '{work_pool_name}' "
+        f"but got: {result.output[:200]}..."
+    )
+
+    # Tool verification: agent should have inspected work pools
+    tool_call_spy.assert_tool_was_called("get_work_pools")
+
+    # LLM evaluation for response quality
     await evaluate_response(
         f"""Does this response specifically identify that work pool
         '{work_pool_name}' has a concurrency limit of 1 that is causing late

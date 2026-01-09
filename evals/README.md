@@ -54,6 +54,7 @@ Provider defaults:
 | **late_runs/test_deployment_concurrency** | verifies agent can diagnose late runs caused by deployment concurrency limits | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
 | **late_runs/test_tag_concurrency** | verifies agent can diagnose late runs caused by tag-based concurrency limits | ✅ implemented | [#32](https://github.com/PrefectHQ/prefect-mcp-server/issues/32) |
 | **late_runs/test_cancel_late_runs** | verifies agent can cancel all late runs for a deployment using the prefect CLI | ✅ implemented | - |
+| **late_runs/test_no_late_runs** | negative case: verifies agent correctly identifies when there are NO late runs (doesn't hallucinate problems) | ✅ implemented | - |
 | **test_create_reactive_automation** | verifies agent can create reactive automations | ✅ implemented | [#47](https://github.com/PrefectHQ/prefect-mcp-server/pull/47) |
 | **test_trigger_deployment_run** | verifies agent can trigger deployment runs with custom parameters | ✅ implemented | - |
 | **test_debug_automation_not_firing** | verifies agent can debug why an automation didn't fire due to threshold mismatch | ✅ implemented | [#62](https://github.com/PrefectHQ/prefect-mcp-server/issues/62) |
