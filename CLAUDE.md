@@ -25,3 +25,14 @@ gh api repos/PrefectHQ/prefect-mcp-server/check-runs/$CHECK_RUN_ID/annotations
 ```
 
 this shows the full assertion errors including what the LLM agent responded with and why it failed the eval criteria.
+
+## fastmcp client
+
+```python
+from fastmcp import Client
+from prefect_mcp_server.server import mcp
+
+async with Client(mcp) as client:
+    await client.list_tools()
+    await client.call_tool("get_identity", {})
+```
