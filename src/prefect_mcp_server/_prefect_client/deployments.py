@@ -95,7 +95,7 @@ async def get_deployments(
                 )
                 flow_runs = await client.read_flow_runs(
                     deployment_filter=deployment_filter_for_runs,
-                    limit=len(deployment_ids) * 5,  # consider making this a setting
+                    limit=min(len(deployment_ids) * 5, 200),  # cap at API max of 200
                     sort=FlowRunSort.START_TIME_DESC,
                 )
 

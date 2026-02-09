@@ -30,14 +30,13 @@ class PrefectAuthMiddleware(Middleware):
         context: MiddlewareContext[mt.CallToolRequestParams],
         call_next: CallNext[mt.CallToolRequestParams, Any],
     ) -> Any:
-        """extract credentials from headers on each tool call."""
+        """Extract credentials from headers, workspace selection, or environment."""
         fastmcp_ctx = context.fastmcp_context
 
         if fastmcp_ctx:
             credentials: dict[str, str | None] = {}
 
-            # extract from http headers if available
-            # get_http_headers() returns empty dict when not in http transport (e.g., stdio)
+            # Priority 1: HTTP headers (multi-tenant deployments)
             headers = get_http_headers(include_all=True)
             api_url = headers.get("x-prefect-api-url")
             api_key = headers.get("x-prefect-api-key")
@@ -45,19 +44,73 @@ class PrefectAuthMiddleware(Middleware):
 
             if api_url:
                 credentials["api_url"] = api_url
-            if api_key:
-                credentials["api_key"] = api_key
-            if auth_string:
-                credentials["auth_string"] = auth_string
+                if api_key:
+                    credentials["api_key"] = api_key
+                if auth_string:
+                    credentials["auth_string"] = auth_string
+                logger.debug("Using credentials from HTTP headers: api_url=%s", api_url)
 
-            if credentials:
-                logger.debug(
-                    "Extracted Prefect credentials from HTTP headers: api_url=%s",
-                    api_url,
-                )
+            # Priority 2: Selected workspace from session state, env var, or module variable
+            else:
+                # Check session state first
+                selected_workspace = fastmcp_ctx.get_state("selected_workspace")
+                logger.debug(f"Selected workspace from context state: {selected_workspace}")
 
-            # store in context if we found credentials
-            # the absence of credentials means we'll use environment/profile defaults
+                # Then check environment variable
+                if not selected_workspace:
+                    import os
+
+                    selected_workspace = os.getenv("PREFECT_SELECTED_WORKSPACE")
+                    logger.debug(f"Selected workspace from environment: {selected_workspace}")
+
+                # Finally check module-level variable
+                if not selected_workspace:
+                    try:
+                        from prefect_mcp_server import server
+
+                        selected_workspace = server._selected_workspace
+                        logger.debug(f"Selected workspace from module variable: {selected_workspace}")
+                    except (ImportError, AttributeError) as e:
+                        logger.debug(f"Could not import server module: {e}")
+                        pass
+
+                if selected_workspace:
+                    try:
+                        from prefect_mcp_server.settings import settings
+
+                        workspace_creds = settings.workspace.get_workspace_credentials(
+                            selected_workspace
+                        )
+                        credentials = workspace_creds
+                        logger.debug(
+                            "Using credentials from selected workspace: %s (url=%s)",
+                            selected_workspace,
+                            workspace_creds.get("api_url", "")[:80]
+                        )
+                    except ValueError as e:
+                        logger.error("Failed to get workspace credentials: %s", e)
+
+            # Priority 3: Default workspace
+            if not credentials:
+                try:
+                    from prefect_mcp_server.settings import settings
+
+                    if settings.workspace.default_workspace:
+                        workspace_creds = settings.workspace.get_workspace_credentials(
+                            settings.workspace.default_workspace
+                        )
+                        credentials = workspace_creds
+                        logger.debug(
+                            "Using credentials from default workspace: %s",
+                            settings.workspace.default_workspace,
+                        )
+                except ValueError as e:
+                    logger.warning("Failed to get default workspace credentials: %s", e)
+
+            # Priority 4: Fall back to environment (existing behavior)
+            # If no credentials set here, get_prefect_client() will use
+            # PREFECT_API_URL/PREFECT_API_KEY or profiles.toml
+
             if credentials:
                 fastmcp_ctx.set_state("prefect_credentials", credentials)
 

@@ -1,5 +1,7 @@
 """Settings for Prefect MCP server."""
 
+import os
+import re
 from datetime import timedelta
 from typing import Literal
 
@@ -48,6 +50,80 @@ class LogfireSettings(BaseSettings):
     )
 
 
+class WorkspaceSettings(BaseSettings):
+    """Multi-workspace configuration with auto-discovery."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="PREFECT_", extra="ignore", env_file=".env"
+    )
+
+    default_workspace: str | None = Field(
+        default=None,
+        description="Default workspace if none selected",
+    )
+
+    def discover_workspaces(self) -> list[str]:
+        """Auto-discover workspaces by scanning environment for PREFECT_WORKSPACE_*_API_URL pattern.
+
+        Returns workspace names in lowercase (extracted from env var names).
+        """
+        workspaces = set()
+        pattern = re.compile(r"^PREFECT_WORKSPACE_([A-Z0-9_]+)_API_URL$")
+
+        for env_var in os.environ:
+            if match := pattern.match(env_var):
+                workspace_name = match.group(1).lower()
+                workspaces.add(workspace_name)
+
+        return sorted(workspaces)
+
+    def get_workspace_credentials(self, workspace_name: str) -> dict[str, str]:
+        """Get credentials for a specific workspace from environment.
+
+        Expects env vars in format:
+        - PREFECT_WORKSPACE_{NAME}_API_URL
+        - PREFECT_WORKSPACE_{NAME}_API_KEY
+
+        Args:
+            workspace_name: Name of workspace (case-insensitive)
+        """
+        import logging
+
+        logger = logging.getLogger(__name__)
+        prefix = f"PREFECT_WORKSPACE_{workspace_name.upper()}_"
+        api_url = os.getenv(f"{prefix}API_URL")
+        api_key = os.getenv(f"{prefix}API_KEY")
+
+        logger.debug(
+            f"Getting credentials for workspace '{workspace_name}': url={api_url[:50] if api_url else None}..."
+        )
+
+        if not api_url or not api_key:
+            raise ValueError(
+                f"Workspace '{workspace_name}' not configured. "
+                f"Expected {prefix}API_URL and {prefix}API_KEY"
+            )
+
+        return {
+            "api_url": api_url,
+            "api_key": api_key,
+        }
+
+    def list_configured_workspaces(self) -> list[str]:
+        """Return list of workspaces that have valid credentials configured.
+
+        Auto-discovers from environment, validates credentials exist.
+        """
+        configured = []
+        for ws in self.discover_workspaces():
+            try:
+                self.get_workspace_credentials(ws)
+                configured.append(ws)
+            except ValueError:
+                pass
+        return configured
+
+
 class Settings(BaseSettings):
     """Settings for the Prefect MCP server."""
 
@@ -66,6 +142,11 @@ class Settings(BaseSettings):
     logfire: LogfireSettings = Field(
         default_factory=LogfireSettings,
         description="Logfire settings",
+    )
+
+    workspace: WorkspaceSettings = Field(
+        default_factory=WorkspaceSettings,
+        description="Multi-workspace settings",
     )
 
 

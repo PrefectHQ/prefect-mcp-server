@@ -35,7 +35,7 @@ try:
         token=settings.logfire.token,
     )
     logfire.instrument_mcp()
-except ImportError:
+except (ImportError, Exception):
     pass
 
 mcp = FastMCP("Prefect MCP Server")
@@ -44,11 +44,14 @@ mcp = FastMCP("Prefect MCP Server")
 mcp.add_middleware(PrefectAuthMiddleware())
 
 # Mount the Prefect docs MCP server to expose its tools
-docs_proxy = FastMCP.as_proxy(
-    ProxyClient(settings.docs_mcp.url, init_timeout=settings.docs_mcp.init_timeout),
-    name="Prefect Documentation Search",
-)
-mcp.mount(docs_proxy, prefix="docs")
+try:
+    docs_proxy = FastMCP.as_proxy(
+        ProxyClient(settings.docs_mcp.url, init_timeout=settings.docs_mcp.init_timeout),
+        name="Prefect Documentation Search",
+    )
+    mcp.mount(docs_proxy, prefix="docs")
+except Exception:
+    pass  # Docs proxy optional
 
 # Cloud-specific tools (conditionally mounted at end of file)
 cloud_mcp = FastMCP("Prefect Cloud Tools")
@@ -65,6 +68,107 @@ def orientation() -> str:
 
     Use get_object_schema to get JSON schemas for complex objects like automations.
     """
+
+
+# Global variable to track selected workspace across tool calls
+_selected_workspace: str | None = None
+
+
+@mcp.tool()
+def select_workspace(workspace: str) -> str:
+    """Select which Prefect workspace to use for this session.
+
+    Workspaces are auto-discovered from environment variables matching the pattern:
+    - PREFECT_WORKSPACE_{NAME}_API_URL
+    - PREFECT_WORKSPACE_{NAME}_API_KEY
+
+    Use list_workspaces tool to see available workspaces.
+
+    Args:
+        workspace: Name of the workspace to use (case-insensitive)
+    """
+    global _selected_workspace
+    from fastmcp.server.dependencies import get_context
+    from prefect_mcp_server.settings import settings as _settings
+
+    # Normalize workspace name
+    workspace = workspace.lower()
+
+    # Validate workspace exists and has credentials
+    configured = _settings.workspace.list_configured_workspaces()
+    if workspace not in configured:
+        available = ", ".join(configured) if configured else "(none configured)"
+        return (
+            f"Error: Workspace '{workspace}' not configured. "
+            f"Available workspaces: {available}"
+        )
+
+    # Store in module-level variable, session state, and environment
+    _selected_workspace = workspace
+
+    # Set as environment variable for middleware to pick up
+    import os
+    os.environ["PREFECT_SELECTED_WORKSPACE"] = workspace
+
+    try:
+        ctx = get_context()
+        ctx.set_state("selected_workspace", workspace)
+    except RuntimeError:
+        pass  # Context not available, but other methods work
+
+    return f"✓ Switched to Prefect workspace: {workspace}"
+
+
+@mcp.tool()
+async def list_workspaces() -> dict[str, Any]:
+    """List available Prefect workspaces for this session.
+
+    Workspaces are auto-discovered from environment variables.
+    Shows which workspaces are configured and which is currently selected.
+    """
+    try:
+        from fastmcp.server.dependencies import get_context
+        from prefect_mcp_server.settings import settings as _settings
+
+        selected = None
+        try:
+            ctx = get_context()
+            selected = ctx.get_state("selected_workspace")
+        except (RuntimeError, AttributeError):
+            pass
+
+        # Check environment variable if not in context
+        if selected is None:
+            import os
+
+            selected = os.getenv("PREFECT_SELECTED_WORKSPACE")
+
+        # Check module-level variable if not in env
+        if selected is None:
+            global _selected_workspace
+            selected = _selected_workspace
+
+        # If nothing selected, use default
+        if selected is None:
+            selected = _settings.workspace.default_workspace
+
+        # Get list of workspaces with valid credentials
+        configured = _settings.workspace.list_configured_workspaces()
+
+        return {
+            "success": True,
+            "configured_workspaces": configured,
+            "selected_workspace": selected,
+            "default_workspace": _settings.workspace.default_workspace,
+            "note": "Use select_workspace tool to switch workspaces",
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        }
 
 
 @mcp.tool
@@ -476,5 +580,8 @@ async def review_rate_limits(
 
 
 # Conditionally mount Cloud tools if connected to Prefect Cloud
-if determine_server_type() == ServerType.CLOUD:
-    mcp.mount(cloud_mcp)
+try:
+    if determine_server_type() == ServerType.CLOUD:
+        mcp.mount(cloud_mcp)
+except Exception:
+    pass  # Cloud tools will be unavailable if can't determine server type

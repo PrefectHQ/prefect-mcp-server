@@ -138,6 +138,55 @@ claude mcp add prefect \
 > [!TIP]
 > Prefect Cloud users on Team, Pro, and Enterprise plans can use service accounts for API authentication. Pro and Enterprise users can restrict service accounts to read-only access (only `see_*` permissions) since this MCP server requires no write permissions.
 
+#### Multi-Workspace Setup
+
+Configure multiple Prefect workspaces using the `PREFECT_WORKSPACE_{NAME}_API_URL` and `PREFECT_WORKSPACE_{NAME}_API_KEY` pattern. Workspaces are auto-discovered - just add the environment variables.
+
+**Setup with .env file:**
+```bash
+# .env or ~/.prefect-mcp.env
+PREFECT_WORKSPACE_PROD_API_URL=https://api.prefect.cloud/api/accounts/ACCOUNT_ID/workspaces/WORKSPACE_ID
+PREFECT_WORKSPACE_PROD_API_KEY=pnu_YOUR_API_KEY
+
+PREFECT_WORKSPACE_DEV_API_URL=https://api.prefect.cloud/api/accounts/ACCOUNT_ID/workspaces/WORKSPACE_ID
+PREFECT_WORKSPACE_DEV_API_KEY=pnu_YOUR_API_KEY
+
+# Optional default
+PREFECT_DEFAULT_WORKSPACE=prod
+```
+
+**Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):**
+```json
+{
+  "mcpServers": {
+    "prefect": {
+      "command": "uvx",
+      "args": ["--from", "prefect-mcp", "prefect-mcp-server"],
+      "env": {
+        "PREFECT_WORKSPACE_PROD_API_URL": "https://api.prefect.cloud/api/accounts/.../workspaces/...",
+        "PREFECT_WORKSPACE_PROD_API_KEY": "pnu_...",
+        "PREFECT_WORKSPACE_DEV_API_URL": "https://api.prefect.cloud/api/accounts/.../workspaces/...",
+        "PREFECT_WORKSPACE_DEV_API_KEY": "pnu_...",
+        "PREFECT_DEFAULT_WORKSPACE": "prod"
+      }
+    }
+  }
+}
+```
+
+**Usage:**
+```
+"list my workspaces"
+"switch to dev workspace"
+"show me recent flow runs"
+```
+
+> [!NOTE]
+> Workspace switching requires stdio transport (local execution). It won't work with MCP Inspector or HTTP transport since those don't maintain session state across requests.
+
+> [!TIP]
+> If you see "Failed to spawn process" errors in Claude Desktop, use the full path to `uvx`: `"command": "/Users/YOUR_USERNAME/.local/bin/uvx"` (or find it with `which uvx`)
+
 ### Other MCP Clients
 
 <details>
