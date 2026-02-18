@@ -107,7 +107,9 @@ async def get_deployments(
 ) -> DeploymentsResult:
     """Get deployments with optional filters.
 
-    Returns a list of deployments and their details matching the filters.
+    Returns compact summaries by default. Filter by specific ID(s) for full
+    detail including parameters, parameter_openapi_schema, job_variables,
+    work_pool details, and recent_runs.
 
     Filter operators:
     - any_: Match any value in list
@@ -119,7 +121,7 @@ async def get_deployments(
 
     Examples:
         - List all deployments: get_deployments()
-        - Get specific deployment: get_deployments(filter={"id": {"any_": ["<deployment-id>"]}})
+        - Full detail: get_deployments(filter={"id": {"any_": ["<deployment-id>"]}})
         - Active deployments: get_deployments(filter={"paused": {"eq_": False}})
         - Production deployments: get_deployments(filter={"tags": {"all_": ["production"]}})
     """
@@ -191,7 +193,8 @@ async def get_flow_runs(
 ) -> FlowRunsResult:
     """Get flow runs with optional filters.
 
-    Returns a list of flow runs and their details matching the filters.
+    Returns compact summaries by default. Filter by specific ID(s) for full
+    detail including parameters, inlined deployment info, and work pool info.
 
     Filter operators:
     - any_: Match any value in list
@@ -299,10 +302,10 @@ async def get_work_pools(
 ) -> WorkPoolsResult:
     """Get work pools with optional filters.
 
-    Returns a list of work pools and their details matching the filters.
-    Essential for debugging deployment issues related to flow runs being stuck
-    or not starting. Shows work pool and queue concurrency limits, active workers,
-    and configuration details.
+    Returns compact summaries by default (name, type, status, concurrency_limit).
+    Filter by specific ID(s) for full detail including work queues, active worker
+    counts, and descriptions. Essential for debugging deployment issues related to
+    flow runs being stuck or not starting.
 
     Filter operators:
     - any_: Match any value in list
@@ -310,7 +313,7 @@ async def get_work_pools(
 
     Examples:
         - List all pools: get_work_pools()
-        - Get specific pool: get_work_pools(filter={"name": {"any_": ["test-pool"]}})
+        - Full detail: get_work_pools(filter={"id": {"any_": ["<work-pool-id>"]}})
         - Kubernetes pools: get_work_pools(filter={"type": {"any_": ["kubernetes"]}})
     """
     return await _prefect_client.get_work_pools(
@@ -391,11 +394,9 @@ async def get_automations(
 ) -> AutomationsResult:
     """Get automations with optional filters.
 
-    Returns automations with their complete configurations including:
-    - Trigger conditions (event type, posture, threshold, resource filters)
-    - Actions to perform (main, on_trigger, on_resolve)
-    - Enabled/disabled state
-    - Tags and metadata
+    Returns compact summaries by default (trigger_type, action_count).
+    Filter by specific ID(s) for full detail including trigger config,
+    actions, actions_on_trigger, and actions_on_resolve.
 
     Filter operators:
     - id.any_: Match specific automation IDs
@@ -404,7 +405,7 @@ async def get_automations(
 
     Examples:
         - List all automations: get_automations()
-        - Get specific automation: get_automations(filter={"id": {"any_": ["<automation-id>"]}})
+        - Full detail: get_automations(filter={"id": {"any_": ["<automation-id>"]}})
         - Get by name: get_automations(filter={"name": {"any_": ["my-automation"]}})
         - Only enabled: get_automations(filter={"enabled": {"eq_": True}})
     """

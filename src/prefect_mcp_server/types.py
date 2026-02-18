@@ -127,9 +127,11 @@ class WorkPoolDetail(TypedDict):
     status: str | None
     is_paused: bool
     concurrency_limit: int | None
-    work_queues: list[WorkQueueInfo]
     active_workers: int
-    description: str | None
+    # Full detail (omitted in compact mode)
+    work_queues: NotRequired[list[WorkQueueInfo]]
+    work_queue_count: NotRequired[int]
+    description: NotRequired[str | None]
 
 
 class WorkPoolResult(TypedDict):
@@ -144,6 +146,7 @@ class WorkPoolsResult(TypedDict):
     """Result of listing work pools."""
 
     success: bool
+    detail: NotRequired[bool]
     count: int
     work_pools: list[WorkPoolDetail]
     error: str | None
@@ -202,7 +205,12 @@ class DeploymentInfo(TypedDict):
 
 
 class DeploymentDetail(TypedDict):
-    """Detailed deployment information."""
+    """Detailed deployment information.
+
+    In compact mode (browsing), heavy fields are omitted: parameters,
+    parameter_openapi_schema, job_variables, work_pool, recent_runs,
+    pull_steps, entrypoint. Filter by specific ID(s) for full detail.
+    """
 
     id: str
     name: str | None
@@ -211,15 +219,11 @@ class DeploymentDetail(TypedDict):
     flow_id: str | None
     flow_name: str | None
     tags: list[str]
-    parameters: dict[str, Any]
-    parameter_openapi_schema: dict[str, Any]
-    job_variables: dict[str, Any]
     work_pool_name: str | None
     work_queue_name: str | None
     schedules: list[dict[str, Any]]
     created: str | None
     updated: str | None
-    recent_runs: list[dict[str, Any]]
     paused: bool
     enforce_parameter_schema: bool
     global_concurrency_limit: Annotated[
@@ -240,7 +244,12 @@ class DeploymentDetail(TypedDict):
             description="Concurrency options including collision_strategy (ENQUEUE or CANCEL_NEW)."
         ),
     ]
-    work_pool: WorkPoolDetail | None  # Inlined work pool details
+    # Full detail (omitted in compact mode)
+    parameters: NotRequired[dict[str, Any]]
+    parameter_openapi_schema: NotRequired[dict[str, Any]]
+    job_variables: NotRequired[dict[str, Any]]
+    work_pool: NotRequired[WorkPoolDetail | None]
+    recent_runs: NotRequired[list[dict[str, Any]]]
     pull_steps: NotRequired[list[dict[str, Any]]]
     entrypoint: NotRequired[str]
 
@@ -249,13 +258,19 @@ class DeploymentsResult(TypedDict):
     """Result of listing deployments."""
 
     success: bool
+    detail: NotRequired[bool]
     count: int
     deployments: list[DeploymentDetail]
     error: str | None
 
 
 class FlowRunDetail(TypedDict):
-    """Detailed flow run information with inlined relationships."""
+    """Detailed flow run information with inlined relationships.
+
+    In compact mode (browsing), heavy fields are omitted: parameters,
+    deployment (inlined), work_pool (inlined). Filter by specific ID(s)
+    for full detail.
+    """
 
     id: str
     name: str | None
@@ -271,14 +286,16 @@ class FlowRunDetail(TypedDict):
     start_time: str | None
     end_time: str | None
     duration: float | None
-    parameters: dict[str, Any] | None
     tags: list[str] | None
     deployment_id: str | None
+    work_pool_name: str | None
     work_queue_name: str | None
-    infrastructure_pid: str | None
     parent_task_run_id: str | None
-    deployment: DeploymentInfo | None  # Inlined deployment summary
-    work_pool: WorkPoolInfo | None  # Inlined work pool summary
+    # Full detail (omitted in compact mode)
+    parameters: NotRequired[dict[str, Any] | None]
+    infrastructure_pid: NotRequired[str | None]
+    deployment: NotRequired[DeploymentInfo | None]
+    work_pool: NotRequired[WorkPoolInfo | None]
 
 
 class LogEntry(TypedDict):
@@ -314,6 +331,7 @@ class FlowRunsResult(TypedDict):
     """Result of listing flow runs."""
 
     success: bool
+    detail: NotRequired[bool]
     count: int
     flow_runs: list[FlowRunDetail]
     error: str | None
@@ -409,24 +427,34 @@ class IdentityResult(TypedDict):
 
 
 class AutomationDetail(TypedDict):
-    """Detailed automation information."""
+    """Detailed automation information.
+
+    In compact mode (browsing), heavy fields are omitted: trigger, actions,
+    actions_on_trigger, actions_on_resolve. Summary fields trigger_type and
+    action_count are included instead. Filter by specific ID(s) for full detail.
+    """
 
     id: str
     name: str
     description: str
     enabled: bool
-    trigger: dict[str, Any]  # Full trigger configuration
-    actions: list[dict[str, Any]]  # Actions to perform when triggered
-    actions_on_trigger: list[dict[str, Any]]  # Actions when going into triggered state
-    actions_on_resolve: list[dict[str, Any]]  # Actions when resolving
     tags: list[str]
     owner_resource: str | None
+    # Compact summary fields (present in compact mode)
+    trigger_type: NotRequired[str]
+    action_count: NotRequired[int]
+    # Full detail (omitted in compact mode)
+    trigger: NotRequired[dict[str, Any]]
+    actions: NotRequired[list[dict[str, Any]]]
+    actions_on_trigger: NotRequired[list[dict[str, Any]]]
+    actions_on_resolve: NotRequired[list[dict[str, Any]]]
 
 
 class AutomationsResult(TypedDict):
     """Result of listing automations."""
 
     success: bool
+    detail: NotRequired[bool]
     count: int
     automations: list[AutomationDetail]
     error: str | None

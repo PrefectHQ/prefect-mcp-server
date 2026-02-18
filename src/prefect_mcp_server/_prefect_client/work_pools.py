@@ -6,6 +6,7 @@ from httpx import HTTPStatusError
 from prefect.exceptions import ObjectNotFound
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
+from prefect_mcp_server._prefect_client.utils import is_detail_query
 from prefect_mcp_server.types import WorkPoolDetail, WorkPoolResult, WorkQueueInfo
 
 
@@ -84,6 +85,8 @@ async def get_work_pools(
     Returns a list of work pools matching the filters.
     To get a specific work pool by name, use filter={"name": {"any_": ["<pool-name>"]}}
     """
+    detail = is_detail_query(filter)
+
     try:
         async with get_prefect_client() as client:
             from prefect.client.schemas.filters import WorkPoolFilter
@@ -102,44 +105,60 @@ async def get_work_pools(
             # Format the work pools
             work_pool_list = []
             for work_pool in work_pools:
-                # Get worker count for this pool
-                workers = await client.read_workers_for_work_pool(
-                    work_pool_name=work_pool.name
-                )
-                active_worker_count = len([w for w in workers if w.status == "ONLINE"])
+                if detail:
+                    # Full detail: fetch workers and queues per pool
+                    workers = await client.read_workers_for_work_pool(
+                        work_pool_name=work_pool.name
+                    )
+                    active_worker_count = len(
+                        [w for w in workers if w.status == "ONLINE"]
+                    )
 
-                # Get work queues for this pool
-                work_queues = await client.read_work_queues(
-                    work_pool_name=work_pool.name
-                )
+                    work_queues = await client.read_work_queues(
+                        work_pool_name=work_pool.name
+                    )
 
-                queue_list: list[WorkQueueInfo] = []
-                for queue in work_queues:
-                    queue_info: WorkQueueInfo = {
-                        "id": str(queue.id),
-                        "name": queue.name,
-                        "concurrency_limit": queue.concurrency_limit,
-                        "priority": queue.priority,
-                        "is_paused": queue.is_paused,
-                    }
-                    queue_list.append(queue_info)
+                    queue_list: list[WorkQueueInfo] = []
+                    for queue in work_queues:
+                        queue_info: WorkQueueInfo = {
+                            "id": str(queue.id),
+                            "name": queue.name,
+                            "concurrency_limit": queue.concurrency_limit,
+                            "priority": queue.priority,
+                            "is_paused": queue.is_paused,
+                        }
+                        queue_list.append(queue_info)
 
-                work_pool_list.append(
-                    {
-                        "id": str(work_pool.id),
-                        "name": work_pool.name,
-                        "type": work_pool.type,
-                        "status": work_pool.status,
-                        "is_paused": work_pool.is_paused,
-                        "concurrency_limit": work_pool.concurrency_limit,
-                        "work_queues": queue_list,
-                        "active_workers": active_worker_count,
-                        "description": work_pool.description,
-                    }
-                )
+                    work_pool_list.append(
+                        {
+                            "id": str(work_pool.id),
+                            "name": work_pool.name,
+                            "type": work_pool.type,
+                            "status": work_pool.status,
+                            "is_paused": work_pool.is_paused,
+                            "concurrency_limit": work_pool.concurrency_limit,
+                            "work_queues": queue_list,
+                            "active_workers": active_worker_count,
+                            "description": work_pool.description,
+                        }
+                    )
+                else:
+                    # Compact: skip per-pool API calls, just include summary
+                    work_pool_list.append(
+                        {
+                            "id": str(work_pool.id),
+                            "name": work_pool.name,
+                            "type": work_pool.type,
+                            "status": work_pool.status,
+                            "is_paused": work_pool.is_paused,
+                            "concurrency_limit": work_pool.concurrency_limit,
+                            "active_workers": 0,
+                        }
+                    )
 
             return {
                 "success": True,
+                "detail": detail,
                 "count": len(work_pool_list),
                 "work_pools": work_pool_list,
                 "error": None,

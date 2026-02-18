@@ -4,6 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
+from prefect_mcp_server._prefect_client.utils import is_detail_query
 from prefect_mcp_server.types import AutomationsResult
 
 
@@ -12,6 +13,8 @@ async def get_automations(
     limit: int = 100,
 ) -> AutomationsResult:
     """Get automations with optional filters."""
+    detail = is_detail_query(filter)
+
     async with get_prefect_client() as client:
         try:
             # If filter contains an ID, fetch specific automation(s)
@@ -55,39 +58,45 @@ async def get_automations(
 
             automation_list = []
             for automation in automations:
-                # Extract trigger details
-                trigger_dict = automation.trigger.model_dump(mode="json")
+                # Build automation dict - compact by default
+                auto: dict[str, Any] = {
+                    "id": str(automation.id),
+                    "name": automation.name,
+                    "description": automation.description,
+                    "enabled": automation.enabled,
+                    "tags": list(automation.tags) if automation.tags else [],
+                    "owner_resource": automation.owner_resource,
+                }
 
-                # Extract action details
-                actions_list = [
-                    action.model_dump(mode="json") for action in automation.actions
-                ]
-                actions_on_trigger_list = [
-                    action.model_dump(mode="json")
-                    for action in automation.actions_on_trigger
-                ]
-                actions_on_resolve_list = [
-                    action.model_dump(mode="json")
-                    for action in automation.actions_on_resolve
-                ]
+                if detail:
+                    # Full trigger and action details
+                    auto["trigger"] = automation.trigger.model_dump(mode="json")
+                    auto["actions"] = [
+                        action.model_dump(mode="json") for action in automation.actions
+                    ]
+                    auto["actions_on_trigger"] = [
+                        action.model_dump(mode="json")
+                        for action in automation.actions_on_trigger
+                    ]
+                    auto["actions_on_resolve"] = [
+                        action.model_dump(mode="json")
+                        for action in automation.actions_on_resolve
+                    ]
+                else:
+                    # Compact summary fields
+                    trigger_dict = automation.trigger.model_dump(mode="json")
+                    auto["trigger_type"] = trigger_dict.get("type", "unknown")
+                    auto["action_count"] = (
+                        len(automation.actions)
+                        + len(automation.actions_on_trigger)
+                        + len(automation.actions_on_resolve)
+                    )
 
-                automation_list.append(
-                    {
-                        "id": str(automation.id),
-                        "name": automation.name,
-                        "description": automation.description,
-                        "enabled": automation.enabled,
-                        "trigger": trigger_dict,
-                        "actions": actions_list,
-                        "actions_on_trigger": actions_on_trigger_list,
-                        "actions_on_resolve": actions_on_resolve_list,
-                        "tags": list(automation.tags) if automation.tags else [],
-                        "owner_resource": automation.owner_resource,
-                    }
-                )
+                automation_list.append(auto)
 
             return {
                 "success": True,
+                "detail": detail,
                 "count": len(automation_list),
                 "automations": automation_list,
                 "error": None,

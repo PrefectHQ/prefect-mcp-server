@@ -8,6 +8,7 @@ from prefect.client.schemas.filters import LogFilter, LogFilterFlowRunId
 from prefect.client.schemas.sorting import FlowRunSort, LogSort
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
+from prefect_mcp_server._prefect_client.utils import is_detail_query
 from prefect_mcp_server.types import LogEntry, LogsResult
 
 # Log level mapping from Python logging levels to readable names
@@ -168,6 +169,8 @@ async def get_flow_runs(
         filter: JSON-like dict that gets converted to FlowRunFilter
         limit: Maximum number of flow runs to return
     """
+    detail = is_detail_query(filter)
+
     async with get_prefect_client() as client:
         try:
             from prefect.client.schemas.filters import FlowRunFilter
@@ -184,44 +187,51 @@ async def get_flow_runs(
                 sort=FlowRunSort.START_TIME_DESC,
             )
 
-            # Batch fetch related objects using existing functions
-            # Collect unique deployment and work pool IDs
-            deployment_ids = list(
-                {str(fr.deployment_id) for fr in flow_runs if fr.deployment_id}
-            )
-            work_pool_names = list(
-                {fr.work_pool_name for fr in flow_runs if fr.work_pool_name}
-            )
+            # Only batch fetch related objects in detail mode
+            deployment_cache: dict[str, dict[str, Any]] = {}
+            work_pool_cache: dict[str, dict[str, Any]] = {}
 
-            # Batch fetch deployments
-            deployment_cache = {}
-            if deployment_ids:
-                from prefect_mcp_server._prefect_client.deployments import (
-                    get_deployments,
+            if detail:
+                # Collect unique deployment and work pool IDs
+                deployment_ids = list(
+                    {str(fr.deployment_id) for fr in flow_runs if fr.deployment_id}
+                )
+                work_pool_names = list(
+                    {fr.work_pool_name for fr in flow_runs if fr.work_pool_name}
                 )
 
-                # Fetch all deployments in one call using filter
-                result = await get_deployments(filter={"id": {"any_": deployment_ids}})
+                # Batch fetch deployments
+                if deployment_ids:
+                    from prefect_mcp_server._prefect_client.deployments import (
+                        get_deployments,
+                    )
 
-                if result.get("success"):
-                    for deployment in result["deployments"]:
-                        deployment_cache[deployment["id"]] = deployment
+                    result = await get_deployments(
+                        filter={"id": {"any_": deployment_ids}}
+                    )
 
-            # Batch fetch work pools
-            work_pool_cache = {}
-            if work_pool_names:
-                import asyncio
+                    if result.get("success"):
+                        for deployment in result["deployments"]:
+                            deployment_cache[deployment["id"]] = deployment
 
-                from prefect_mcp_server._prefect_client.work_pools import get_work_pool
+                # Batch fetch work pools
+                if work_pool_names:
+                    import asyncio
 
-                tasks = [get_work_pool(pool_name) for pool_name in work_pool_names]
-                work_pool_results = await asyncio.gather(*tasks, return_exceptions=True)
+                    from prefect_mcp_server._prefect_client.work_pools import (
+                        get_work_pool,
+                    )
 
-                for pool_name, result in zip(work_pool_names, work_pool_results):
-                    if isinstance(result, dict) and result.get("success"):
-                        work_pool_cache[pool_name] = result["work_pool"]
+                    tasks = [get_work_pool(pool_name) for pool_name in work_pool_names]
+                    work_pool_results = await asyncio.gather(
+                        *tasks, return_exceptions=True
+                    )
 
-            # Format the flow runs with inlined information
+                    for pool_name, result in zip(work_pool_names, work_pool_results):
+                        if isinstance(result, dict) and result.get("success"):
+                            work_pool_cache[pool_name] = result["work_pool"]
+
+            # Format the flow runs
             flow_run_list = []
             for flow_run in flow_runs:
                 # Get flow name from labels
@@ -234,74 +244,80 @@ async def get_flow_runs(
                 if flow_run.start_time and flow_run.end_time:
                     duration = (flow_run.end_time - flow_run.start_time).total_seconds()
 
-                # Get inlined deployment and work pool info
-                deployment = None
-                if flow_run.deployment_id:
-                    full_deployment = deployment_cache.get(str(flow_run.deployment_id))
-                    if full_deployment:
-                        deployment = {
-                            "id": full_deployment["id"],
-                            "name": full_deployment["name"],
-                            "description": full_deployment["description"],
-                            "flow_id": full_deployment["flow_id"],
-                            "tags": full_deployment["tags"],
-                            "paused": full_deployment["paused"],
-                        }
+                # Build flow run dict - compact by default
+                run: dict[str, Any] = {
+                    "id": str(flow_run.id),
+                    "name": flow_run.name,
+                    "flow_name": flow_name_from_labels,
+                    "state_type": flow_run.state_type.value
+                    if flow_run.state_type
+                    else None,
+                    "state_name": flow_run.state_name,
+                    "state_message": flow_run.state.message if flow_run.state else None,
+                    "created": flow_run.created.isoformat()
+                    if flow_run.created
+                    else None,
+                    "updated": flow_run.updated.isoformat()
+                    if flow_run.updated
+                    else None,
+                    "start_time": flow_run.start_time.isoformat()
+                    if flow_run.start_time
+                    else None,
+                    "end_time": flow_run.end_time.isoformat()
+                    if flow_run.end_time
+                    else None,
+                    "duration": duration,
+                    "tags": flow_run.tags,
+                    "deployment_id": str(flow_run.deployment_id)
+                    if flow_run.deployment_id
+                    else None,
+                    "work_pool_name": flow_run.work_pool_name,
+                    "work_queue_name": flow_run.work_queue_name,
+                    "parent_task_run_id": str(flow_run.parent_task_run_id)
+                    if flow_run.parent_task_run_id
+                    else None,
+                }
 
-                work_pool = None
-                if flow_run.work_pool_name:
-                    full_work_pool = work_pool_cache.get(flow_run.work_pool_name)
-                    if full_work_pool:
-                        work_pool = {
-                            "id": full_work_pool["id"],
-                            "name": full_work_pool["name"],
-                            "type": full_work_pool["type"],
-                            "status": full_work_pool["status"],
-                            "is_paused": full_work_pool["is_paused"],
-                        }
+                # Add heavy fields only in detail mode
+                if detail:
+                    run["parameters"] = flow_run.parameters
+                    run["infrastructure_pid"] = flow_run.infrastructure_pid
 
-                flow_run_list.append(
-                    {
-                        "id": str(flow_run.id),
-                        "name": flow_run.name,
-                        "flow_name": flow_name_from_labels,
-                        "state_type": flow_run.state_type.value
-                        if flow_run.state_type
-                        else None,
-                        "state_name": flow_run.state_name,
-                        "state_message": flow_run.state.message
-                        if flow_run.state
-                        else None,
-                        "created": flow_run.created.isoformat()
-                        if flow_run.created
-                        else None,
-                        "updated": flow_run.updated.isoformat()
-                        if flow_run.updated
-                        else None,
-                        "start_time": flow_run.start_time.isoformat()
-                        if flow_run.start_time
-                        else None,
-                        "end_time": flow_run.end_time.isoformat()
-                        if flow_run.end_time
-                        else None,
-                        "duration": duration,
-                        "parameters": flow_run.parameters,
-                        "tags": flow_run.tags,
-                        "deployment_id": str(flow_run.deployment_id)
-                        if flow_run.deployment_id
-                        else None,
-                        "work_queue_name": flow_run.work_queue_name,
-                        "infrastructure_pid": flow_run.infrastructure_pid,
-                        "parent_task_run_id": str(flow_run.parent_task_run_id)
-                        if flow_run.parent_task_run_id
-                        else None,
-                        "deployment": deployment,
-                        "work_pool": work_pool,
-                    }
-                )
+                    # Get inlined deployment and work pool info
+                    deployment = None
+                    if flow_run.deployment_id:
+                        full_deployment = deployment_cache.get(
+                            str(flow_run.deployment_id)
+                        )
+                        if full_deployment:
+                            deployment = {
+                                "id": full_deployment["id"],
+                                "name": full_deployment["name"],
+                                "description": full_deployment["description"],
+                                "flow_id": full_deployment["flow_id"],
+                                "tags": full_deployment["tags"],
+                                "paused": full_deployment["paused"],
+                            }
+                    run["deployment"] = deployment
+
+                    work_pool = None
+                    if flow_run.work_pool_name:
+                        full_work_pool = work_pool_cache.get(flow_run.work_pool_name)
+                        if full_work_pool:
+                            work_pool = {
+                                "id": full_work_pool["id"],
+                                "name": full_work_pool["name"],
+                                "type": full_work_pool["type"],
+                                "status": full_work_pool["status"],
+                                "is_paused": full_work_pool["is_paused"],
+                            }
+                    run["work_pool"] = work_pool
+
+                flow_run_list.append(run)
 
             return {
                 "success": True,
+                "detail": detail,
                 "count": len(flow_run_list),
                 "flow_runs": flow_run_list,
                 "error": None,
