@@ -143,7 +143,8 @@ async def get_work_pools(
                         }
                     )
                 else:
-                    # Compact: skip per-pool API calls, just include summary
+                    # Compact: skip per-pool API calls, just include summary.
+                    # Use the status field (READY/NOT_READY) for worker health.
                     work_pool_list.append(
                         {
                             "id": str(work_pool.id),
@@ -152,7 +153,6 @@ async def get_work_pools(
                             "status": work_pool.status,
                             "is_paused": work_pool.is_paused,
                             "concurrency_limit": work_pool.concurrency_limit,
-                            "active_workers": 0,
                         }
                     )
 

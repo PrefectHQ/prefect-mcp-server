@@ -127,8 +127,8 @@ class WorkPoolDetail(TypedDict):
     status: str | None
     is_paused: bool
     concurrency_limit: int | None
-    active_workers: int
-    # Full detail (omitted in compact mode)
+    # Full detail (omitted in compact mode — use status field for worker health)
+    active_workers: NotRequired[int]
     work_queues: NotRequired[list[WorkQueueInfo]]
     work_queue_count: NotRequired[int]
     description: NotRequired[str | None]
