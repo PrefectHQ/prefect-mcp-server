@@ -1,8 +1,10 @@
 """Unit tests for identity client module."""
 
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from prefect_mcp_server._prefect_client.identity import get_identity
+from prefect_mcp_server.types import CloudIdentityInfo, ServerIdentityInfo
 
 
 async def test_get_identity_oss() -> None:
@@ -25,11 +27,11 @@ async def test_get_identity_oss() -> None:
 
     assert result["success"] is True
     assert result["identity"] is not None
-    assert result["identity"]["api_url"] == "http://localhost:4200/api"
-    assert result["identity"]["version"] == "2.14.0"
+    identity = cast(ServerIdentityInfo, result["identity"])
+    assert identity["api_url"] == "http://localhost:4200/api"
+    assert identity["version"] == "2.14.0"
 
     # Verify Cloud-specific fields are not present on OSS
-    identity = result["identity"]
     assert "account_id" not in identity
     assert "workspace_id" not in identity
     assert "user" not in identity
@@ -85,19 +87,20 @@ async def test_get_identity_cloud_basic() -> None:
         print(f"\nTest failed with error: {result['error']}")
     assert result["success"] is True
     assert result["identity"] is not None
+    identity = cast(CloudIdentityInfo, result["identity"])
     assert (
-        result["identity"]["api_url"]
+        identity["api_url"]
         == "https://api.prefect.cloud/api/accounts/abc-123/workspaces/xyz-789"
     )
-    assert result["identity"]["account_id"] == "abc-123"
-    assert result["identity"]["account_name"] == "Test Account"
-    assert result["identity"]["workspace_id"] == "xyz-789"
-    assert result["identity"]["workspace_name"] == "Test Workspace"
-    assert result["identity"]["workspace_description"] == "A test workspace"
-    assert result["identity"]["user"]["email"] == "user@example.com"
+    assert identity["account_id"] == "abc-123"
+    assert identity["account_name"] == "Test Account"
+    assert identity["workspace_id"] == "xyz-789"
+    assert identity["workspace_name"] == "Test Workspace"
+    assert identity["workspace_description"] == "A test workspace"
+    assert identity["user"] is not None
+    assert identity["user"]["email"] == "user@example.com"
 
     # Verify OSS-specific fields are not present on Cloud
-    identity = result["identity"]
     assert "version" not in identity
 
 
@@ -161,22 +164,22 @@ async def test_get_identity_cloud_with_account_details() -> None:
 
     assert result["success"] is True
     assert result["identity"] is not None
-    assert result["identity"]["account_id"] == "abc-123"
-    assert result["identity"]["account_name"] == "Test Account"
-    assert result["identity"]["workspace_name"] == "Production Workspace"
-    assert result["identity"]["workspace_description"] == "Main production environment"
-    assert result["identity"]["plan_type"] == "TEAM"
-    assert result["identity"]["plan_tier"] == 2
-    assert result["identity"]["features"] == ["feature1", "feature2"]
-    assert result["identity"]["automations_limit"] == 100
-    assert result["identity"]["work_pool_limit"] == 10
-    assert result["identity"]["mex_work_pool_limit"] == 5
-    assert result["identity"]["run_retention_days"] == 90
-    assert result["identity"]["audit_log_retention_days"] == 30
-    assert result["identity"]["self_serve"] is True
+    identity = cast(CloudIdentityInfo, result["identity"])
+    assert identity["account_id"] == "abc-123"
+    assert identity["account_name"] == "Test Account"
+    assert identity["workspace_name"] == "Production Workspace"
+    assert identity["workspace_description"] == "Main production environment"
+    assert identity["plan_type"] == "TEAM"
+    assert identity["plan_tier"] == 2
+    assert identity["features"] == ["feature1", "feature2"]
+    assert identity["automations_limit"] == 100
+    assert identity["work_pool_limit"] == 10
+    assert identity["mex_work_pool_limit"] == 5
+    assert identity["run_retention_days"] == 90
+    assert identity["audit_log_retention_days"] == 30
+    assert identity["self_serve"] is True
 
     # Verify OSS-specific fields are not present on Cloud
-    identity = result["identity"]
     assert "version" not in identity
 
 

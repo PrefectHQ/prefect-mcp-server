@@ -12,7 +12,7 @@ from prefect.client.orchestration import PrefectClient, get_client
 logger = logging.getLogger(__name__)
 
 
-def _get_credentials() -> dict[str, str] | None:
+async def _get_credentials() -> dict[str, str] | None:
     """extract credentials from fastmcp context if available.
 
     returns:
@@ -22,7 +22,7 @@ def _get_credentials() -> dict[str, str] | None:
         from fastmcp.server.dependencies import get_context
 
         ctx = get_context()
-        return ctx.get_state("prefect_credentials")
+        return await ctx.get_state("prefect_credentials")
     except RuntimeError as e:
         if "No active context found" not in str(e):
             raise
@@ -53,7 +53,7 @@ async def get_prefect_client() -> AsyncIterator[PrefectClient]:
         async with get_prefect_client() as client:
             result = await client.read_flows()
     """
-    credentials = _get_credentials()
+    credentials = await _get_credentials()
 
     # if we have per-request credentials, create a client with them
     if credentials:
@@ -103,7 +103,7 @@ async def get_prefect_cloud_client() -> AsyncIterator[CloudClient]:
         async with get_prefect_cloud_client() as cloud_client:
             me_data = await cloud_client.get("/me/")
     """
-    credentials = _get_credentials()
+    credentials = await _get_credentials()
 
     if credentials:
         api_url = credentials.get("api_url")

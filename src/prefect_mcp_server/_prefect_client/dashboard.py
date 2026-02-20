@@ -1,6 +1,9 @@
 """Dashboard functionality for Prefect MCP server."""
 
 from datetime import datetime, timedelta, timezone
+from typing import cast
+
+from prefect.types import DateTime
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server.types import (
@@ -61,7 +64,9 @@ async def fetch_dashboard() -> DashboardResult:
                             any_=[StateType.FAILED, StateType.CRASHED]
                         )
                     ),
-                    start_time=FlowRunFilterStartTime(after_=one_hour_ago),
+                    start_time=FlowRunFilterStartTime(
+                        after_=cast(DateTime, one_hour_ago)
+                    ),
                 ),
                 limit=50,
             )

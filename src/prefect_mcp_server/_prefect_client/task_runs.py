@@ -6,7 +6,7 @@ from uuid import UUID
 from prefect.client.schemas.sorting import TaskRunSort
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
-from prefect_mcp_server.types import TaskRunDetail, TaskRunResult
+from prefect_mcp_server.types import TaskRunDetail, TaskRunResult, TaskRunsResult
 
 
 async def get_task_run(task_run_id: str) -> TaskRunResult:
@@ -98,7 +98,7 @@ async def get_task_run(task_run_id: str) -> TaskRunResult:
 async def get_task_runs(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-) -> dict[str, Any]:
+) -> TaskRunsResult:
     """Get task runs with optional filters.
 
     Returns a list of task runs matching the filters.

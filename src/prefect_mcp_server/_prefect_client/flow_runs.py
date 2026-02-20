@@ -9,7 +9,12 @@ from prefect.client.schemas.sorting import FlowRunSort, LogSort
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server._prefect_client.utils import is_detail_query
-from prefect_mcp_server.types import LogEntry, LogsResult
+from prefect_mcp_server.types import (
+    DeploymentDetail,
+    FlowRunsResult,
+    LogEntry,
+    LogsResult,
+)
 
 # Log level mapping from Python logging levels to readable names
 LOG_LEVEL_NAMES = {
@@ -159,7 +164,7 @@ async def get_flow_run(
 async def get_flow_runs(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-) -> dict[str, Any]:
+) -> FlowRunsResult:
     """Get flow runs with optional filters.
 
     Returns a list of flow runs matching the filters.
@@ -188,7 +193,7 @@ async def get_flow_runs(
             )
 
             # Only batch fetch related objects in detail mode
-            deployment_cache: dict[str, dict[str, Any]] = {}
+            deployment_cache: dict[str, DeploymentDetail] = {}
             work_pool_cache: dict[str, dict[str, Any]] = {}
 
             if detail:

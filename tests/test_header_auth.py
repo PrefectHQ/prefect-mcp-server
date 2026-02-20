@@ -12,6 +12,7 @@ async def test_middleware_extracts_headers():
 
     # Mock FastMCP context
     mock_fastmcp_ctx = MagicMock()
+    mock_fastmcp_ctx.set_state = AsyncMock()
     mock_context = MagicMock()
     mock_context.fastmcp_context = mock_fastmcp_ctx
 
@@ -51,6 +52,7 @@ async def test_middleware_extracts_oss_auth_string():
     middleware = PrefectAuthMiddleware()
 
     mock_fastmcp_ctx = MagicMock()
+    mock_fastmcp_ctx.set_state = AsyncMock()
     mock_context = MagicMock()
     mock_context.fastmcp_context = mock_fastmcp_ctx
     mock_call_next = AsyncMock(return_value="result")
@@ -77,6 +79,7 @@ async def test_middleware_handles_missing_headers():
     middleware = PrefectAuthMiddleware()
 
     mock_fastmcp_ctx = MagicMock()
+    mock_fastmcp_ctx.set_state = AsyncMock()
     mock_context = MagicMock()
     mock_context.fastmcp_context = mock_fastmcp_ctx
     mock_call_next = AsyncMock(return_value="result")
@@ -99,6 +102,7 @@ async def test_middleware_handles_stdio_mode():
     middleware = PrefectAuthMiddleware()
 
     mock_fastmcp_ctx = MagicMock()
+    mock_fastmcp_ctx.set_state = AsyncMock()
     mock_context = MagicMock()
     mock_context.fastmcp_context = mock_fastmcp_ctx
     mock_call_next = AsyncMock(return_value="result")
@@ -119,10 +123,12 @@ async def test_middleware_handles_stdio_mode():
 async def test_get_prefect_client_with_context_credentials():
     """Test that get_prefect_client uses credentials from context."""
     mock_context = MagicMock()
-    mock_context.get_state.return_value = {
-        "api_url": "https://api.prefect.cloud/api/accounts/test/workspaces/test",
-        "api_key": "test-api-key",
-    }
+    mock_context.get_state = AsyncMock(
+        return_value={
+            "api_url": "https://api.prefect.cloud/api/accounts/test/workspaces/test",
+            "api_key": "test-api-key",
+        }
+    )
 
     with (
         patch(
@@ -151,10 +157,12 @@ async def test_get_prefect_client_with_context_credentials():
 async def test_get_prefect_client_with_oss_auth_string():
     """Test that get_prefect_client handles OSS basic auth."""
     mock_context = MagicMock()
-    mock_context.get_state.return_value = {
-        "api_url": "http://localhost:4200/api",
-        "auth_string": "username:password",
-    }
+    mock_context.get_state = AsyncMock(
+        return_value={
+            "api_url": "http://localhost:4200/api",
+            "auth_string": "username:password",
+        }
+    )
 
     with (
         patch(
@@ -217,7 +225,7 @@ async def test_get_prefect_client_fallback_to_environment():
 async def test_get_prefect_client_fallback_when_no_credentials_in_context():
     """Test that get_prefect_client falls back when context exists but has no credentials."""
     mock_context = MagicMock()
-    mock_context.get_state.return_value = None  # No credentials in state
+    mock_context.get_state = AsyncMock(return_value=None)  # No credentials in state
 
     with (
         patch(

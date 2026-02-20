@@ -7,7 +7,12 @@ from prefect.exceptions import ObjectNotFound
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server._prefect_client.utils import is_detail_query
-from prefect_mcp_server.types import WorkPoolDetail, WorkPoolResult, WorkQueueInfo
+from prefect_mcp_server.types import (
+    WorkPoolDetail,
+    WorkPoolResult,
+    WorkPoolsResult,
+    WorkQueueInfo,
+)
 
 
 async def get_work_pool(work_pool_name: str) -> WorkPoolResult:
@@ -79,7 +84,7 @@ async def get_work_pool(work_pool_name: str) -> WorkPoolResult:
 async def get_work_pools(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-) -> dict[str, Any]:
+) -> WorkPoolsResult:
     """Get work pools with optional filters.
 
     Returns a list of work pools matching the filters.

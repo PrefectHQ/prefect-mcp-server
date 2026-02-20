@@ -5,7 +5,8 @@ from typing import Annotated, Any, Literal
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from fastmcp import FastMCP
-from fastmcp.server.proxy import ProxyClient
+from fastmcp.server import create_proxy
+from fastmcp.server.providers.proxy import ProxyClient
 from prefect.client.base import ServerType, determine_server_type
 from pydantic import Field
 
@@ -44,11 +45,11 @@ mcp = FastMCP("Prefect MCP Server")
 mcp.add_middleware(PrefectAuthMiddleware())
 
 # Mount the Prefect docs MCP server to expose its tools
-docs_proxy = FastMCP.as_proxy(
+docs_proxy = create_proxy(
     ProxyClient(settings.docs_mcp.url, init_timeout=settings.docs_mcp.init_timeout),
     name="Prefect Documentation Search",
 )
-mcp.mount(docs_proxy, prefix="docs")
+mcp.mount(docs_proxy, namespace="docs")
 
 # Cloud-specific tools (conditionally mounted at end of file)
 cloud_mcp = FastMCP("Prefect Cloud Tools")

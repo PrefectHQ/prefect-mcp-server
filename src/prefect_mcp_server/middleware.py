@@ -59,6 +59,6 @@ class PrefectAuthMiddleware(Middleware):
             # store in context if we found credentials
             # the absence of credentials means we'll use environment/profile defaults
             if credentials:
-                fastmcp_ctx.set_state("prefect_credentials", credentials)
+                await fastmcp_ctx.set_state("prefect_credentials", credentials)
 
         return await call_next(context)
