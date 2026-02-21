@@ -13,6 +13,7 @@ async def test_middleware_extracts_headers():
     # Mock FastMCP context
     mock_fastmcp_ctx = MagicMock()
     mock_fastmcp_ctx.set_state = AsyncMock()
+    mock_fastmcp_ctx.get_state = AsyncMock(return_value=None)
     mock_context = MagicMock()
     mock_context.fastmcp_context = mock_fastmcp_ctx
 
@@ -53,6 +54,7 @@ async def test_middleware_extracts_oss_auth_string():
 
     mock_fastmcp_ctx = MagicMock()
     mock_fastmcp_ctx.set_state = AsyncMock()
+    mock_fastmcp_ctx.get_state = AsyncMock(return_value=None)
     mock_context = MagicMock()
     mock_context.fastmcp_context = mock_fastmcp_ctx
     mock_call_next = AsyncMock(return_value="result")
@@ -80,6 +82,7 @@ async def test_middleware_handles_missing_headers():
 
     mock_fastmcp_ctx = MagicMock()
     mock_fastmcp_ctx.set_state = AsyncMock()
+    mock_fastmcp_ctx.get_state = AsyncMock(return_value=None)
     mock_context = MagicMock()
     mock_context.fastmcp_context = mock_fastmcp_ctx
     mock_call_next = AsyncMock(return_value="result")
@@ -103,6 +106,7 @@ async def test_middleware_handles_stdio_mode():
 
     mock_fastmcp_ctx = MagicMock()
     mock_fastmcp_ctx.set_state = AsyncMock()
+    mock_fastmcp_ctx.get_state = AsyncMock(return_value=None)
     mock_context = MagicMock()
     mock_context.fastmcp_context = mock_fastmcp_ctx
     mock_call_next = AsyncMock(return_value="result")

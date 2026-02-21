@@ -69,6 +69,44 @@ def orientation() -> str:
 
 
 @mcp.tool
+async def list_profiles() -> dict[str, Any]:
+    """List available Prefect profiles from ~/.prefect/profiles.toml.
+
+    Use this to see which profiles are configured before switching.
+    """
+    from prefect.settings.profiles import load_profiles
+
+    profiles = load_profiles()
+    return {
+        "profiles": list(profiles.profiles_by_name.keys()),
+        "active": profiles.active_name,
+    }
+
+
+@mcp.tool
+async def switch_profile(profile_name: str) -> str:
+    """Switch to a named Prefect profile for this session.
+
+    All subsequent tool calls will use the credentials from that profile.
+    Use list_profiles to see available profiles.
+
+    Args:
+        profile_name: Name of the profile to switch to
+    """
+    from fastmcp.server.dependencies import get_context
+    from prefect.settings.profiles import load_profiles
+
+    profiles = load_profiles()
+    if profile_name not in profiles.profiles_by_name:
+        available = list(profiles.profiles_by_name.keys())
+        return f"Profile '{profile_name}' not found. Available: {available}"
+
+    ctx = get_context()
+    await ctx.set_state("prefect_profile", profile_name)
+    return f"Switched to profile: {profile_name}"
+
+
+@mcp.tool
 async def get_identity() -> IdentityResult:
     """Get identity and connection information for the current Prefect instance.
 

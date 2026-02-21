@@ -56,8 +56,16 @@ class PrefectAuthMiddleware(Middleware):
                     api_url,
                 )
 
-            # store in context if we found credentials
-            # the absence of credentials means we'll use environment/profile defaults
+            # Priority 2: Session-selected profile (stdio transport)
+            if not credentials:
+                selected_profile = await fastmcp_ctx.get_state("prefect_profile")
+                if selected_profile:
+                    from prefect.context import use_profile
+
+                    with use_profile(selected_profile):
+                        return await call_next(context)
+
+            # Priority 3: Fall back to environment / profiles.toml (existing behavior)
             if credentials:
                 await fastmcp_ctx.set_state("prefect_credentials", credentials)
 
