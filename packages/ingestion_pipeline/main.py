@@ -368,6 +368,9 @@ async def refresh_tpuf_namespace(
                 response = await ns.write(
                     upsert_rows=upsert_batch,  # type: ignore[arg-type]
                     distance_metric="cosine_distance",
+                    schema={
+                        "text": {"type": "string", "filterable": False},
+                    },
                 )
                 batch_affected = response.rows_affected or len(upsert_batch)
                 total_upserted += batch_affected
@@ -379,6 +382,9 @@ async def refresh_tpuf_namespace(
             response = await ns.write(
                 upsert_rows=pending_documents,  # type: ignore[arg-type]
                 distance_metric="cosine_distance",
+                schema={
+                    "text": {"type": "string", "filterable": False},
+                },
             )
             batch_affected = response.rows_affected or len(pending_documents)
             total_upserted += batch_affected
