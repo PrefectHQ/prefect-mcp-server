@@ -1,0 +1,16 @@
+{
+  "name": "prefect-mcp-server",
+  "version": "0.1.0",
+  "description": "Prefect MCP server",
+  "author": {
+    "name": "PrefectHQ",
+    "url": "https://github.com/PrefectHQ"
+  },
+  "homepage": "https://github.com/PrefectHQ/prefect-mcp-server",
+  "repository": "https://github.com/PrefectHQ/prefect-mcp-server",
+  "keywords": [
+    "mcp",
+    "codex"
+  ],
+  "mcpServers": "./.mcp.json"
+}
