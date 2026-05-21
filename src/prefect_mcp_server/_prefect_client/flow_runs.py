@@ -67,7 +67,7 @@ async def get_flow_run(
             if flow_run.start_time and flow_run.end_time:
                 duration = (flow_run.end_time - flow_run.start_time).total_seconds()
 
-            result = {
+            result: dict[str, Any] = {
                 "success": True,
                 "flow_run": {
                     "id": str(flow_run.id),
@@ -194,7 +194,7 @@ async def get_flow_runs(
 
             # Only batch fetch related objects in detail mode
             deployment_cache: dict[str, DeploymentDetail] = {}
-            work_pool_cache: dict[str, dict[str, Any]] = {}
+            work_pool_cache: dict[str, Any] = {}
 
             if detail:
                 # Collect unique deployment and work pool IDs
