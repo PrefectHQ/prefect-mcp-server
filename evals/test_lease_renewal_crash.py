@@ -25,6 +25,7 @@ import pytest
 from prefect import flow
 from prefect.client.orchestration import PrefectClient, SyncPrefectClient
 from prefect.client.schemas.actions import GlobalConcurrencyLimitCreate
+from prefect.client.schemas.filters import FlowFilter, FlowFilterName
 from prefect.client.schemas.objects import FlowRun
 from prefect.concurrency.sync import concurrency
 from pydantic_ai import Agent
@@ -45,6 +46,7 @@ async def crashed_flow_run(prefect_client: PrefectClient) -> FlowRun:
     cancel scope, and the resulting CRASHED state - runs for real.
     """
     limit_name = f"db-connection-pool-{uuid4().hex[:8]}"
+    flow_name = f"db-sync-job-{uuid4().hex[:8]}"
     await prefect_client.create_global_concurrency_limit(
         concurrency_limit=GlobalConcurrencyLimitCreate(name=limit_name, limit=1)
     )
@@ -54,7 +56,7 @@ async def crashed_flow_run(prefect_client: PrefectClient) -> FlowRun:
     ) -> None:
         raise httpx.ConnectError("Simulated network failure during lease renewal")
 
-    @flow(name=f"db-sync-job-{uuid4().hex[:8]}")
+    @flow(name=flow_name)
     def db_sync_job() -> str:
         # strict=True -> raise_on_lease_renewal_failure=True, so a real renewal
         # failure cancels the cancel scope and crashes the run.
@@ -78,8 +80,12 @@ async def crashed_flow_run(prefect_client: PrefectClient) -> FlowRun:
             # CancelledError from the cancel scope is a BaseException
             pass
 
-    runs = await prefect_client.read_flow_runs()
-    assert runs, "expected a flow run to have been recorded"
+    # the conftest's prefect_test_harness is session-scoped, so other tests'
+    # flow runs share the same db. filter by our unique flow name.
+    runs = await prefect_client.read_flow_runs(
+        flow_filter=FlowFilter(name=FlowFilterName(any_=[flow_name])),
+    )
+    assert runs, f"expected a flow run for {flow_name!r} to have been recorded"
     return runs[0]
 
 
