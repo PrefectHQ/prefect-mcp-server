@@ -1,20 +1,27 @@
 """Fixtures for rate limits evals."""
 
+import os
 import re
+import subprocess
 import threading
+import time
 from collections.abc import AsyncGenerator, Callable, Generator
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 
 import httpx
+import jwt
 import pytest
 import uvicorn
 from fastapi import APIRouter, FastAPI, Request, Response
 from prefect.client.orchestration import PrefectClient
 from prefect.settings import get_current_settings
 from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServer, MCPServerStdio
+from pydantic_ai.mcp import MCPServer, MCPServerStdio, MCPServerStreamableHTTP
 
 from evals._tools.spy import ToolCallSpy
+
+HOSTED_CLOUD_OAUTH_TOKEN_KEY = "notArealACCESStokenKEY"
 
 # Retry tests on Anthropic API rate limiting or overload errors
 pytestmark = pytest.mark.flaky(
@@ -124,6 +131,19 @@ def cloud_api_router(
     @router.get("/api/accounts/{account_id}/workspaces/{workspace_id}")
     async def get_workspace(account_id: str, workspace_id: str) -> dict[str, str]:
         return cloud_workspace_data
+
+    @router.get("/auth/mcp/oauth/grant/workspaces")
+    async def get_oauth_grant_workspaces() -> list[dict[str, str]]:
+        return [
+            {
+                "account_id": str(cloud_account_data["id"]),
+                "account_handle": "test-account",
+                "account_name": str(cloud_account_data["name"]),
+                "workspace_id": cloud_workspace_data["id"],
+                "workspace_handle": "test-workspace",
+                "workspace_name": cloud_workspace_data["name"],
+            }
+        ]
 
     @router.get("/api/accounts/{account_id}/rate-limits/usage")
     async def get_rate_limits(account_id: str, request: Request) -> dict[str, object]:
@@ -286,6 +306,122 @@ def cloud_mcp_server(
         },
         process_tool_call=tool_call_spy,
         max_retries=3,
+    )
+
+
+@pytest.fixture
+def hosted_cloud_access_token() -> str:
+    """Signed bearer token for the hosted Cloud OAuth MCP eval server."""
+    now = datetime.now(timezone.utc)
+    return jwt.encode(
+        {
+            "iss": "AuthServerID",
+            "aud": "AuthServerID",
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(minutes=30)).timestamp()),
+            "scope": "prefect-cloud:workspaces",
+            "mcp_grant_id": "eval-grant",
+        },
+        HOSTED_CLOUD_OAUTH_TOKEN_KEY,
+        algorithm="HS256",
+    )
+
+
+@pytest.fixture
+def hosted_cloud_mcp_server_url(
+    cloud_proxy_server: str,
+    unused_tcp_port_factory: Callable[[], int],
+) -> Generator[str, None, None]:
+    """Run the hosted Cloud MCP entrypoint over streamable HTTP."""
+    port: int = unused_tcp_port_factory()
+    base_url = f"http://127.0.0.1:{port}"
+    env = {
+        **os.environ,
+        "PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY": HOSTED_CLOUD_OAUTH_TOKEN_KEY,
+        "PREFECT_MCP_CLOUD_API_BASE_URL": cloud_proxy_server,
+        "PREFECT_MCP_CLOUD_AUTH_BASE_URL": cloud_proxy_server,
+        "PREFECT_MCP_CLOUD_PUBLIC_BASE_URL": base_url,
+        "PREFECT_DOCS_MCP_INIT_TIMEOUT": "0.1",
+    }
+    process = subprocess.Popen(
+        [
+            "uv",
+            "run",
+            "fastmcp",
+            "run",
+            "src/prefect_mcp_server/hosted_cloud.py",
+            "--transport",
+            "http",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(port),
+        ],
+        cwd=os.getcwd(),
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+
+    metadata_url = f"{base_url}/.well-known/oauth-protected-resource/mcp"
+    try:
+        deadline = time.monotonic() + 15
+        last_error: Exception | None = None
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                output = process.stdout.read() if process.stdout else ""
+                raise RuntimeError(
+                    "Hosted Cloud MCP server exited during startup:\n" + output
+                )
+            try:
+                response = httpx.get(metadata_url, timeout=1)
+                if response.status_code == 200:
+                    break
+            except Exception as exc:
+                last_error = exc
+            time.sleep(0.25)
+        else:
+            output = process.stdout.read() if process.stdout else ""
+            raise TimeoutError(
+                f"Hosted Cloud MCP server did not start: {last_error}\n{output}"
+            )
+
+        yield f"{base_url}/mcp"
+    finally:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+
+
+@pytest.fixture
+def hosted_cloud_mcp_server(
+    hosted_cloud_mcp_server_url: str,
+    hosted_cloud_access_token: str,
+    tool_call_spy: ToolCallSpy,
+) -> MCPServer:
+    """Hosted Cloud OAuth MCP server connected over HTTP."""
+    return MCPServerStreamableHTTP(
+        hosted_cloud_mcp_server_url,
+        headers={"Authorization": f"Bearer {hosted_cloud_access_token}"},
+        process_tool_call=tool_call_spy,
+        max_retries=3,
+    )
+
+
+@pytest.fixture
+def hosted_cloud_simple_agent(
+    hosted_cloud_mcp_server: MCPServer,
+    simple_model: str,
+) -> Agent:
+    """Agent using hosted Cloud OAuth MCP mode."""
+    return Agent(
+        name="Hosted Prefect Cloud Simple Agent",
+        toolsets=[hosted_cloud_mcp_server],
+        model=simple_model,
     )
 
 
