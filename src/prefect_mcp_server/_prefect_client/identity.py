@@ -48,7 +48,9 @@ async def get_identity(workspace_id: str | None = None) -> IdentityResult:
             # If it's Prefect Cloud, build CloudIdentityInfo
             if is_cloud:
                 # Use the CloudClient to access cloud-specific endpoints
-                async with get_prefect_cloud_client(workspace_id=workspace_id) as cloud_client:
+                async with get_prefect_cloud_client(
+                    workspace_id=workspace_id
+                ) as cloud_client:
                     # Get user info from /me/ endpoint
                     me_data = await cloud_client.get("/me/")
                     user_info: UserInfo = {
