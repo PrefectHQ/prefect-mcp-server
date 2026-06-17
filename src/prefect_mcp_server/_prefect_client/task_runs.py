@@ -11,7 +11,7 @@ from prefect_mcp_server.types import TaskRunDetail, TaskRunResult, TaskRunsResul
 
 async def get_task_run(
     task_run_id: str,
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> TaskRunResult:
     """Get detailed information about a specific task run."""
     async with get_prefect_client(workspace_id=workspace_id) as client:
@@ -101,7 +101,7 @@ async def get_task_run(
 async def get_task_runs(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> TaskRunsResult:
     """Get task runs with optional filters.
 

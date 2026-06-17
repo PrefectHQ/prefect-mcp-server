@@ -1,6 +1,7 @@
 """Flow operations for the Prefect MCP server."""
 
 from typing import Any
+from uuid import UUID
 
 import prefect.main  # noqa: F401
 from prefect.client.schemas.filters import FlowFilter
@@ -12,7 +13,7 @@ from prefect_mcp_server.types import FlowsResult
 async def get_flows(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> FlowsResult:
     """Get flows with optional filters.
 

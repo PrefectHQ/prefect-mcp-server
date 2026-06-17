@@ -11,7 +11,7 @@ from prefect_mcp_server.types import AutomationsResult
 async def get_automations(
     filter: dict[str, Any] | None = None,
     limit: int = 100,
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> AutomationsResult:
     """Get automations with optional filters."""
     detail = is_detail_query(filter)

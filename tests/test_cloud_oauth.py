@@ -1,6 +1,7 @@
 """Tests for hosted Prefect Cloud OAuth support."""
 
 from unittest.mock import AsyncMock, PropertyMock, patch
+from uuid import UUID
 
 import pytest
 from fastmcp import Client
@@ -16,12 +17,15 @@ from prefect_mcp_server.server import (
     build_prefect_mcp_server,
 )
 
+ACCOUNT_ID = UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+WORKSPACE_ID = UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+
 
 async def test_get_prefect_client_uses_oauth_workspace() -> None:
     workspace = cloud_oauth.WorkspaceRef(
-        account_id="account-1",
+        account_id=ACCOUNT_ID,
         account_handle="acme",
-        workspace_id="workspace-1",
+        workspace_id=WORKSPACE_ID,
         workspace_handle="prod",
     )
 
@@ -33,7 +37,7 @@ async def test_get_prefect_client_uses_oauth_workspace() -> None:
         patch(
             "prefect_mcp_server._prefect_client.client.cloud_oauth.require_authorized_workspace",
             AsyncMock(return_value=workspace),
-        ),
+        ) as mock_require_authorized_workspace,
         patch(
             "prefect_mcp_server.cloud_oauth.CloudOAuthSettings.resolved_api_base_url",
             new_callable=PropertyMock,
@@ -48,11 +52,15 @@ async def test_get_prefect_client_uses_oauth_workspace() -> None:
         mock_client.__aexit__ = AsyncMock(return_value=None)
         mock_client_cls.return_value = mock_client
 
-        async with get_prefect_client(workspace_id="workspace-1") as client:
+        async with get_prefect_client(workspace_id=WORKSPACE_ID) as client:
             assert client is mock_client
 
+    mock_require_authorized_workspace.assert_awaited_once_with(WORKSPACE_ID)
     mock_client_cls.assert_called_once_with(
-        api=("https://api.prefect.cloud/api/accounts/account-1/workspaces/workspace-1"),
+        api=(
+            "https://api.prefect.cloud/api/accounts/"
+            f"{ACCOUNT_ID}/workspaces/{WORKSPACE_ID}"
+        ),
         api_key="oauth-token",
     )
 
@@ -63,7 +71,7 @@ async def test_get_prefect_client_requires_oauth_token_for_workspace() -> None:
         return_value=None,
     ):
         with pytest.raises(RuntimeError, match="requires a Prefect Cloud OAuth"):
-            async with get_prefect_client(workspace_id="workspace-1"):
+            async with get_prefect_client(workspace_id=WORKSPACE_ID):
                 pass
 
 
@@ -86,9 +94,9 @@ async def test_get_prefect_client_requires_workspace_in_oauth_mode() -> None:
 
 async def test_get_identity_describes_hosted_oauth_grant_without_workspace() -> None:
     workspace = cloud_oauth.WorkspaceRef(
-        account_id="account-1",
+        account_id=ACCOUNT_ID,
         account_handle="acme",
-        workspace_id="workspace-1",
+        workspace_id=WORKSPACE_ID,
         workspace_handle="prod",
     )
 
@@ -175,9 +183,9 @@ def test_hosted_cloud_server_requires_oauth_configuration(
 
 def test_workspace_ref_display_name_prefers_handles() -> None:
     workspace = cloud_oauth.WorkspaceRef(
-        account_id="account-1",
+        account_id=ACCOUNT_ID,
         account_handle="acme",
-        workspace_id="workspace-1",
+        workspace_id=WORKSPACE_ID,
         workspace_handle="prod",
         workspace_name="Production",
     )

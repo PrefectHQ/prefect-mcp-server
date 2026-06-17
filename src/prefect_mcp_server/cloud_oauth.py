@@ -8,6 +8,7 @@ import os
 from dataclasses import dataclass
 from typing import Literal
 from urllib.parse import urlparse
+from uuid import UUID
 
 import httpx
 from fastmcp.server.auth import RemoteAuthProvider
@@ -82,8 +83,8 @@ class CloudOAuthSettings(BaseSettings):
 
 @dataclass(frozen=True)
 class WorkspaceRef:
-    account_id: str
-    workspace_id: str
+    account_id: UUID
+    workspace_id: UUID
     account_handle: str | None = None
     account_name: str | None = None
     workspace_handle: str | None = None
@@ -93,14 +94,14 @@ class WorkspaceRef:
     def display_name(self) -> str:
         if self.account_handle and self.workspace_handle:
             return f"{self.account_handle}/{self.workspace_handle}"
-        return self.workspace_name or self.workspace_handle or self.workspace_id
+        return self.workspace_name or self.workspace_handle or str(self.workspace_id)
 
     def as_dict(self) -> dict[str, str | None]:
         return {
-            "account_id": self.account_id,
+            "account_id": str(self.account_id),
             "account_handle": self.account_handle,
             "account_name": self.account_name,
-            "workspace_id": self.workspace_id,
+            "workspace_id": str(self.workspace_id),
             "workspace_handle": self.workspace_handle,
             "workspace_name": self.workspace_name,
             "display_name": self.display_name,
@@ -226,10 +227,10 @@ async def list_authorized_workspaces(
 
     return [
         WorkspaceRef(
-            account_id=str(item["account_id"]),
+            account_id=UUID(str(item["account_id"])),
             account_handle=item.get("account_handle"),
             account_name=item.get("account_name"),
-            workspace_id=str(item["workspace_id"]),
+            workspace_id=UUID(str(item["workspace_id"])),
             workspace_handle=item.get("workspace_handle"),
             workspace_name=item.get("workspace_name"),
         )
@@ -237,7 +238,7 @@ async def list_authorized_workspaces(
     ]
 
 
-async def require_authorized_workspace(workspace_id: str) -> WorkspaceRef:
+async def require_authorized_workspace(workspace_id: UUID) -> WorkspaceRef:
     """Return a consented workspace or raise a clear error."""
     for workspace in await list_authorized_workspaces():
         if workspace.workspace_id == workspace_id:

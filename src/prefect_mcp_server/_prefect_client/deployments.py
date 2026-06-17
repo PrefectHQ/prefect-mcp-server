@@ -38,7 +38,7 @@ async def fetch_flow_names(client, flow_ids: list[UUID]) -> dict[UUID, str | Non
 async def get_deployments(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> DeploymentsResult:
     """Get deployments with optional filters.
 

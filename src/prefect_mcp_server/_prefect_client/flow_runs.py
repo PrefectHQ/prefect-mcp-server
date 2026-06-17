@@ -37,7 +37,7 @@ async def get_flow_run(
     flow_run_id: str,
     include_logs: bool = False,
     log_limit: int = 100,
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> dict[str, Any]:
     """Get detailed information about a flow run.
 
@@ -167,7 +167,7 @@ async def get_flow_run(
 async def get_flow_runs(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> FlowRunsResult:
     """Get flow runs with optional filters.
 
@@ -348,7 +348,7 @@ async def get_flow_runs(
 async def get_flow_run_logs(
     flow_run_id: str,
     limit: int = 100,
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> LogsResult:
     """Get only the logs for a flow run.
 

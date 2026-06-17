@@ -1,6 +1,7 @@
 """Work pool functionality for Prefect MCP server."""
 
 from typing import Any
+from uuid import UUID
 
 from httpx import HTTPStatusError
 from prefect.exceptions import ObjectNotFound
@@ -17,7 +18,7 @@ from prefect_mcp_server.types import (
 
 async def get_work_pool(
     work_pool_name: str,
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> WorkPoolResult:
     """Get detailed information about a work pool including concurrency limits."""
     try:
@@ -87,7 +88,7 @@ async def get_work_pool(
 async def get_work_pools(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> WorkPoolsResult:
     """Get work pools with optional filters.
 

@@ -42,15 +42,11 @@ except ImportError:
     pass
 
 WorkspaceId = Annotated[
-    UUID | None,
+    UUID,
     Field(
         description="Prefect Cloud workspace ID. Required when using hosted Prefect Cloud mode.",
     ),
 ]
-
-
-def _workspace_id_value(workspace_id: UUID | None) -> str | None:
-    return str(workspace_id) if workspace_id is not None else None
 
 
 def orientation() -> str:
@@ -65,16 +61,14 @@ def orientation() -> str:
 
 
 async def get_identity(
-    workspace_id: WorkspaceId = None,
+    workspace_id: WorkspaceId | None = None,
 ) -> IdentityResult:
     """Get identity and connection information for the current Prefect instance.
 
     Returns API URL, type (cloud/oss), and user information if available.
     Essential for understanding which Prefect instance you're connected to.
     """
-    return await _prefect_client.get_identity(
-        workspace_id=_workspace_id_value(workspace_id)
-    )
+    return await _prefect_client.get_identity(workspace_id=workspace_id)
 
 
 async def list_authorized_workspaces() -> dict[str, object]:
@@ -95,7 +89,7 @@ async def list_authorized_workspaces() -> dict[str, object]:
 
 
 async def get_dashboard(
-    workspace_id: WorkspaceId = None,
+    workspace_id: WorkspaceId | None = None,
 ) -> DashboardResult:
     """Get a high-level dashboard overview of the Prefect instance.
 
@@ -103,13 +97,11 @@ async def get_dashboard(
     concurrency limits (global/tag-based, deployment, work pool, and work queue).
     Essential for diagnosing flow run delays and bottlenecks.
     """
-    return await _prefect_client.fetch_dashboard(
-        workspace_id=_workspace_id_value(workspace_id)
-    )
+    return await _prefect_client.fetch_dashboard(workspace_id=workspace_id)
 
 
 async def get_deployments(
-    workspace_id: WorkspaceId = None,
+    workspace_id: WorkspaceId | None = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -148,12 +140,12 @@ async def get_deployments(
     return await _prefect_client.get_deployments(
         filter=filter,
         limit=limit,
-        workspace_id=_workspace_id_value(workspace_id),
+        workspace_id=workspace_id,
     )
 
 
 async def get_flows(
-    workspace_id: WorkspaceId = None,
+    workspace_id: WorkspaceId | None = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -186,12 +178,12 @@ async def get_flows(
     return await _prefect_client.get_flows(
         filter=filter,
         limit=limit,
-        workspace_id=_workspace_id_value(workspace_id),
+        workspace_id=workspace_id,
     )
 
 
 async def get_flow_runs(
-    workspace_id: WorkspaceId = None,
+    workspace_id: WorkspaceId | None = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -236,7 +228,7 @@ async def get_flow_runs(
     return await _prefect_client.get_flow_runs(
         filter=filter,
         limit=limit,
-        workspace_id=_workspace_id_value(workspace_id),
+        workspace_id=workspace_id,
     )
 
 
@@ -251,7 +243,7 @@ async def get_flow_run_logs(
     limit: Annotated[
         int, Field(description="Maximum number of log entries to return", ge=1, le=1000)
     ] = 100,
-    workspace_id: WorkspaceId = None,
+    workspace_id: WorkspaceId | None = None,
 ) -> LogsResult:
     """Get execution logs for a flow run.
 
@@ -265,12 +257,12 @@ async def get_flow_run_logs(
     return await _prefect_client.get_flow_run_logs(
         flow_run_id,
         limit=limit,
-        workspace_id=_workspace_id_value(workspace_id),
+        workspace_id=workspace_id,
     )
 
 
 async def get_task_runs(
-    workspace_id: WorkspaceId = None,
+    workspace_id: WorkspaceId | None = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -308,12 +300,12 @@ async def get_task_runs(
     return await _prefect_client.get_task_runs(
         filter=filter,
         limit=limit,
-        workspace_id=_workspace_id_value(workspace_id),
+        workspace_id=workspace_id,
     )
 
 
 async def get_work_pools(
-    workspace_id: WorkspaceId = None,
+    workspace_id: WorkspaceId | None = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -347,12 +339,12 @@ async def get_work_pools(
     return await _prefect_client.get_work_pools(
         filter=filter,
         limit=limit,
-        workspace_id=_workspace_id_value(workspace_id),
+        workspace_id=workspace_id,
     )
 
 
 async def read_events(
-    workspace_id: WorkspaceId = None,
+    workspace_id: WorkspaceId | None = None,
     event_type_prefix: Annotated[
         str | None,
         Field(
@@ -401,12 +393,12 @@ async def read_events(
         event_prefix=event_type_prefix,
         occurred_after=occurred_after,
         occurred_before=occurred_before,
-        workspace_id=_workspace_id_value(workspace_id),
+        workspace_id=workspace_id,
     )
 
 
 async def get_automations(
-    workspace_id: WorkspaceId = None,
+    workspace_id: WorkspaceId | None = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -442,7 +434,7 @@ async def get_automations(
     return await _prefect_client.get_automations(
         filter=filter,
         limit=limit,
-        workspace_id=_workspace_id_value(workspace_id),
+        workspace_id=workspace_id,
     )
 
 

@@ -1,5 +1,7 @@
 """Identity and connection information for Prefect MCP server."""
 
+from uuid import UUID
+
 from prefect_mcp_server import cloud_oauth
 from prefect_mcp_server._prefect_client.client import (
     get_prefect_client,
@@ -14,7 +16,7 @@ from prefect_mcp_server.types import (
 )
 
 
-async def get_identity(workspace_id: str | None = None) -> IdentityResult:
+async def get_identity(workspace_id: UUID | None = None) -> IdentityResult:
     """Get identity and connection information for the current Prefect instance."""
     try:
         access_token = cloud_oauth.current_oauth_access_token()
@@ -66,22 +68,24 @@ async def get_identity(workspace_id: str | None = None) -> IdentityResult:
                     parts = api_url.split("/")
                     account_idx = parts.index("accounts") + 1
                     workspace_idx = parts.index("workspaces") + 1
-                    account_id = parts[account_idx]
-                    workspace_id = parts[workspace_idx]
+                    account_id_from_url = parts[account_idx]
+                    workspace_id_from_url = parts[workspace_idx]
 
                     # Get account details including plan information
-                    account_data = await cloud_client.get(f"/accounts/{account_id}")
+                    account_data = await cloud_client.get(
+                        f"/accounts/{account_id_from_url}"
+                    )
 
                     # Get workspace details
                     workspace_data = await cloud_client.get(
-                        f"/accounts/{account_id}/workspaces/{workspace_id}"
+                        f"/accounts/{account_id_from_url}/workspaces/{workspace_id_from_url}"
                     )
 
                     identity: CloudIdentityInfo = {
                         "api_url": api_url,
-                        "account_id": account_id,
+                        "account_id": account_id_from_url,
                         "account_name": account_data.get("name"),
-                        "workspace_id": workspace_id,
+                        "workspace_id": workspace_id_from_url,
                         "workspace_name": workspace_data.get("name"),
                         "workspace_description": workspace_data.get("description"),
                         "user": user_info,

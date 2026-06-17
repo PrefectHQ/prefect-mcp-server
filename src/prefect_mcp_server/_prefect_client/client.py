@@ -4,6 +4,7 @@ import logging
 import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from uuid import UUID
 
 import httpx
 from prefect.client.cloud import CloudClient, get_cloud_client
@@ -37,7 +38,7 @@ async def _get_credentials() -> dict[str, str] | None:
 
 @asynccontextmanager
 async def get_prefect_client(
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> AsyncIterator[PrefectClient]:
     """get a prefect client using credentials from context or environment.
 
@@ -115,7 +116,7 @@ async def get_prefect_client(
 
 @asynccontextmanager
 async def get_prefect_cloud_client(
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> AsyncIterator[CloudClient]:
     """get a cloud client using credentials from context or environment.
 

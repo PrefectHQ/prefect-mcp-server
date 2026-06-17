@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from typing import Any
+from uuid import UUID
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server.settings import settings
@@ -62,7 +63,7 @@ async def fetch_events(
     event_prefix: str | None = None,
     occurred_after: str | None = None,
     occurred_before: str | None = None,
-    workspace_id: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> EventsResult:
     """Fetch events from Prefect using the REST API.
 
