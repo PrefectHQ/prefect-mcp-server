@@ -90,6 +90,30 @@ def cloud_workspace_data(cloud_workspace_id: str) -> dict[str, str]:
 
 
 @pytest.fixture(scope="module")
+def cloud_workspace_refs(
+    cloud_account_data: dict[str, object],
+    cloud_workspace_data: dict[str, str],
+) -> list[dict[str, str]]:
+    """Cloud workspaces included in the fake OAuth grant."""
+    return [
+        {
+            "account_id": str(cloud_account_data["id"]),
+            "account_handle": "test-account",
+            "account_name": str(cloud_account_data["name"]),
+            "workspace_id": cloud_workspace_data["id"],
+            "workspace_handle": "test-workspace",
+            "workspace_name": cloud_workspace_data["name"],
+        }
+    ]
+
+
+@pytest.fixture(scope="module")
+def workspace_flow_name_prefixes() -> dict[str, str]:
+    """Optional per-workspace flow-name prefixes for fake Cloud read isolation."""
+    return {}
+
+
+@pytest.fixture(scope="module")
 def rate_limit_usage_data() -> dict[str, object]:
     """Rate limit usage data (override in test files for specific scenarios).
 
@@ -107,6 +131,7 @@ def cloud_api_router(
     cloud_user_data: dict[str, str],
     cloud_account_data: dict[str, object],
     cloud_workspace_data: dict[str, str],
+    cloud_workspace_refs: list[dict[str, str]],
     rate_limit_usage_data: dict[str, object],
 ) -> APIRouter:
     """FastAPI router with Cloud-specific endpoints.
@@ -130,20 +155,18 @@ def cloud_api_router(
 
     @router.get("/api/accounts/{account_id}/workspaces/{workspace_id}")
     async def get_workspace(account_id: str, workspace_id: str) -> dict[str, str]:
+        for workspace in cloud_workspace_refs:
+            if workspace["workspace_id"] == workspace_id:
+                return {
+                    "id": workspace["workspace_id"],
+                    "name": workspace["workspace_name"],
+                    "description": f"{workspace['workspace_name']} workspace for evals",
+                }
         return cloud_workspace_data
 
     @router.get("/auth/mcp/oauth/grant/workspaces")
     async def get_oauth_grant_workspaces() -> list[dict[str, str]]:
-        return [
-            {
-                "account_id": str(cloud_account_data["id"]),
-                "account_handle": "test-account",
-                "account_name": str(cloud_account_data["name"]),
-                "workspace_id": cloud_workspace_data["id"],
-                "workspace_handle": "test-workspace",
-                "workspace_name": cloud_workspace_data["name"],
-            }
-        ]
+        return cloud_workspace_refs
 
     @router.get("/api/accounts/{account_id}/rate-limits/usage")
     async def get_rate_limits(account_id: str, request: Request) -> dict[str, object]:
@@ -173,6 +196,7 @@ def oss_server_url(prefect_mcp_server: MCPServer) -> str:
 def cloud_proxy_server(
     cloud_api_router: APIRouter,
     oss_server_url: str,
+    workspace_flow_name_prefixes: dict[str, str],
     tool_call_spy: ToolCallSpy,
     unused_tcp_port_factory: Callable[[], int],
 ) -> Generator[str, None, None]:
@@ -197,21 +221,23 @@ def cloud_proxy_server(
     # Mount Cloud API router
     app.include_router(cloud_api_router)
 
-    def _strip_cloud_prefix(path: str) -> str:
+    def _split_cloud_path(path: str) -> tuple[str | None, str]:
         """Strip /api/accounts/{id}/workspaces/{id} prefix from path if present.
 
         Examples:
-            api/accounts/123/workspaces/456/flow_runs -> /flow_runs
-            /api/accounts/123/workspaces/456/flow_runs -> /flow_runs
-            flow_runs -> /flow_runs
+            api/accounts/123/workspaces/456/flow_runs -> ("456", "/flow_runs")
+            /api/accounts/123/workspaces/456/flow_runs -> ("456", "/flow_runs")
+            flow_runs -> (None, "/flow_runs")
         """
         # Match: optional /, optional api/, accounts/{id}/workspaces/{id}, then capture the rest
-        pattern = r"^/?(?:api/)?accounts/[^/]+/workspaces/[^/]+(/.*)?$"
+        pattern = r"^/?(?:api/)?accounts/[^/]+/workspaces/([^/]+)(/.*)?$"
         match = re.match(pattern, path)
-        if match and match.group(1):
-            return match.group(1)
+        if match:
+            workspace_id = match.group(1)
+            return workspace_id, match.group(2) or "/"
         # If no match, ensure it starts with /
-        return f"/{path}" if not path.startswith("/") else path
+        clean_path = f"/{path}" if not path.startswith("/") else path
+        return None, clean_path
 
     # Proxy all other requests to OSS server
     @app.api_route(
@@ -221,7 +247,7 @@ def cloud_proxy_server(
     async def proxy_request(request: Request, path: str) -> Response:
         """Proxy OSS API requests to real Prefect server."""
         # Strip Cloud prefix from path
-        clean_path = _strip_cloud_prefix(path)
+        workspace_id, clean_path = _split_cloud_path(path)
 
         # Build target URL
         target_url = f"{oss_server_url}{clean_path}"
@@ -248,6 +274,23 @@ def cloud_proxy_server(
                 follow_redirects=True,
             )
 
+            content = response.content
+            if (
+                workspace_id
+                and clean_path == "/flows/filter"
+                and response.status_code == 200
+                and (prefix := workspace_flow_name_prefixes.get(workspace_id))
+            ):
+                flows = response.json()
+                content = httpx.Response(
+                    200,
+                    json=[
+                        flow
+                        for flow in flows
+                        if str(flow.get("name", "")).startswith(prefix)
+                    ],
+                ).content
+
             # Return response (exclude headers that httpx handles automatically)
             headers = {
                 k: v
@@ -256,7 +299,7 @@ def cloud_proxy_server(
                 not in ("content-length", "transfer-encoding", "content-encoding")
             }
             return Response(
-                content=response.content,
+                content=content,
                 status_code=response.status_code,
                 headers=headers,
             )
