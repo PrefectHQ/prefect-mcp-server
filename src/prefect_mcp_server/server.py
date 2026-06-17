@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Annotated, Any, Literal
+from uuid import UUID
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from fastmcp import FastMCP
@@ -41,11 +42,15 @@ except ImportError:
     pass
 
 WorkspaceId = Annotated[
-    str | None,
+    UUID | None,
     Field(
-        description="Prefect Cloud workspace ID. Required when using hosted OAuth mode.",
+        description="Prefect Cloud workspace ID. Required when using hosted Prefect Cloud mode.",
     ),
 ]
+
+
+def _workspace_id_value(workspace_id: UUID | None) -> str | None:
+    return str(workspace_id) if workspace_id is not None else None
 
 
 def orientation() -> str:
@@ -67,7 +72,9 @@ async def get_identity(
     Returns API URL, type (cloud/oss), and user information if available.
     Essential for understanding which Prefect instance you're connected to.
     """
-    return await _prefect_client.get_identity(workspace_id=workspace_id)
+    return await _prefect_client.get_identity(
+        workspace_id=_workspace_id_value(workspace_id)
+    )
 
 
 async def list_authorized_workspaces() -> dict[str, object]:
@@ -96,7 +103,9 @@ async def get_dashboard(
     concurrency limits (global/tag-based, deployment, work pool, and work queue).
     Essential for diagnosing flow run delays and bottlenecks.
     """
-    return await _prefect_client.fetch_dashboard(workspace_id=workspace_id)
+    return await _prefect_client.fetch_dashboard(
+        workspace_id=_workspace_id_value(workspace_id)
+    )
 
 
 async def get_deployments(
@@ -139,7 +148,7 @@ async def get_deployments(
     return await _prefect_client.get_deployments(
         filter=filter,
         limit=limit,
-        workspace_id=workspace_id,
+        workspace_id=_workspace_id_value(workspace_id),
     )
 
 
@@ -177,7 +186,7 @@ async def get_flows(
     return await _prefect_client.get_flows(
         filter=filter,
         limit=limit,
-        workspace_id=workspace_id,
+        workspace_id=_workspace_id_value(workspace_id),
     )
 
 
@@ -227,7 +236,7 @@ async def get_flow_runs(
     return await _prefect_client.get_flow_runs(
         filter=filter,
         limit=limit,
-        workspace_id=workspace_id,
+        workspace_id=_workspace_id_value(workspace_id),
     )
 
 
@@ -256,7 +265,7 @@ async def get_flow_run_logs(
     return await _prefect_client.get_flow_run_logs(
         flow_run_id,
         limit=limit,
-        workspace_id=workspace_id,
+        workspace_id=_workspace_id_value(workspace_id),
     )
 
 
@@ -299,7 +308,7 @@ async def get_task_runs(
     return await _prefect_client.get_task_runs(
         filter=filter,
         limit=limit,
-        workspace_id=workspace_id,
+        workspace_id=_workspace_id_value(workspace_id),
     )
 
 
@@ -338,7 +347,7 @@ async def get_work_pools(
     return await _prefect_client.get_work_pools(
         filter=filter,
         limit=limit,
-        workspace_id=workspace_id,
+        workspace_id=_workspace_id_value(workspace_id),
     )
 
 
@@ -392,7 +401,7 @@ async def read_events(
         event_prefix=event_type_prefix,
         occurred_after=occurred_after,
         occurred_before=occurred_before,
-        workspace_id=workspace_id,
+        workspace_id=_workspace_id_value(workspace_id),
     )
 
 
@@ -433,7 +442,7 @@ async def get_automations(
     return await _prefect_client.get_automations(
         filter=filter,
         limit=limit,
-        workspace_id=workspace_id,
+        workspace_id=_workspace_id_value(workspace_id),
     )
 
 

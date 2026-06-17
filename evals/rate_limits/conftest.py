@@ -231,10 +231,10 @@ def cloud_proxy_server(
         """
         # Match: optional /, optional api/, accounts/{id}/workspaces/{id}, then capture the rest
         pattern = r"^/?(?:api/)?accounts/[^/]+/workspaces/([^/]+)(/.*)?$"
-        match = re.match(pattern, path)
-        if match:
-            workspace_id = match.group(1)
-            return workspace_id, match.group(2) or "/"
+        cloud_path_match = re.match(pattern, path)
+        if cloud_path_match:
+            workspace_id = cloud_path_match.group(1)
+            return workspace_id, cloud_path_match.group(2) or "/"
         # If no match, ensure it starts with /
         clean_path = f"/{path}" if not path.startswith("/") else path
         return None, clean_path
