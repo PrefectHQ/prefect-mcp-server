@@ -23,6 +23,9 @@ The server gives MCP clients read-only tools for inspecting Prefect Cloud and se
 
 Use this path when you want a remote MCP URL that authenticates to Prefect Cloud in the browser instead of asking users to create or paste API keys.
 
+> [!NOTE]
+> Prefect-hosted Cloud MCP is an experimental hosted deployment path. It is available only where Prefect Cloud MCP OAuth is enabled.
+
 ```bash
 claude mcp add prefect-cloud \
   --transport http https://prefect-cloud-mcp-server.fastmcp.app/mcp
@@ -126,6 +129,8 @@ Prefect-operated hosted Cloud OAuth deployments use a dedicated entrypoint:
 
 This entrypoint reuses the same read-only tool definitions as the local/API-key server, adds Prefect Cloud OAuth, and adds hosted-only workspace discovery. If OAuth is not configured, the hosted entrypoint fails at import time instead of starting an unprotected server.
 
+Hosted mode is selected by deploying `src/prefect_mcp_server/hosted_cloud.py`. The token key is the required runtime secret for validating Prefect Cloud-issued MCP OAuth access tokens; it is not a user-provided Prefect API key.
+
 <details>
 <summary>Hosted Cloud configuration reference</summary>
 
@@ -138,7 +143,8 @@ Hosted Cloud settings use the `PREFECT_MCP_CLOUD_` prefix:
 | `PREFECT_MCP_CLOUD_API_BASE_URL` | Optional override for the Prefect API base URL |
 | `PREFECT_MCP_CLOUD_AUTH_BASE_URL` | Optional override for auth helper endpoints |
 | `PREFECT_MCP_CLOUD_AUTHORIZATION_SERVER` | Optional override for advertised OAuth authorization server |
-| `PREFECT_MCP_PUBLIC_BASE_URL` | Public base URL for the hosted MCP server |
+| `PREFECT_MCP_CLOUD_PUBLIC_BASE_URL` | Public base URL for the hosted MCP server |
+| `PREFECT_MCP_PUBLIC_BASE_URL` | Legacy alias for the public base URL |
 
 </details>
 
@@ -388,6 +394,16 @@ just test
 ```
 
 </details>
+
+## Evals
+
+This project includes scenario tests that connect Pydantic AI agents to the MCP server and validate that they can solve realistic Prefect support tasks. See [`evals/README.md`](evals/README.md).
+
+Evals should be written like support case reproductions: set up a workspace state that represents a real customer problem, ask the agent the kind of question a user or support engineer would ask, and verify the final answer identifies the concrete cause or next action. Protocol behavior such as OAuth token validation belongs in unit tests; evals should prove that the MCP server helps an agent solve user-facing Prefect problems.
+
+```bash
+uv run pytest evals
+```
 
 ## Links
 

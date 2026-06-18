@@ -114,6 +114,12 @@ def workspace_flow_name_prefixes() -> dict[str, str]:
 
 
 @pytest.fixture(scope="module")
+def workspace_flow_run_name_prefixes() -> dict[str, str]:
+    """Optional per-workspace flow-run name prefixes for fake Cloud read isolation."""
+    return {}
+
+
+@pytest.fixture(scope="module")
 def rate_limit_usage_data() -> dict[str, object]:
     """Rate limit usage data (override in test files for specific scenarios).
 
@@ -197,6 +203,7 @@ def cloud_proxy_server(
     cloud_api_router: APIRouter,
     oss_server_url: str,
     workspace_flow_name_prefixes: dict[str, str],
+    workspace_flow_run_name_prefixes: dict[str, str],
     tool_call_spy: ToolCallSpy,
     unused_tcp_port_factory: Callable[[], int],
 ) -> Generator[str, None, None]:
@@ -288,6 +295,21 @@ def cloud_proxy_server(
                         flow
                         for flow in flows
                         if str(flow.get("name", "")).startswith(prefix)
+                    ],
+                ).content
+            elif (
+                workspace_id
+                and clean_path == "/flow_runs/filter"
+                and response.status_code == 200
+                and (prefix := workspace_flow_run_name_prefixes.get(workspace_id))
+            ):
+                flow_runs = response.json()
+                content = httpx.Response(
+                    200,
+                    json=[
+                        flow_run
+                        for flow_run in flow_runs
+                        if str(flow_run.get("name", "")).startswith(prefix)
                     ],
                 ).content
 

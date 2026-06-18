@@ -230,7 +230,8 @@ class ToolCallSpy:
             ```
         """
         assert any(
-            self._compare_args(kwargs, call["tool_args"]) for call in self.calls
+            call["name"] == tool_name and self._compare_args(kwargs, call["tool_args"])
+            for call in self.calls
         ), (
             f"Tool {tool_name} was not called with {kwargs}. Tool was called with {[call['tool_args'] for call in self.calls]}"
         )
