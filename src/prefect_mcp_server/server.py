@@ -451,7 +451,36 @@ async def get_object_schema(
     if object_type == "automation":
         from prefect.events.schemas.automations import AutomationCore
 
-        return AutomationCore.model_json_schema()
+        schema = AutomationCore.model_json_schema()
+        schema["x-prefect-mcp-guidance"] = {
+            "proactive_stuck_pending_flow_runs": {
+                "description": (
+                    "To detect flow runs stuck in Pending, use a proactive event "
+                    "trigger that starts after a Pending event and expects the "
+                    "specific state transition event that would prove the run is "
+                    "no longer stuck."
+                ),
+                "trigger": {
+                    "type": "event",
+                    "posture": "Proactive",
+                    "after": ["prefect.flow-run.Pending"],
+                    "expect": [
+                        "prefect.flow-run.Running",
+                        "prefect.flow-run.Crashed",
+                    ],
+                    "for_each": ["prefect.resource.id"],
+                    "threshold": 1,
+                    "within": 300,
+                },
+                "note": (
+                    "Do not use prefect.flow-run.* as the expected event for a "
+                    "stuck Pending detector; it is too broad. Prefer explicit "
+                    "state events such as prefect.flow-run.Running and "
+                    "prefect.flow-run.Crashed."
+                ),
+            }
+        }
+        return schema
     else:
         raise ValueError(f"Unknown object type: {object_type}")
 

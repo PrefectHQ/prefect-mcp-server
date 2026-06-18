@@ -11,8 +11,16 @@ def test_assert_tool_was_called_with_matches_tool_name() -> None:
     spy = ToolCallSpy()
     ctx: Any = None
     spy._calls = [
-        ToolCall(ctx=ctx, name="get_flows", tool_args={"workspace_id": "one"}),
-        ToolCall(ctx=ctx, name="get_flow_runs", tool_args={"workspace_id": "two"}),
+        ToolCall(
+            ctx=ctx,
+            name="get_flows",
+            tool_args={"workspace_id": "one", "limit": 50},
+        ),
+        ToolCall(
+            ctx=ctx,
+            name="get_flow_runs",
+            tool_args={"workspace_id": "two", "limit": 50},
+        ),
     ]
 
     spy.assert_tool_was_called_with("get_flow_runs", workspace_id="two")

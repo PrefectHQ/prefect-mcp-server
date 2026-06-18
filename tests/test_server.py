@@ -182,3 +182,8 @@ async def test_get_object_schema_tool(prefect_mcp_server: FastMCP) -> None:
         assert "name" in properties
         assert "trigger" in properties
         assert "actions" in properties
+
+        guidance = data["x-prefect-mcp-guidance"]["proactive_stuck_pending_flow_runs"]
+        assert guidance["trigger"]["after"] == ["prefect.flow-run.Pending"]
+        assert "prefect.flow-run.Running" in guidance["trigger"]["expect"]
+        assert "prefect.flow-run.*" in guidance["note"]

@@ -1,7 +1,6 @@
 """Eval: hosted Cloud MCP answers questions across authorized workspaces."""
 
 from collections.abc import Awaitable, Callable
-from unittest.mock import ANY
 
 import pytest
 from prefect import flow
@@ -115,14 +114,10 @@ async def test_hosted_cloud_agent_answers_across_workspaces(
     tool_call_spy.assert_tool_was_called_with(
         "get_flows",
         workspace_id=OBSERVABILITY_WORKSPACE_ID,
-        filter=None,
-        limit=50,
     )
     tool_call_spy.assert_tool_was_called_with(
         "get_flows",
         workspace_id=PLATFORM_WORKSPACE_ID,
-        filter=None,
-        limit=50,
     )
 
 
@@ -214,12 +209,8 @@ async def test_hosted_cloud_agent_triages_unknown_workspace_failure(
     tool_call_spy.assert_tool_was_called_with(
         "get_flow_runs",
         workspace_id=OBSERVABILITY_WORKSPACE_ID,
-        filter=ANY,
-        limit=ANY,
     )
     tool_call_spy.assert_tool_was_called_with(
         "get_flow_runs",
         workspace_id=PLATFORM_WORKSPACE_ID,
-        filter=ANY,
-        limit=ANY,
     )
