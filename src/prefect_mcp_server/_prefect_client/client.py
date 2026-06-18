@@ -75,7 +75,7 @@ async def get_prefect_client(
 
     if cloud_oauth.settings.enabled and cloud_oauth.current_oauth_access_token():
         raise RuntimeError(
-            "workspace_id is required when using hosted Prefect Cloud mode. "
+            "workspace_id is required when using Prefect Cloud OAuth mode. "
             "Call list_authorized_workspaces first, then pass one of those "
             "workspace IDs to this tool."
         )
@@ -147,7 +147,7 @@ async def get_prefect_cloud_client(
 
     if cloud_oauth.settings.enabled and cloud_oauth.current_oauth_access_token():
         raise RuntimeError(
-            "workspace_id is required when using hosted Prefect Cloud mode. "
+            "workspace_id is required when using Prefect Cloud OAuth mode. "
             "Call list_authorized_workspaces first, then pass one of those "
             "workspace IDs to this tool."
         )

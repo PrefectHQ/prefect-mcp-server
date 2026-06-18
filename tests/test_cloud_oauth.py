@@ -1,4 +1,4 @@
-"""Tests for hosted Prefect Cloud OAuth support."""
+"""Tests for Prefect Cloud OAuth support."""
 
 from unittest.mock import AsyncMock, PropertyMock, patch
 from uuid import UUID
@@ -13,7 +13,7 @@ from prefect_mcp_server import cloud_oauth
 from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server._prefect_client.identity import get_identity
 from prefect_mcp_server.server import (
-    build_hosted_cloud_mcp_server,
+    build_cloud_mcp_server,
     build_prefect_mcp_server,
 )
 
@@ -92,7 +92,7 @@ async def test_get_prefect_client_requires_workspace_in_oauth_mode() -> None:
                 pass
 
 
-async def test_get_identity_describes_hosted_oauth_grant_without_workspace() -> None:
+async def test_get_identity_describes_oauth_grant_without_workspace() -> None:
     workspace = cloud_oauth.WorkspaceRef(
         account_id=ACCOUNT_ID,
         account_handle="acme",
@@ -136,11 +136,11 @@ async def test_get_identity_describes_hosted_oauth_grant_without_workspace() -> 
     )
 
 
-async def test_default_server_excludes_hosted_cloud_workspace_tools() -> None:
+async def test_default_server_excludes_cloud_oauth_workspace_tools() -> None:
     server = build_prefect_mcp_server(
         include_docs_proxy=False,
         include_cloud_tools=False,
-        include_hosted_cloud_tools=False,
+        include_cloud_oauth_tools=False,
     )
 
     async with Client(server) as client:
@@ -152,7 +152,7 @@ async def test_default_server_excludes_hosted_cloud_workspace_tools() -> None:
     assert "review_rate_limits" not in tool_names
 
 
-async def test_hosted_cloud_server_includes_oauth_workspace_tools(
+async def test_cloud_oauth_server_includes_oauth_workspace_tools(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
@@ -161,7 +161,7 @@ async def test_hosted_cloud_server_includes_oauth_workspace_tools(
         "notArealACCESStokenKEY",
     )
 
-    server = build_hosted_cloud_mcp_server(include_docs_proxy=False)
+    server = build_cloud_mcp_server(include_docs_proxy=False)
 
     async with Client(server) as client:
         tool_names = {tool.name for tool in await client.list_tools()}
@@ -172,13 +172,13 @@ async def test_hosted_cloud_server_includes_oauth_workspace_tools(
     assert "review_rate_limits" in tool_names
 
 
-def test_hosted_cloud_server_requires_oauth_configuration(
+def test_cloud_oauth_server_requires_oauth_configuration(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(cloud_oauth.settings, "auth_token_key", None)
 
     with pytest.raises(RuntimeError, match="PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY"):
-        build_hosted_cloud_mcp_server()
+        build_cloud_mcp_server()
 
 
 def test_workspace_ref_display_name_prefers_handles() -> None:

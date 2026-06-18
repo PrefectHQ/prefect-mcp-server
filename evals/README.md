@@ -63,7 +63,7 @@ Provider defaults:
 | **rate_limits/test_cloud_direct** | verifies agent can diagnose rate limiting when user asks about 429 errors (Cloud) | ✅ implemented | [#46](https://github.com/PrefectHQ/prefect-mcp-server/issues/46) |
 | **rate_limits/test_cloud_no_throttling** | verifies agent correctly rules out rate limiting when no throttling occurred (Cloud) | ✅ implemented | [#46](https://github.com/PrefectHQ/prefect-mcp-server/issues/46) |
 | **rate_limits/test_cloud_correlate_logs** | verifies agent can correlate 429 warnings in flow logs with rate limit data (Cloud) | ✅ implemented | [#46](https://github.com/PrefectHQ/prefect-mcp-server/issues/46) |
-| **rate_limits/test_hosted_cloud_cross_workspace** | verifies hosted Cloud OAuth mode can answer support-style questions across consented workspaces | ✅ implemented | - |
+| **rate_limits/test_cloud_oauth_cross_workspace** | verifies Cloud OAuth mode can answer support-style questions across consented workspaces | ✅ implemented | - |
 
 ## adding new evals
 

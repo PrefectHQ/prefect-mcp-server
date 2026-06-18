@@ -1,4 +1,4 @@
-"""Eval: hosted Cloud MCP answers questions across authorized workspaces."""
+"""Eval: Cloud OAuth MCP answers questions across authorized workspaces."""
 
 from collections.abc import Awaitable, Callable
 
@@ -91,14 +91,14 @@ async def cross_workspace_flows(
     return workspace_flows
 
 
-async def test_hosted_cloud_agent_answers_across_workspaces(
-    hosted_cloud_simple_agent: Agent,
+async def test_cloud_oauth_agent_answers_across_workspaces(
+    cloud_oauth_simple_agent: Agent,
     cross_workspace_flows: dict[str, list[str]],
     tool_call_spy: ToolCallSpy,
 ) -> None:
     """Agent answers a user question that requires reading multiple workspaces."""
-    async with hosted_cloud_simple_agent:
-        result = await hosted_cloud_simple_agent.run(
+    async with cloud_oauth_simple_agent:
+        result = await cloud_oauth_simple_agent.run(
             "Look across all of my authorized Prefect Cloud workspaces. Which "
             "workspace has observability flows and which workspace has platform "
             "flows? Include the relevant flow names."
@@ -180,15 +180,15 @@ async def cross_workspace_failed_run(
     }
 
 
-async def test_hosted_cloud_agent_triages_unknown_workspace_failure(
-    hosted_cloud_simple_agent: Agent,
+async def test_cloud_oauth_agent_triages_unknown_workspace_failure(
+    cloud_oauth_simple_agent: Agent,
     cross_workspace_failed_run: dict[str, str],
     evaluate_response: Callable[[str, str], Awaitable[None]],
     tool_call_spy: ToolCallSpy,
 ) -> None:
     """Agent solves a support-style Cloud incident across authorized workspaces."""
-    async with hosted_cloud_simple_agent:
-        result = await hosted_cloud_simple_agent.run(
+    async with cloud_oauth_simple_agent:
+        result = await cloud_oauth_simple_agent.run(
             "A customer says their release sync started failing in Prefect Cloud, "
             "but they are not sure which authorized workspace it is in. Look across "
             "the workspaces you can access, identify the affected workspace, and "

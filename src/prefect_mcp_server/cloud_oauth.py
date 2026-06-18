@@ -156,12 +156,11 @@ class PrefectCloudRemoteAuthProvider(RemoteAuthProvider):
 
 
 def build_auth_provider(*, require_enabled: bool = False) -> RemoteAuthProvider | None:
-    """Build the FastMCP auth provider when hosted Cloud OAuth is configured."""
+    """Build the FastMCP auth provider when Cloud OAuth is configured."""
     if not settings.enabled:
         if require_enabled:
             raise RuntimeError(
-                "Hosted Prefect Cloud OAuth mode requires "
-                "PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY."
+                "Prefect Cloud OAuth mode requires PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY."
             )
         return None
 

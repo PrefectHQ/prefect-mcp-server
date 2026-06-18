@@ -21,7 +21,7 @@ from pydantic_ai.mcp import MCPServer, MCPServerStdio, MCPServerStreamableHTTP
 
 from evals._tools.spy import ToolCallSpy
 
-HOSTED_CLOUD_OAUTH_TOKEN_KEY = "notArealACCESStokenKEY"
+CLOUD_OAUTH_TOKEN_KEY = "notArealACCESStokenKEY"
 
 # Retry tests on Anthropic API rate limiting or overload errors
 pytestmark = pytest.mark.flaky(
@@ -375,8 +375,8 @@ def cloud_mcp_server(
 
 
 @pytest.fixture
-def hosted_cloud_access_token() -> str:
-    """Signed bearer token for the hosted Cloud OAuth MCP eval server."""
+def cloud_oauth_access_token() -> str:
+    """Signed bearer token for the Cloud OAuth MCP eval server."""
     now = datetime.now(timezone.utc)
     return jwt.encode(
         {
@@ -387,22 +387,22 @@ def hosted_cloud_access_token() -> str:
             "scope": "prefect-cloud:workspaces",
             "mcp_grant_id": "eval-grant",
         },
-        HOSTED_CLOUD_OAUTH_TOKEN_KEY,
+        CLOUD_OAUTH_TOKEN_KEY,
         algorithm="HS256",
     )
 
 
 @pytest.fixture
-def hosted_cloud_mcp_server_url(
+def cloud_oauth_mcp_server_url(
     cloud_proxy_server: str,
     unused_tcp_port_factory: Callable[[], int],
 ) -> Generator[str, None, None]:
-    """Run the hosted Cloud MCP entrypoint over streamable HTTP."""
+    """Run the Cloud OAuth MCP entrypoint over streamable HTTP."""
     port: int = unused_tcp_port_factory()
     base_url = f"http://127.0.0.1:{port}"
     env = {
         **os.environ,
-        "PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY": HOSTED_CLOUD_OAUTH_TOKEN_KEY,
+        "PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY": CLOUD_OAUTH_TOKEN_KEY,
         "PREFECT_MCP_CLOUD_API_BASE_URL": cloud_proxy_server,
         "PREFECT_MCP_CLOUD_AUTH_BASE_URL": cloud_proxy_server,
         "PREFECT_MCP_CLOUD_PUBLIC_BASE_URL": base_url,
@@ -414,7 +414,7 @@ def hosted_cloud_mcp_server_url(
             "run",
             "fastmcp",
             "run",
-            "src/prefect_mcp_server/hosted_cloud.py",
+            "src/prefect_mcp_server/cloud.py",
             "--transport",
             "http",
             "--host",
@@ -437,7 +437,7 @@ def hosted_cloud_mcp_server_url(
             if process.poll() is not None:
                 output = process.stdout.read() if process.stdout else ""
                 raise RuntimeError(
-                    "Hosted Cloud MCP server exited during startup:\n" + output
+                    "Cloud OAuth MCP server exited during startup:\n" + output
                 )
             try:
                 response = httpx.get(metadata_url, timeout=1)
@@ -449,7 +449,7 @@ def hosted_cloud_mcp_server_url(
         else:
             output = process.stdout.read() if process.stdout else ""
             raise TimeoutError(
-                f"Hosted Cloud MCP server did not start: {last_error}\n{output}"
+                f"Cloud OAuth MCP server did not start: {last_error}\n{output}"
             )
 
         yield f"{base_url}/mcp"
@@ -463,29 +463,29 @@ def hosted_cloud_mcp_server_url(
 
 
 @pytest.fixture
-def hosted_cloud_mcp_server(
-    hosted_cloud_mcp_server_url: str,
-    hosted_cloud_access_token: str,
+def cloud_oauth_mcp_server(
+    cloud_oauth_mcp_server_url: str,
+    cloud_oauth_access_token: str,
     tool_call_spy: ToolCallSpy,
 ) -> MCPServer:
-    """Hosted Cloud OAuth MCP server connected over HTTP."""
+    """Cloud OAuth MCP server connected over HTTP."""
     return MCPServerStreamableHTTP(
-        hosted_cloud_mcp_server_url,
-        headers={"Authorization": f"Bearer {hosted_cloud_access_token}"},
+        cloud_oauth_mcp_server_url,
+        headers={"Authorization": f"Bearer {cloud_oauth_access_token}"},
         process_tool_call=tool_call_spy,
         max_retries=3,
     )
 
 
 @pytest.fixture
-def hosted_cloud_simple_agent(
-    hosted_cloud_mcp_server: MCPServer,
+def cloud_oauth_simple_agent(
+    cloud_oauth_mcp_server: MCPServer,
     simple_model: str,
 ) -> Agent:
-    """Agent using hosted Cloud OAuth MCP mode."""
+    """Agent using Cloud OAuth MCP mode."""
     return Agent(
-        name="Hosted Prefect Cloud Simple Agent",
-        toolsets=[hosted_cloud_mcp_server],
+        name="Prefect Cloud Simple Agent",
+        toolsets=[cloud_oauth_mcp_server],
         model=simple_model,
     )
 

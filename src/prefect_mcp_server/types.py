@@ -417,8 +417,8 @@ class CloudIdentityInfo(TypedDict, total=False):
     self_serve: bool | None
 
 
-class HostedCloudOAuthIdentityInfo(TypedDict, total=False):
-    """Identity information for hosted Prefect Cloud OAuth mode."""
+class CloudOAuthIdentityInfo(TypedDict, total=False):
+    """Identity information for Prefect Cloud OAuth mode."""
 
     api_url: str
     auth_mode: str
@@ -428,7 +428,7 @@ class HostedCloudOAuthIdentityInfo(TypedDict, total=False):
     next_step: str
 
 
-IdentityInfo = CloudIdentityInfo | HostedCloudOAuthIdentityInfo | ServerIdentityInfo
+IdentityInfo = CloudIdentityInfo | CloudOAuthIdentityInfo | ServerIdentityInfo
 
 
 class IdentityResult(TypedDict):

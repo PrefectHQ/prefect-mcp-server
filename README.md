@@ -13,18 +13,18 @@ The server gives MCP clients read-only tools for inspecting Prefect Cloud and se
 
 | Use case | Recommended setup | Authentication |
 | --- | --- | --- |
-| Prefect Cloud with no local API key | Prefect-hosted Cloud MCP | Browser OAuth with workspace consent |
+| Prefect Cloud with no local API key | Prefect Cloud OAuth MCP | Browser OAuth with workspace consent |
 | Claude Code on your machine | Claude Code plugin | Active local Prefect profile |
 | Local MCP client | `uvx` stdio server | Active local Prefect profile or env vars |
 | Self-hosted Prefect or custom Cloud workspace | Self-hosted HTTP or stdio server | API key, basic auth, env vars, or headers |
 | Team-operated shared server | HTTP deployment with per-request headers | User or service-account credentials in headers |
 
-## Prefect-hosted Cloud MCP
+## Prefect Cloud OAuth MCP
 
 Use this path when you want a remote MCP URL that authenticates to Prefect Cloud in the browser instead of asking users to create or paste API keys.
 
 > [!NOTE]
-> Prefect-hosted Cloud MCP is an experimental hosted deployment path. It is available only where Prefect Cloud MCP OAuth is enabled.
+> Prefect Cloud OAuth MCP is an experimental deployment path. It is available only where Prefect Cloud MCP OAuth is enabled.
 
 ```bash
 claude mcp add prefect-cloud \
@@ -33,7 +33,7 @@ claude mcp add prefect-cloud \
 
 The MCP client discovers the OAuth metadata from the server, opens a browser for Prefect Cloud authentication, and asks the user to choose the workspaces this MCP client may read. After authentication, the assistant can list the consented workspaces and call the same read-only Prefect tools against those workspaces.
 
-Hosted Cloud mode:
+Cloud OAuth mode:
 
 - uses HTTP MCP OAuth, not stdio credentials
 - does not require `PREFECT_API_KEY` in the MCP client
@@ -48,7 +48,7 @@ Useful first prompts:
 - "Compare deployment health between my staging and production workspaces."
 
 > [!NOTE]
-> The hosted Cloud MCP path is for Prefect Cloud. Local stdio usage and self-hosted Prefect deployments continue to use local profiles, environment variables, API keys, basic auth, or HTTP headers.
+> The Cloud OAuth MCP path is for Prefect Cloud. Local stdio usage and self-hosted Prefect deployments continue to use local profiles, environment variables, API keys, basic auth, or HTTP headers.
 
 ## Claude Code Plugin
 
@@ -119,22 +119,22 @@ Deploy your own server when you need a custom Prefect API target, self-hosted Pr
 > [!NOTE]
 > For self-hosted deployments, environment variables are configured on the deployed MCP server, not in your MCP client configuration. The MCP host authenticates access to the MCP server, while this server uses the configured Prefect credentials to access Prefect.
 
-## Hosted Cloud Deployment Entrypoint
+## Cloud OAuth Deployment Entrypoint
 
-Prefect-operated hosted Cloud OAuth deployments use a dedicated entrypoint:
+Prefect-operated Cloud OAuth deployments use a dedicated entrypoint:
 
-- server path: `src/prefect_mcp_server/hosted_cloud.py`
+- server path: `src/prefect_mcp_server/cloud.py`
 - required runtime secret: `PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY`
 - optional environment selector: `PREFECT_MCP_CLOUD_ENVIRONMENT=stg` or `prod`
 
-This entrypoint reuses the same read-only tool definitions as the local/API-key server, adds Prefect Cloud OAuth, and adds hosted-only workspace discovery. If OAuth is not configured, the hosted entrypoint fails at import time instead of starting an unprotected server.
+This entrypoint reuses the same read-only tool definitions as the local/API-key server, adds Prefect Cloud OAuth, and adds Cloud OAuth-only workspace discovery. If OAuth is not configured, the Cloud OAuth entrypoint fails at import time instead of starting an unprotected server.
 
-Hosted mode is selected by deploying `src/prefect_mcp_server/hosted_cloud.py`. The token key is the required runtime secret for validating Prefect Cloud-issued MCP OAuth access tokens; it is not a user-provided Prefect API key.
+Cloud OAuth mode is selected by deploying `src/prefect_mcp_server/cloud.py`. The token key is the required runtime secret for validating Prefect Cloud-issued MCP OAuth access tokens; it is not a user-provided Prefect API key.
 
 <details>
-<summary>Hosted Cloud configuration reference</summary>
+<summary>Cloud OAuth configuration reference</summary>
 
-Hosted Cloud settings use the `PREFECT_MCP_CLOUD_` prefix:
+Cloud OAuth settings use the `PREFECT_MCP_CLOUD_` prefix:
 
 | Environment variable | Purpose |
 | --- | --- |
@@ -359,7 +359,7 @@ This server enables MCP clients to interact with Prefect read-only APIs:
 - Track events across your workflow ecosystem
 - Review rate limit usage for Prefect Cloud
 
-**Hosted Cloud workspace access**
+**Cloud OAuth workspace access**
 
 - Authenticate with Prefect Cloud using browser OAuth
 - List workspaces selected during consent

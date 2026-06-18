@@ -44,7 +44,7 @@ except ImportError:
 WorkspaceId = Annotated[
     UUID,
     Field(
-        description="Prefect Cloud workspace ID. Required when using hosted Prefect Cloud mode.",
+        description="Prefect Cloud workspace ID. Required when using Prefect Cloud OAuth mode.",
     ),
 ]
 
@@ -74,8 +74,8 @@ async def get_identity(
 async def list_authorized_workspaces() -> dict[str, object]:
     """List Prefect Cloud workspaces selected during OAuth consent.
 
-    This tool is only available when the server is running in hosted Prefect
-    Cloud OAuth mode. Use it before calling workspace-scoped tools when the user
+    This tool is only available when the server is running in Prefect Cloud
+    OAuth mode. Use it before calling workspace-scoped tools when the user
     names a workspace by handle, account/workspace pair, or nickname.
     """
     workspaces = await cloud_oauth.list_authorized_workspaces()
@@ -544,7 +544,7 @@ CORE_TOOLS = (
 )
 
 CLOUD_TOOLS = (review_rate_limits,)
-HOSTED_CLOUD_TOOLS = (list_authorized_workspaces,)
+CLOUD_OAUTH_TOOLS = (list_authorized_workspaces,)
 
 
 def build_prefect_mcp_server(
@@ -553,7 +553,7 @@ def build_prefect_mcp_server(
     auth_provider: AuthProvider | None = None,
     include_docs_proxy: bool = True,
     include_cloud_tools: bool | None = None,
-    include_hosted_cloud_tools: bool = False,
+    include_cloud_oauth_tools: bool = False,
 ) -> FastMCP:
     """Build a Prefect MCP server from shared tools and optional Cloud adapters."""
     server = FastMCP(name, auth=auth_provider)
@@ -581,25 +581,25 @@ def build_prefect_mcp_server(
         for tool in CLOUD_TOOLS:
             server.add_tool(tool)
 
-    if include_hosted_cloud_tools:
-        for tool in HOSTED_CLOUD_TOOLS:
+    if include_cloud_oauth_tools:
+        for tool in CLOUD_OAUTH_TOOLS:
             server.add_tool(tool)
 
     return server
 
 
-def build_hosted_cloud_mcp_server(*, include_docs_proxy: bool = True) -> FastMCP:
-    """Build the hosted Prefect Cloud MCP server."""
+def build_cloud_mcp_server(*, include_docs_proxy: bool = True) -> FastMCP:
+    """Build the Prefect Cloud OAuth MCP server."""
     return build_prefect_mcp_server(
         name="Prefect Cloud MCP Server",
         auth_provider=cloud_oauth.build_auth_provider(require_enabled=True),
         include_docs_proxy=include_docs_proxy,
         include_cloud_tools=True,
-        include_hosted_cloud_tools=True,
+        include_cloud_oauth_tools=True,
     )
 
 
 mcp = build_prefect_mcp_server(
     auth_provider=cloud_oauth.build_auth_provider(),
-    include_hosted_cloud_tools=cloud_oauth.settings.enabled,
+    include_cloud_oauth_tools=cloud_oauth.settings.enabled,
 )

@@ -6,12 +6,12 @@ The Prefect MCP server supports different auth patterns depending on how it is d
 
 | Deployment mode | MCP transport | Prefect authentication |
 | --- | --- | --- |
-| Prefect-hosted Cloud MCP | Remote HTTP | Browser OAuth with workspace consent |
+| Prefect Cloud OAuth MCP | Remote HTTP | Browser OAuth with workspace consent |
 | Local stdio server | stdio | Active local Prefect profile or environment variables |
 | Self-hosted HTTP server | Remote HTTP | Server-side environment variables or per-request headers |
 | Self-hosted Prefect with basic auth | stdio or HTTP | `PREFECT_API_AUTH_STRING` |
 
-For Prefect-hosted Cloud MCP, users authenticate in a browser and choose the Prefect Cloud workspaces the MCP client may read. The MCP client receives an OAuth bearer token for the hosted MCP resource. The server validates that token and only permits workspace-scoped calls for the consented workspace set.
+For Prefect Cloud OAuth MCP, users authenticate in a browser and choose the Prefect Cloud workspaces the MCP client may read. The MCP client receives an OAuth bearer token for the MCP resource. The server validates that token and only permits workspace-scoped calls for the consented workspace set.
 
 For local and self-hosted deployments, the server still uses standard Prefect programmatic credentials:
 
@@ -32,7 +32,7 @@ Yes. Prefect RBAC applies to every Prefect API call made by the MCP server.
 
 The auth mechanism determines the bounds of what the read-only tools can see:
 
-- Hosted Cloud OAuth grants are bounded by the workspaces selected during consent and by the authenticated actor's Prefect Cloud permissions.
+- Cloud OAuth grants are bounded by the workspaces selected during consent and by the authenticated actor's Prefect Cloud permissions.
 - API-key deployments are bounded by the permissions associated with the API key.
 - Local profile deployments are bounded by the active local Prefect profile.
 
@@ -42,9 +42,9 @@ The auth mechanism determines the bounds of what the read-only tools can see:
 
 ---
 
-## 3. How does hosted Prefect Cloud OAuth differ from API-key usage?
+## 3. How does Prefect Cloud OAuth differ from API-key usage?
 
-Hosted Prefect Cloud OAuth is designed for users connecting an MCP client to a Prefect-operated remote MCP URL.
+Prefect Cloud OAuth is designed for users connecting an MCP client to a Prefect-operated remote MCP URL.
 
 In that mode:
 
@@ -66,7 +66,7 @@ API-key usage remains supported for local, self-hosted, and custom deployments. 
 - Query flow runs and task runs with advanced filtering
 - Retrieve execution logs from flow runs
 - View dashboard overviews with run statistics and work pool status
-- Look across multiple authorized Prefect Cloud workspaces in hosted Cloud mode
+- Look across multiple authorized Prefect Cloud workspaces in Cloud OAuth mode
 
 **Debugging flow run failures**
 
@@ -98,7 +98,7 @@ Usually no. The MCP server is API-based and makes HTTPS requests to the Prefect 
 
 The main exception is local stdio usage: when running locally, the server can read `~/.prefect/profiles.toml` to inherit the same default credentials used by the `prefect` CLI. If you provide explicit credentials through environment variables or HTTP headers, the server does not need that profile file.
 
-Hosted Prefect Cloud OAuth does not rely on local Prefect files.
+Prefect Cloud OAuth does not rely on local Prefect files.
 
 > **Note:** MCP clients themselves may have filesystem and shell access independent of the MCP server. The MCP server's lack of filesystem access does not prevent an AI assistant from accessing files or running CLI commands if the MCP client allows it.
 
@@ -106,7 +106,7 @@ Hosted Prefect Cloud OAuth does not rely on local Prefect files.
 
 ## 6. Recommendations for piloting internally
 
-**Option A - Use the Prefect-hosted Cloud MCP**
+**Option A - Use the Prefect Cloud OAuth MCP**
 
 Use this for the lowest-friction Prefect Cloud pilot. Users add the hosted MCP URL to a compatible client, authenticate in the browser, and select the workspaces the client may read.
 
@@ -132,7 +132,7 @@ Deploy as a shared service using Prefect Horizon, FastMCP Cloud, or your own inf
 
 **Security recommendations:**
 
-- Prefer hosted Cloud OAuth when users should authenticate themselves without creating API keys.
+- Prefer Cloud OAuth when users should authenticate themselves without creating API keys.
 - Use service accounts with read-only permissions for API-key deployments.
 - Rotate API keys periodically.
 - Scope API keys to specific workspaces where possible.

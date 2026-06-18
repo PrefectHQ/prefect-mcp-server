@@ -9,7 +9,7 @@ from prefect_mcp_server._prefect_client.client import (
 )
 from prefect_mcp_server.types import (
     CloudIdentityInfo,
-    HostedCloudOAuthIdentityInfo,
+    CloudOAuthIdentityInfo,
     IdentityResult,
     ServerIdentityInfo,
     UserInfo,
@@ -22,7 +22,7 @@ async def get_identity(workspace_id: UUID | None = None) -> IdentityResult:
         access_token = cloud_oauth.current_oauth_access_token()
         if workspace_id is None and cloud_oauth.settings.enabled and access_token:
             workspaces = await cloud_oauth.list_authorized_workspaces(access_token)
-            identity: HostedCloudOAuthIdentityInfo = {
+            identity: CloudOAuthIdentityInfo = {
                 "api_url": cloud_oauth.settings.resolved_api_base_url,
                 "auth_mode": "prefect-cloud-oauth",
                 "grant_id": cloud_oauth.grant_id_from_access_token(access_token),
