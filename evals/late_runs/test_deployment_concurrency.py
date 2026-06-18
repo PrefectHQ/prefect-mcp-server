@@ -8,7 +8,7 @@ from prefect.client.orchestration import PrefectClient
 from prefect.client.schemas.actions import WorkPoolCreate
 from prefect.client.schemas.objects import FlowRun, WorkPool
 from prefect.client.schemas.responses import DeploymentResponse
-from prefect.states import Late
+from prefect.states import Late, Running
 from pydantic_ai import Agent
 
 
@@ -68,6 +68,14 @@ async def deployment_concurrency_scenario(
         heartbeat_interval_seconds=30,
     )
 
+    blocking_run = await prefect_client.create_flow_run_from_deployment(
+        deployment_id=deployment.id,
+        name="deployment-run-blocking",
+    )
+    await prefect_client.set_flow_run_state(
+        flow_run_id=blocking_run.id, state=Running(), force=True
+    )
+
     # Create flow runs and force to Late state
     flow_runs = []
     for i in range(3):
@@ -111,16 +119,18 @@ async def deployment_concurrency_scenario(
     )
 
 
-@pytest.mark.usefixtures("deployment_concurrency_scenario")
 async def test_diagnoses_deployment_concurrency(
     reasoning_agent: Agent,
+    deployment_concurrency_scenario: LateRunsScenario,
     evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
     """Test agent diagnoses late runs caused by deployment concurrency limit."""
+    deployment_name = deployment_concurrency_scenario.deployment.name
     async with reasoning_agent:
         result = await reasoning_agent.run(
-            """Why are recent flow runs of my deployment taking so long to start? Some have
-            been scheduled for a while but haven't begun execution."""
+            f"""Why are recent flow runs of deployment '{deployment_name}' taking
+            so long to start? Some have been scheduled for a while but haven't
+            begun execution."""
         )
     await evaluate_response(
         """Does this response correctly identify that a deployment-level concurrency

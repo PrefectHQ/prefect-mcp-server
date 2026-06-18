@@ -214,6 +214,7 @@ async def get_deployments(
                         if deployment.work_pool_name
                         else None
                     )
+                    dep["diagnostic_hints"] = _deployment_diagnostic_hints(dep)
 
                     # Add source code location info only if available
                     if deployment.pull_steps:
@@ -247,3 +248,25 @@ async def get_deployments(
             "deployments": [],
             "error": f"Failed to fetch deployments: {str(e)}",
         }
+
+
+def _deployment_diagnostic_hints(deployment: DeploymentDetail) -> list[str]:
+    hints: list[str] = []
+    concurrency_limit = deployment["global_concurrency_limit"]
+    recent_runs = deployment.get("recent_runs", [])
+    if concurrency_limit:
+        limit = concurrency_limit["limit"]
+        running_count = sum(1 for run in recent_runs if run.get("state") == "Running")
+        late_count = sum(1 for run in recent_runs if run.get("state") == "Late")
+        if running_count >= limit and late_count > 0:
+            hints.append(
+                f"Deployment concurrency limit '{concurrency_limit['name']}' is likely blocking runs: "
+                f"{running_count} recent run(s) are Running against limit={limit}, and "
+                f"{late_count} recent run(s) are Late for this deployment."
+            )
+        elif concurrency_limit["over_limit"]:
+            hints.append(
+                f"Deployment concurrency limit '{concurrency_limit['name']}' is over limit; "
+                "additional runs for this deployment will wait for slots to free."
+            )
+    return hints

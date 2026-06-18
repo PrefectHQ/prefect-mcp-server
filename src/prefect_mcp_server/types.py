@@ -251,6 +251,7 @@ class DeploymentDetail(TypedDict):
     job_variables: NotRequired[dict[str, Any]]
     work_pool: NotRequired[WorkPoolDetail | None]
     recent_runs: NotRequired[list[dict[str, Any]]]
+    diagnostic_hints: NotRequired[list[str]]
     pull_steps: NotRequired[list[dict[str, Any]]]
     entrypoint: NotRequired[str]
 
