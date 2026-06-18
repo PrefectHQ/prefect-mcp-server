@@ -131,6 +131,7 @@ class WorkPoolDetail(TypedDict):
     active_workers: NotRequired[int]
     work_queues: NotRequired[list[WorkQueueInfo]]
     work_queue_count: NotRequired[int]
+    diagnostic_hints: NotRequired[list[str]]
     description: NotRequired[str | None]
 
 

@@ -119,8 +119,9 @@ async def test_diagnoses_work_queue_concurrency(
 
     async with reasoning_agent:
         result = await reasoning_agent.run(
-            """Why are my recent flow runs taking so long to start? Some have
-            been scheduled for a while but haven't begun execution."""
+            f"""Why are recent flow runs in work pool '{work_pool_name}' taking
+            so long to start? Some have been scheduled for a while but haven't
+            begun execution."""
         )
 
     await evaluate_response(

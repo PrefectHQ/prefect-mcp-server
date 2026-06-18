@@ -47,6 +47,11 @@ async def get_work_pool(
                 }
                 queue_list.append(queue_info)
 
+            diagnostic_hints = _work_pool_diagnostic_hints(
+                active_worker_count=active_worker_count,
+                queue_list=queue_list,
+            )
+
             # Build detailed work pool info
             work_pool_detail: WorkPoolDetail = {
                 "id": str(work_pool.id),
@@ -57,6 +62,7 @@ async def get_work_pool(
                 "concurrency_limit": work_pool.concurrency_limit,
                 "work_queues": queue_list,
                 "active_workers": active_worker_count,
+                "diagnostic_hints": diagnostic_hints,
                 "description": work_pool.description,
             }
 
@@ -139,6 +145,11 @@ async def get_work_pools(
                         }
                         queue_list.append(queue_info)
 
+                    diagnostic_hints = _work_pool_diagnostic_hints(
+                        active_worker_count=active_worker_count,
+                        queue_list=queue_list,
+                    )
+
                     work_pool_list.append(
                         {
                             "id": str(work_pool.id),
@@ -149,6 +160,7 @@ async def get_work_pools(
                             "concurrency_limit": work_pool.concurrency_limit,
                             "work_queues": queue_list,
                             "active_workers": active_worker_count,
+                            "diagnostic_hints": diagnostic_hints,
                             "description": work_pool.description,
                         }
                     )
@@ -181,3 +193,30 @@ async def get_work_pools(
             "work_pools": [],
             "error": f"Failed to fetch work pools: {str(e)}",
         }
+
+
+def _work_pool_diagnostic_hints(
+    *,
+    active_worker_count: int,
+    queue_list: list[WorkQueueInfo],
+) -> list[str]:
+    hints: list[str] = []
+    for queue in queue_list:
+        if queue["is_paused"]:
+            hints.append(
+                f"Work queue '{queue['name']}' is paused; runs assigned to it will not start."
+            )
+        if queue["concurrency_limit"] is not None:
+            if active_worker_count > 0:
+                hints.append(
+                    f"Work queue '{queue['name']}' has concurrency_limit={queue['concurrency_limit']}. "
+                    "If runs assigned to this queue are Late while the work pool has active workers, "
+                    "the queue concurrency limit is a likely bottleneck."
+                )
+            else:
+                hints.append(
+                    f"Work queue '{queue['name']}' has concurrency_limit={queue['concurrency_limit']}, "
+                    "but the work pool has no active workers; check worker health before attributing "
+                    "late runs to queue concurrency."
+                )
+    return hints
