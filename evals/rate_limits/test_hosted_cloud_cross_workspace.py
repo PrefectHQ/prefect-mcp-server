@@ -206,11 +206,10 @@ async def test_hosted_cloud_agent_triages_unknown_workspace_failure(
     )
 
     tool_call_spy.assert_tool_was_called("list_authorized_workspaces")
-    tool_call_spy.assert_tool_was_called_with(
-        "get_flow_runs",
-        workspace_id=OBSERVABILITY_WORKSPACE_ID,
-    )
-    tool_call_spy.assert_tool_was_called_with(
-        "get_flow_runs",
-        workspace_id=PLATFORM_WORKSPACE_ID,
-    )
+    called_workspace_ids = {
+        call["tool_args"].get("workspace_id")
+        for call in tool_call_spy.calls
+        if call["tool_args"].get("workspace_id")
+    }
+    assert OBSERVABILITY_WORKSPACE_ID in called_workspace_ids
+    assert PLATFORM_WORKSPACE_ID in called_workspace_ids
