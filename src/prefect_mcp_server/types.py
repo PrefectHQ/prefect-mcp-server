@@ -131,6 +131,7 @@ class WorkPoolDetail(TypedDict):
     active_workers: NotRequired[int]
     work_queues: NotRequired[list[WorkQueueInfo]]
     work_queue_count: NotRequired[int]
+    diagnostic_hints: NotRequired[list[str]]
     description: NotRequired[str | None]
 
 
@@ -250,6 +251,7 @@ class DeploymentDetail(TypedDict):
     job_variables: NotRequired[dict[str, Any]]
     work_pool: NotRequired[WorkPoolDetail | None]
     recent_runs: NotRequired[list[dict[str, Any]]]
+    diagnostic_hints: NotRequired[list[str]]
     pull_steps: NotRequired[list[dict[str, Any]]]
     entrypoint: NotRequired[str]
 
@@ -415,7 +417,18 @@ class CloudIdentityInfo(TypedDict, total=False):
     self_serve: bool | None
 
 
-IdentityInfo = CloudIdentityInfo | ServerIdentityInfo
+class CloudOAuthIdentityInfo(TypedDict, total=False):
+    """Identity information for Prefect Cloud OAuth mode."""
+
+    api_url: str
+    auth_mode: str
+    grant_id: str | None
+    authorized_workspace_count: int
+    authorized_workspaces: list[dict[str, str | None]]
+    next_step: str
+
+
+IdentityInfo = CloudIdentityInfo | CloudOAuthIdentityInfo | ServerIdentityInfo
 
 
 class IdentityResult(TypedDict):

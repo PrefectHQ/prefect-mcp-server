@@ -1,21 +1,46 @@
 """Identity and connection information for Prefect MCP server."""
 
+from uuid import UUID
+
+from prefect_mcp_server import cloud_oauth
 from prefect_mcp_server._prefect_client.client import (
     get_prefect_client,
     get_prefect_cloud_client,
 )
 from prefect_mcp_server.types import (
     CloudIdentityInfo,
+    CloudOAuthIdentityInfo,
     IdentityResult,
     ServerIdentityInfo,
     UserInfo,
 )
 
 
-async def get_identity() -> IdentityResult:
+async def get_identity(workspace_id: UUID | None = None) -> IdentityResult:
     """Get identity and connection information for the current Prefect instance."""
     try:
-        async with get_prefect_client() as client:
+        access_token = cloud_oauth.current_oauth_access_token()
+        if workspace_id is None and cloud_oauth.settings.enabled and access_token:
+            workspaces = await cloud_oauth.list_authorized_workspaces(access_token)
+            identity: CloudOAuthIdentityInfo = {
+                "api_url": cloud_oauth.settings.resolved_api_base_url,
+                "auth_mode": "prefect-cloud-oauth",
+                "grant_id": cloud_oauth.grant_id_from_access_token(access_token),
+                "authorized_workspace_count": len(workspaces),
+                "authorized_workspaces": [
+                    workspace.as_dict() for workspace in workspaces
+                ],
+                "next_step": (
+                    "Pass one authorized workspace_id to workspace-scoped tools."
+                ),
+            }
+            return {
+                "success": True,
+                "identity": identity,
+                "error": None,
+            }
+
+        async with get_prefect_client(workspace_id=workspace_id) as client:
             api_url = str(client.api_url)
 
             # determine server type from the actual api_url, not global settings
@@ -25,7 +50,9 @@ async def get_identity() -> IdentityResult:
             # If it's Prefect Cloud, build CloudIdentityInfo
             if is_cloud:
                 # Use the CloudClient to access cloud-specific endpoints
-                async with get_prefect_cloud_client() as cloud_client:
+                async with get_prefect_cloud_client(
+                    workspace_id=workspace_id
+                ) as cloud_client:
                     # Get user info from /me/ endpoint
                     me_data = await cloud_client.get("/me/")
                     user_info: UserInfo = {
@@ -41,22 +68,24 @@ async def get_identity() -> IdentityResult:
                     parts = api_url.split("/")
                     account_idx = parts.index("accounts") + 1
                     workspace_idx = parts.index("workspaces") + 1
-                    account_id = parts[account_idx]
-                    workspace_id = parts[workspace_idx]
+                    account_id_from_url = parts[account_idx]
+                    workspace_id_from_url = parts[workspace_idx]
 
                     # Get account details including plan information
-                    account_data = await cloud_client.get(f"/accounts/{account_id}")
+                    account_data = await cloud_client.get(
+                        f"/accounts/{account_id_from_url}"
+                    )
 
                     # Get workspace details
                     workspace_data = await cloud_client.get(
-                        f"/accounts/{account_id}/workspaces/{workspace_id}"
+                        f"/accounts/{account_id_from_url}/workspaces/{workspace_id_from_url}"
                     )
 
                     identity: CloudIdentityInfo = {
                         "api_url": api_url,
-                        "account_id": account_id,
+                        "account_id": account_id_from_url,
                         "account_name": account_data.get("name"),
-                        "workspace_id": workspace_id,
+                        "workspace_id": workspace_id_from_url,
                         "workspace_name": workspace_data.get("name"),
                         "workspace_description": workspace_data.get("description"),
                         "user": user_info,

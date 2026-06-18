@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 from typing import cast
+from uuid import UUID
 
 from prefect.types import DateTime
 
@@ -14,10 +15,10 @@ from prefect_mcp_server.types import (
 )
 
 
-async def fetch_dashboard() -> DashboardResult:
+async def fetch_dashboard(workspace_id: UUID | None = None) -> DashboardResult:
     """Fetch dashboard overview data from Prefect."""
     try:
-        async with get_prefect_client() as client:
+        async with get_prefect_client(workspace_id=workspace_id) as client:
             from prefect.client.schemas.filters import (
                 FlowRunFilter,
                 FlowRunFilterStartTime,

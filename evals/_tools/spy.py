@@ -204,8 +204,9 @@ class ToolCallSpy:
     def assert_tool_was_called_with(self, tool_name: str, **kwargs: Any) -> None:
         """Assert that a tool was called with specific arguments.
 
-        This method checks if any call to the specified tool matches the
-        provided arguments. Supports partial matching with ANY and ... wildcards.
+        This method checks if any call to the specified tool includes the
+        provided arguments. Extra arguments omitted by the assertion are ignored.
+        Supports partial matching with ANY and ... wildcards.
 
         Args:
             tool_name: The name of the tool
@@ -230,7 +231,16 @@ class ToolCallSpy:
             ```
         """
         assert any(
-            self._compare_args(kwargs, call["tool_args"]) for call in self.calls
+            call["name"] == tool_name
+            and self._compare_args(
+                kwargs,
+                {
+                    key: value
+                    for key, value in call["tool_args"].items()
+                    if key in kwargs
+                },
+            )
+            for call in self.calls
         ), (
             f"Tool {tool_name} was not called with {kwargs}. Tool was called with {[call['tool_args'] for call in self.calls]}"
         )

@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from typing import Any
+from uuid import UUID
 
 from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server.settings import settings
@@ -62,6 +63,7 @@ async def fetch_events(
     event_prefix: str | None = None,
     occurred_after: str | None = None,
     occurred_before: str | None = None,
+    workspace_id: UUID | None = None,
 ) -> EventsResult:
     """Fetch events from Prefect using the REST API.
 
@@ -72,7 +74,7 @@ async def fetch_events(
         occurred_before: ISO 8601 timestamp to filter events before
     """
     try:
-        async with get_prefect_client() as client:
+        async with get_prefect_client(workspace_id=workspace_id) as client:
             # Build the filter
             filter_dict = {}
             if event_prefix:

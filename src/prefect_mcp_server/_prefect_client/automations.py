@@ -11,11 +11,12 @@ from prefect_mcp_server.types import AutomationsResult
 async def get_automations(
     filter: dict[str, Any] | None = None,
     limit: int = 100,
+    workspace_id: UUID | None = None,
 ) -> AutomationsResult:
     """Get automations with optional filters."""
     detail = is_detail_query(filter)
 
-    async with get_prefect_client() as client:
+    async with get_prefect_client(workspace_id=workspace_id) as client:
         try:
             # If filter contains an ID, fetch specific automation(s)
             if filter and "id" in filter and "any_" in filter["id"]:

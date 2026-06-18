@@ -4,10 +4,13 @@ import logging
 import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from uuid import UUID
 
 import httpx
 from prefect.client.cloud import CloudClient, get_cloud_client
 from prefect.client.orchestration import PrefectClient, get_client
+
+from prefect_mcp_server import cloud_oauth
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +37,9 @@ async def _get_credentials() -> dict[str, str] | None:
 
 
 @asynccontextmanager
-async def get_prefect_client() -> AsyncIterator[PrefectClient]:
+async def get_prefect_client(
+    workspace_id: UUID | None = None,
+) -> AsyncIterator[PrefectClient]:
     """get a prefect client using credentials from context or environment.
 
     this function first checks if credentials were provided via http headers
@@ -53,8 +58,29 @@ async def get_prefect_client() -> AsyncIterator[PrefectClient]:
         async with get_prefect_client() as client:
             result = await client.read_flows()
     """
-    credentials = await _get_credentials()
+    if workspace_id is not None:
+        access_token = cloud_oauth.current_oauth_access_token()
+        if access_token is None:
+            raise RuntimeError(
+                "workspace_id requires a Prefect Cloud OAuth bearer token."
+            )
+        workspace = await cloud_oauth.require_authorized_workspace(workspace_id)
+        api_url = (
+            f"{cloud_oauth.settings.resolved_api_base_url}/api/accounts/"
+            f"{workspace.account_id}/workspaces/{workspace.workspace_id}"
+        )
+        async with PrefectClient(api=api_url, api_key=access_token) as client:
+            yield client
+        return
 
+    if cloud_oauth.settings.enabled and cloud_oauth.current_oauth_access_token():
+        raise RuntimeError(
+            "workspace_id is required when using Prefect Cloud OAuth mode. "
+            "Call list_authorized_workspaces first, then pass one of those "
+            "workspace IDs to this tool."
+        )
+
+    credentials = await _get_credentials()
     # if we have per-request credentials, create a client with them
     if credentials:
         api_url = credentials.get("api_url")
@@ -89,7 +115,9 @@ async def get_prefect_client() -> AsyncIterator[PrefectClient]:
 
 
 @asynccontextmanager
-async def get_prefect_cloud_client() -> AsyncIterator[CloudClient]:
+async def get_prefect_cloud_client(
+    workspace_id: UUID | None = None,
+) -> AsyncIterator[CloudClient]:
     """get a cloud client using credentials from context or environment.
 
     similar to get_prefect_client, this extracts credentials from context
@@ -103,8 +131,28 @@ async def get_prefect_cloud_client() -> AsyncIterator[CloudClient]:
         async with get_prefect_cloud_client() as cloud_client:
             me_data = await cloud_client.get("/me/")
     """
-    credentials = await _get_credentials()
+    if workspace_id is not None:
+        access_token = cloud_oauth.current_oauth_access_token()
+        if access_token is None:
+            raise RuntimeError(
+                "workspace_id requires a Prefect Cloud OAuth bearer token."
+            )
+        await cloud_oauth.require_authorized_workspace(workspace_id)
+        async with CloudClient(
+            host=f"{cloud_oauth.settings.resolved_api_base_url}/api",
+            api_key=access_token,
+        ) as client:
+            yield client
+        return
 
+    if cloud_oauth.settings.enabled and cloud_oauth.current_oauth_access_token():
+        raise RuntimeError(
+            "workspace_id is required when using Prefect Cloud OAuth mode. "
+            "Call list_authorized_workspaces first, then pass one of those "
+            "workspace IDs to this tool."
+        )
+
+    credentials = await _get_credentials()
     if credentials:
         api_url = credentials.get("api_url")
         api_key = credentials.get("api_key")

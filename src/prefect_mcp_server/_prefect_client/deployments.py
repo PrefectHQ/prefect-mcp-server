@@ -38,6 +38,7 @@ async def fetch_flow_names(client, flow_ids: list[UUID]) -> dict[UUID, str | Non
 async def get_deployments(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
+    workspace_id: UUID | None = None,
 ) -> DeploymentsResult:
     """Get deployments with optional filters.
 
@@ -47,7 +48,7 @@ async def get_deployments(
     detail = is_detail_query(filter)
 
     try:
-        async with get_prefect_client() as client:
+        async with get_prefect_client(workspace_id=workspace_id) as client:
             # Build filter from JSON if provided
             deployment_filter = None
             if filter:
@@ -81,6 +82,7 @@ async def get_deployments(
                     work_pools_result = await get_work_pools(
                         filter={"name": {"any_": work_pool_names}},
                         limit=len(work_pool_names),
+                        workspace_id=workspace_id,
                     )
                     if work_pools_result["success"]:
                         work_pools_map = {
@@ -212,6 +214,7 @@ async def get_deployments(
                         if deployment.work_pool_name
                         else None
                     )
+                    dep["diagnostic_hints"] = _deployment_diagnostic_hints(dep)
 
                     # Add source code location info only if available
                     if deployment.pull_steps:
@@ -245,3 +248,25 @@ async def get_deployments(
             "deployments": [],
             "error": f"Failed to fetch deployments: {str(e)}",
         }
+
+
+def _deployment_diagnostic_hints(deployment: DeploymentDetail) -> list[str]:
+    hints: list[str] = []
+    concurrency_limit = deployment["global_concurrency_limit"]
+    recent_runs = deployment.get("recent_runs", [])
+    if concurrency_limit:
+        limit = concurrency_limit["limit"]
+        running_count = sum(1 for run in recent_runs if run.get("state") == "Running")
+        late_count = sum(1 for run in recent_runs if run.get("state") == "Late")
+        if running_count >= limit and late_count > 0:
+            hints.append(
+                f"Deployment concurrency limit '{concurrency_limit['name']}' is likely blocking runs: "
+                f"{running_count} recent run(s) are Running against limit={limit}, and "
+                f"{late_count} recent run(s) are Late for this deployment."
+            )
+        elif concurrency_limit["over_limit"]:
+            hints.append(
+                f"Deployment concurrency limit '{concurrency_limit['name']}' is over limit; "
+                "additional runs for this deployment will wait for slots to free."
+            )
+    return hints

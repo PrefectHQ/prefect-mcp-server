@@ -11,10 +11,12 @@ just evals
 
 ## about evals
 
-evals (evaluation scenarios) test whether ai agents hooked up to the prefect mcp server can satisfy real-world expectations. for example:
+evals (evaluation scenarios) test whether ai agents hooked up to the prefect mcp server can satisfy real-world support expectations. they should read like support case reproductions: create the workspace state that represents a customer problem, ask the agent the question a user or support engineer would ask, and verify that the final answer identifies the concrete cause or next action. for example:
 - "why did my foo flow fail?" → agent retrieves and explains the stack trace
 - "why are runs late on thursdays?" → agent analyzes patterns in deployment schedules
 - "debug my ecs tasks" → agent investigates infrastructure-specific issues
+
+protocol behavior belongs in unit tests. evals should prove that the mcp server helps an agent solve a user-facing prefect problem well enough that support could answer, "use the mcp; we have coverage for this class of issue."
 
 ## running the suite
 
@@ -61,6 +63,7 @@ Provider defaults:
 | **rate_limits/test_cloud_direct** | verifies agent can diagnose rate limiting when user asks about 429 errors (Cloud) | ✅ implemented | [#46](https://github.com/PrefectHQ/prefect-mcp-server/issues/46) |
 | **rate_limits/test_cloud_no_throttling** | verifies agent correctly rules out rate limiting when no throttling occurred (Cloud) | ✅ implemented | [#46](https://github.com/PrefectHQ/prefect-mcp-server/issues/46) |
 | **rate_limits/test_cloud_correlate_logs** | verifies agent can correlate 429 warnings in flow logs with rate limit data (Cloud) | ✅ implemented | [#46](https://github.com/PrefectHQ/prefect-mcp-server/issues/46) |
+| **rate_limits/test_cloud_oauth_cross_workspace** | verifies Cloud OAuth mode can answer support-style questions across consented workspaces | ✅ implemented | - |
 
 ## adding new evals
 

@@ -34,7 +34,10 @@ def get_log_level_name(level: int | None) -> str | None:
 
 
 async def get_flow_run(
-    flow_run_id: str, include_logs: bool = False, log_limit: int = 100
+    flow_run_id: str,
+    include_logs: bool = False,
+    log_limit: int = 100,
+    workspace_id: UUID | None = None,
 ) -> dict[str, Any]:
     """Get detailed information about a flow run.
 
@@ -46,7 +49,7 @@ async def get_flow_run(
     Returns:
         Dictionary containing flow run details and optionally logs
     """
-    async with get_prefect_client() as client:
+    async with get_prefect_client(workspace_id=workspace_id) as client:
         try:
             # Fetch the flow run
             flow_run = await client.read_flow_run(UUID(flow_run_id))
@@ -164,6 +167,7 @@ async def get_flow_run(
 async def get_flow_runs(
     filter: dict[str, Any] | None = None,
     limit: int = 50,
+    workspace_id: UUID | None = None,
 ) -> FlowRunsResult:
     """Get flow runs with optional filters.
 
@@ -176,7 +180,7 @@ async def get_flow_runs(
     """
     detail = is_detail_query(filter)
 
-    async with get_prefect_client() as client:
+    async with get_prefect_client(workspace_id=workspace_id) as client:
         try:
             from prefect.client.schemas.filters import FlowRunFilter
 
@@ -212,7 +216,8 @@ async def get_flow_runs(
                     )
 
                     result = await get_deployments(
-                        filter={"id": {"any_": deployment_ids}}
+                        filter={"id": {"any_": deployment_ids}},
+                        workspace_id=workspace_id,
                     )
 
                     if result.get("success"):
@@ -227,7 +232,10 @@ async def get_flow_runs(
                         get_work_pool,
                     )
 
-                    tasks = [get_work_pool(pool_name) for pool_name in work_pool_names]
+                    tasks = [
+                        get_work_pool(pool_name, workspace_id=workspace_id)
+                        for pool_name in work_pool_names
+                    ]
                     work_pool_results = await asyncio.gather(
                         *tasks, return_exceptions=True
                     )
@@ -337,7 +345,11 @@ async def get_flow_runs(
             }
 
 
-async def get_flow_run_logs(flow_run_id: str, limit: int = 100) -> LogsResult:
+async def get_flow_run_logs(
+    flow_run_id: str,
+    limit: int = 100,
+    workspace_id: UUID | None = None,
+) -> LogsResult:
     """Get only the logs for a flow run.
 
     Args:
@@ -347,7 +359,7 @@ async def get_flow_run_logs(flow_run_id: str, limit: int = 100) -> LogsResult:
     Returns:
         LogsResult with just the logs, no flow run details
     """
-    async with get_prefect_client() as client:
+    async with get_prefect_client(workspace_id=workspace_id) as client:
         try:
             # Fetch logs directly
             log_filter = LogFilter(

@@ -2,15 +2,17 @@
 
 from datetime import datetime
 from typing import Annotated, Any, Literal
+from uuid import UUID
 
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from fastmcp import FastMCP
 from fastmcp.server import create_proxy
+from fastmcp.server.auth import AuthProvider
 from fastmcp.server.providers.proxy import ProxyClient
 from prefect.client.base import ServerType, determine_server_type
 from pydantic import Field
 
-from prefect_mcp_server import _prefect_client
+from prefect_mcp_server import _prefect_client, cloud_oauth
 from prefect_mcp_server.middleware import PrefectAuthMiddleware
 from prefect_mcp_server.settings import settings
 from prefect_mcp_server.types import (
@@ -39,24 +41,14 @@ try:
 except ImportError:
     pass
 
-mcp = FastMCP("Prefect MCP Server")
-
-# add middleware for per-request authentication via http headers
-mcp.add_middleware(PrefectAuthMiddleware())
-
-# Mount the Prefect docs MCP server to expose its tools
-docs_proxy = create_proxy(
-    ProxyClient(settings.docs_mcp.url, init_timeout=settings.docs_mcp.init_timeout),
-    name="Prefect Documentation Search",
-)
-mcp.mount(docs_proxy, namespace="docs")
-
-# Cloud-specific tools (conditionally mounted at end of file)
-cloud_mcp = FastMCP("Prefect Cloud Tools")
+WorkspaceId = Annotated[
+    UUID,
+    Field(
+        description="Prefect Cloud workspace ID. Required when using Prefect Cloud OAuth mode.",
+    ),
+]
 
 
-# Tools
-@mcp.tool
 def orientation() -> str:
     """Use this tool to get oriented with the Prefect MCP server."""
     return """
@@ -68,29 +60,48 @@ def orientation() -> str:
     """
 
 
-@mcp.tool
-async def get_identity() -> IdentityResult:
+async def get_identity(
+    workspace_id: WorkspaceId | None = None,
+) -> IdentityResult:
     """Get identity and connection information for the current Prefect instance.
 
     Returns API URL, type (cloud/oss), and user information if available.
     Essential for understanding which Prefect instance you're connected to.
     """
-    return await _prefect_client.get_identity()
+    return await _prefect_client.get_identity(workspace_id=workspace_id)
 
 
-@mcp.tool
-async def get_dashboard() -> DashboardResult:
+async def list_authorized_workspaces() -> dict[str, object]:
+    """List Prefect Cloud workspaces selected during OAuth consent.
+
+    This tool is only available when the server is running in Prefect Cloud
+    OAuth mode. Use it before calling workspace-scoped tools when the user
+    names a workspace by handle, account/workspace pair, or nickname.
+    """
+    workspaces = await cloud_oauth.list_authorized_workspaces()
+    access_token = cloud_oauth.current_oauth_access_token()
+    return {
+        "grant_id": cloud_oauth.grant_id_from_access_token(access_token)
+        if access_token
+        else None,
+        "workspaces": [workspace.as_dict() for workspace in workspaces],
+    }
+
+
+async def get_dashboard(
+    workspace_id: WorkspaceId | None = None,
+) -> DashboardResult:
     """Get a high-level dashboard overview of the Prefect instance.
 
     Returns current flow run statistics, work pool status, and all active
     concurrency limits (global/tag-based, deployment, work pool, and work queue).
     Essential for diagnosing flow run delays and bottlenecks.
     """
-    return await _prefect_client.fetch_dashboard()
+    return await _prefect_client.fetch_dashboard(workspace_id=workspace_id)
 
 
-@mcp.tool
 async def get_deployments(
+    workspace_id: WorkspaceId | None = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -129,11 +140,12 @@ async def get_deployments(
     return await _prefect_client.get_deployments(
         filter=filter,
         limit=limit,
+        workspace_id=workspace_id,
     )
 
 
-@mcp.tool
 async def get_flows(
+    workspace_id: WorkspaceId | None = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -166,11 +178,12 @@ async def get_flows(
     return await _prefect_client.get_flows(
         filter=filter,
         limit=limit,
+        workspace_id=workspace_id,
     )
 
 
-@mcp.tool
 async def get_flow_runs(
+    workspace_id: WorkspaceId | None = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -215,10 +228,10 @@ async def get_flow_runs(
     return await _prefect_client.get_flow_runs(
         filter=filter,
         limit=limit,
+        workspace_id=workspace_id,
     )
 
 
-@mcp.tool
 async def get_flow_run_logs(
     flow_run_id: Annotated[
         str,
@@ -230,6 +243,7 @@ async def get_flow_run_logs(
     limit: Annotated[
         int, Field(description="Maximum number of log entries to return", ge=1, le=1000)
     ] = 100,
+    workspace_id: WorkspaceId | None = None,
 ) -> LogsResult:
     """Get execution logs for a flow run.
 
@@ -240,11 +254,15 @@ async def get_flow_run_logs(
         - Get logs: get_flow_run_logs(flow_run_id="...")
         - Get more logs: get_flow_run_logs(flow_run_id="...", limit=500)
     """
-    return await _prefect_client.get_flow_run_logs(flow_run_id, limit=limit)
+    return await _prefect_client.get_flow_run_logs(
+        flow_run_id,
+        limit=limit,
+        workspace_id=workspace_id,
+    )
 
 
-@mcp.tool
 async def get_task_runs(
+    workspace_id: WorkspaceId | None = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -282,11 +300,12 @@ async def get_task_runs(
     return await _prefect_client.get_task_runs(
         filter=filter,
         limit=limit,
+        workspace_id=workspace_id,
     )
 
 
-@mcp.tool
 async def get_work_pools(
+    workspace_id: WorkspaceId | None = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -320,11 +339,12 @@ async def get_work_pools(
     return await _prefect_client.get_work_pools(
         filter=filter,
         limit=limit,
+        workspace_id=workspace_id,
     )
 
 
-@mcp.tool
 async def read_events(
+    workspace_id: WorkspaceId | None = None,
     event_type_prefix: Annotated[
         str | None,
         Field(
@@ -373,11 +393,12 @@ async def read_events(
         event_prefix=event_type_prefix,
         occurred_after=occurred_after,
         occurred_before=occurred_before,
+        workspace_id=workspace_id,
     )
 
 
-@mcp.tool
 async def get_automations(
+    workspace_id: WorkspaceId | None = None,
     filter: Annotated[
         dict[str, Any] | None,
         Field(
@@ -410,10 +431,13 @@ async def get_automations(
         - Get by name: get_automations(filter={"name": {"any_": ["my-automation"]}})
         - Only enabled: get_automations(filter={"enabled": {"eq_": True}})
     """
-    return await _prefect_client.get_automations(filter=filter, limit=limit)
+    return await _prefect_client.get_automations(
+        filter=filter,
+        limit=limit,
+        workspace_id=workspace_id,
+    )
 
 
-@mcp.tool
 async def get_object_schema(
     object_type: Annotated[
         Literal["automation"],
@@ -427,13 +451,40 @@ async def get_object_schema(
     if object_type == "automation":
         from prefect.events.schemas.automations import AutomationCore
 
-        return AutomationCore.model_json_schema()
+        schema = AutomationCore.model_json_schema()
+        schema["x-prefect-mcp-guidance"] = {
+            "proactive_stuck_pending_flow_runs": {
+                "description": (
+                    "To detect flow runs stuck in Pending, use a proactive event "
+                    "trigger that starts after a Pending event and expects the "
+                    "specific state transition event that would prove the run is "
+                    "no longer stuck."
+                ),
+                "trigger": {
+                    "type": "event",
+                    "posture": "Proactive",
+                    "after": ["prefect.flow-run.Pending"],
+                    "expect": [
+                        "prefect.flow-run.Running",
+                        "prefect.flow-run.Crashed",
+                    ],
+                    "for_each": ["prefect.resource.id"],
+                    "threshold": 1,
+                    "within": 300,
+                },
+                "note": (
+                    "Do not use prefect.flow-run.* as the expected event for a "
+                    "stuck Pending detector; it is too broad. Prefer explicit "
+                    "state events such as prefect.flow-run.Running and "
+                    "prefect.flow-run.Crashed."
+                ),
+            }
+        }
+        return schema
     else:
         raise ValueError(f"Unknown object type: {object_type}")
 
 
-# Cloud-specific tools
-@cloud_mcp.tool
 async def review_rate_limits(
     since: Annotated[
         datetime | None,
@@ -477,6 +528,78 @@ async def review_rate_limits(
     return await _prefect_client.get_rate_limits(since=since, until=until)
 
 
-# Conditionally mount Cloud tools if connected to Prefect Cloud
-if determine_server_type() == ServerType.CLOUD:
-    mcp.mount(cloud_mcp)
+CORE_TOOLS = (
+    orientation,
+    get_identity,
+    get_dashboard,
+    get_deployments,
+    get_flows,
+    get_flow_runs,
+    get_flow_run_logs,
+    get_task_runs,
+    get_work_pools,
+    read_events,
+    get_automations,
+    get_object_schema,
+)
+
+CLOUD_TOOLS = (review_rate_limits,)
+CLOUD_OAUTH_TOOLS = (list_authorized_workspaces,)
+
+
+def build_prefect_mcp_server(
+    *,
+    name: str = "Prefect MCP Server",
+    auth_provider: AuthProvider | None = None,
+    include_docs_proxy: bool = True,
+    include_cloud_tools: bool | None = None,
+    include_cloud_oauth_tools: bool = False,
+) -> FastMCP:
+    """Build a Prefect MCP server from shared tools and optional Cloud adapters."""
+    server = FastMCP(name, auth=auth_provider)
+    server.add_middleware(PrefectAuthMiddleware())
+
+    if include_docs_proxy:
+        docs_proxy = create_proxy(
+            ProxyClient(
+                settings.docs_mcp.url,
+                init_timeout=settings.docs_mcp.init_timeout,
+            ),
+            name="Prefect Documentation Search",
+        )
+        server.mount(docs_proxy, namespace="docs")
+
+    for tool in CORE_TOOLS:
+        server.add_tool(tool)
+
+    should_include_cloud_tools = (
+        include_cloud_tools
+        if include_cloud_tools is not None
+        else determine_server_type() == ServerType.CLOUD or cloud_oauth.settings.enabled
+    )
+    if should_include_cloud_tools:
+        for tool in CLOUD_TOOLS:
+            server.add_tool(tool)
+
+    if include_cloud_oauth_tools:
+        for tool in CLOUD_OAUTH_TOOLS:
+            server.add_tool(tool)
+
+    return server
+
+
+def build_cloud_mcp_server(*, include_docs_proxy: bool = True) -> FastMCP:
+    """Build the Prefect Cloud OAuth MCP server."""
+    return build_prefect_mcp_server(
+        name="Prefect Cloud MCP Server",
+        auth_provider=cloud_oauth.build_auth_provider(require_enabled=True),
+        include_docs_proxy=include_docs_proxy,
+        include_cloud_tools=True,
+        include_cloud_oauth_tools=True,
+    )
+
+
+mcp = build_prefect_mcp_server(
+    auth_provider=cloud_oauth.build_auth_provider(),
+    include_cloud_oauth_tools=cloud_oauth.settings.enabled,
+)
