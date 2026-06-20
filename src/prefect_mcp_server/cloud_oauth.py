@@ -55,6 +55,8 @@ class CloudOAuthSettings(BaseSettings):
     auth_issuer: str = Field(default="AuthServerID")
     auth_audience: str = Field(default="AuthServerID")
     auth_algorithm: str = Field(default="HS256")
+    client_id: str | None = Field(default=None)
+    client_secret: str | None = Field(default=None)
 
     @property
     def enabled(self) -> bool:
@@ -246,3 +248,36 @@ async def require_authorized_workspace(workspace_id: UUID) -> WorkspaceRef:
         "Workspace is not included in the OAuth consent grant. "
         "Call list_authorized_workspaces and choose one of those workspace IDs."
     )
+
+
+async def exchange_client_credentials(
+    *,
+    client_id: str | None = None,
+    client_secret: str | None = None,
+    scope: str = "prefect-cloud:workspaces",
+) -> str:
+    """Exchange service-account MCP OAuth credentials for a bearer token."""
+    resolved_client_id = client_id or settings.client_id
+    resolved_client_secret = client_secret or settings.client_secret
+    if not resolved_client_id or not resolved_client_secret:
+        raise RuntimeError(
+            "PREFECT_MCP_CLOUD_CLIENT_ID and PREFECT_MCP_CLOUD_CLIENT_SECRET "
+            "are required for service-account MCP credential exchange."
+        )
+
+    async with httpx.AsyncClient(
+        base_url=settings.resolved_auth_base_url,
+        auth=(resolved_client_id, resolved_client_secret),
+        timeout=10.0,
+    ) as client:
+        response = await client.post(
+            "/auth/mcp/oauth/token",
+            data={"grant_type": "client_credentials", "scope": scope},
+        )
+        response.raise_for_status()
+
+    body = response.json()
+    access_token = body.get("access_token")
+    if not isinstance(access_token, str) or not access_token:
+        raise RuntimeError("Prefect Cloud did not return an MCP access token.")
+    return access_token

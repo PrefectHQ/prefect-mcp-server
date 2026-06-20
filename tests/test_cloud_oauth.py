@@ -1,5 +1,6 @@
 """Tests for Prefect Cloud OAuth support."""
 
+import asyncio
 from unittest.mock import AsyncMock, PropertyMock, patch
 from uuid import UUID
 
@@ -215,3 +216,54 @@ def test_protected_resource_metadata_preserves_authorization_server_origin() -> 
 
     assert response.status_code == 200
     assert response.json()["authorization_servers"] == ["https://api.prefect.cloud"]
+
+
+async def test_exchange_client_credentials_posts_oauth_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Response:
+        def raise_for_status(self) -> None:
+            pass
+
+        def json(self) -> dict[str, str]:
+            return {"access_token": "mcp-access-token"}
+
+    class Client:
+        def __init__(self, **kwargs):
+            assert kwargs["base_url"] == "https://api.stg.prefect.dev"
+            assert kwargs["auth"] == ("client-id", "client-secret")
+            assert kwargs["timeout"] == 10.0
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc_info):
+            return None
+
+        async def post(self, path: str, *, data: dict[str, str]):
+            assert path == "/auth/mcp/oauth/token"
+            assert data == {
+                "grant_type": "client_credentials",
+                "scope": "prefect-cloud:workspaces",
+            }
+            return Response()
+
+    monkeypatch.setattr(cloud_oauth.settings, "environment", "stg")
+    monkeypatch.setattr(cloud_oauth.httpx, "AsyncClient", Client)
+
+    token = await cloud_oauth.exchange_client_credentials(
+        client_id="client-id",
+        client_secret="client-secret",
+    )
+
+    assert token == "mcp-access-token"
+
+
+def test_exchange_client_credentials_requires_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(cloud_oauth.settings, "client_id", None)
+    monkeypatch.setattr(cloud_oauth.settings, "client_secret", None)
+
+    with pytest.raises(RuntimeError, match="PREFECT_MCP_CLOUD_CLIENT_ID"):
+        asyncio.run(cloud_oauth.exchange_client_credentials())
