@@ -52,10 +52,9 @@ Useful first prompts:
 
 ### Unattended Service-Account Clients
 
-Browser OAuth is the right flow for human-operated MCP clients. Workflow agents and other noninteractive runtimes should use service-account MCP OAuth credentials issued by Prefect Cloud, exchange those credentials for a short-lived MCP bearer token, and connect to the hosted MCP URL with an `Authorization` header.
+Browser OAuth is the right flow for human-operated MCP clients. Workflow agents and other noninteractive runtimes should use service-account MCP OAuth credentials issued by Prefect Cloud, exchange those credentials for an MCP bearer token, and connect to the hosted MCP URL with an `Authorization` header.
 
 ```bash
-export PREFECT_MCP_CLOUD_ENVIRONMENT=stg
 export PREFECT_MCP_CLOUD_CLIENT_ID=...
 export PREFECT_MCP_CLOUD_CLIENT_SECRET=...
 
@@ -67,19 +66,19 @@ Agents can also exchange credentials in process before constructing their MCP cl
 ```python
 from fastmcp import Client
 from fastmcp.client.transports import StreamableHttpTransport
-from prefect_mcp_server.cloud_oauth import exchange_client_credentials
+from prefect_mcp_server.cloud_oauth import exchange_client_credentials_token
 
-token = await exchange_client_credentials()
+token = await exchange_client_credentials_token()
 transport = StreamableHttpTransport(
     url="https://prefect-cloud-mcp-server.fastmcp.app/mcp",
-    headers={"Authorization": f"Bearer {token}"},
+    headers={"Authorization": f"Bearer {token.access_token}"},
 )
 
 async with Client(transport) as client:
     print(await client.list_tools())
 ```
 
-Tokens are intentionally short-lived. Long-running agents should refresh the token before expiry using the same client credentials.
+The token response includes `expires_in`. Treat an agent as long-running if it may keep using the MCP connection longer than that returned lifetime. In that case, request a new token with the same client credentials before reusing the MCP connection. This follows the OAuth client-credentials pattern: the client credentials are the renewable secret, and the access token is the time-limited bearer credential sent to the MCP server.
 
 ## Claude Code Plugin
 
@@ -156,7 +155,6 @@ Prefect-operated Cloud OAuth deployments use a dedicated entrypoint:
 
 - server path: `src/prefect_mcp_server/cloud.py`
 - required runtime secret: `PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY`
-- optional environment selector: `PREFECT_MCP_CLOUD_ENVIRONMENT=stg` or `prod`
 
 This entrypoint reuses the same read-only tool definitions as the local/API-key server, adds Prefect Cloud OAuth, and adds Cloud OAuth-only workspace discovery. If OAuth is not configured, the Cloud OAuth entrypoint fails at import time instead of starting an unprotected server.
 
@@ -170,7 +168,6 @@ Cloud OAuth settings use the `PREFECT_MCP_CLOUD_` prefix:
 | Environment variable | Purpose |
 | --- | --- |
 | `PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY` | Required signing/verification key for Prefect Cloud issued MCP OAuth access tokens |
-| `PREFECT_MCP_CLOUD_ENVIRONMENT` | `prod`, `stg`, or `local`; defaults to `prod` |
 | `PREFECT_MCP_CLOUD_API_BASE_URL` | Optional override for the Prefect API base URL |
 | `PREFECT_MCP_CLOUD_AUTH_BASE_URL` | Optional override for auth helper endpoints |
 | `PREFECT_MCP_CLOUD_AUTHORIZATION_SERVER` | Optional override for advertised OAuth authorization server |

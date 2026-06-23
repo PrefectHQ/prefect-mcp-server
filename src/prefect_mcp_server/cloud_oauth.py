@@ -110,6 +110,14 @@ class WorkspaceRef:
         }
 
 
+@dataclass(frozen=True)
+class ClientCredentialsToken:
+    access_token: str
+    token_type: str
+    expires_in: int
+    scope: str
+
+
 settings = CloudOAuthSettings()
 
 
@@ -250,13 +258,13 @@ async def require_authorized_workspace(workspace_id: UUID) -> WorkspaceRef:
     )
 
 
-async def exchange_client_credentials(
+async def exchange_client_credentials_token(
     *,
     client_id: str | None = None,
     client_secret: str | None = None,
     scope: str = "prefect-cloud:workspaces",
-) -> str:
-    """Exchange service-account MCP OAuth credentials for a bearer token."""
+) -> ClientCredentialsToken:
+    """Exchange service-account MCP OAuth credentials for token metadata."""
     resolved_client_id = client_id or settings.client_id
     resolved_client_secret = client_secret or settings.client_secret
     if not resolved_client_id or not resolved_client_secret:
@@ -280,4 +288,33 @@ async def exchange_client_credentials(
     access_token = body.get("access_token")
     if not isinstance(access_token, str) or not access_token:
         raise RuntimeError("Prefect Cloud did not return an MCP access token.")
-    return access_token
+    token_type = body.get("token_type")
+    if not isinstance(token_type, str) or token_type.lower() != "bearer":
+        raise RuntimeError("Prefect Cloud did not return a bearer token.")
+    expires_in = body.get("expires_in")
+    if not isinstance(expires_in, int) or expires_in <= 0:
+        raise RuntimeError("Prefect Cloud did not return a token expiration.")
+    returned_scope = body.get("scope")
+    if not isinstance(returned_scope, str) or not returned_scope:
+        raise RuntimeError("Prefect Cloud did not return a token scope.")
+    return ClientCredentialsToken(
+        access_token=access_token,
+        token_type=token_type,
+        expires_in=expires_in,
+        scope=returned_scope,
+    )
+
+
+async def exchange_client_credentials(
+    *,
+    client_id: str | None = None,
+    client_secret: str | None = None,
+    scope: str = "prefect-cloud:workspaces",
+) -> str:
+    """Exchange service-account MCP OAuth credentials for a bearer token."""
+    token = await exchange_client_credentials_token(
+        client_id=client_id,
+        client_secret=client_secret,
+        scope=scope,
+    )
+    return token.access_token

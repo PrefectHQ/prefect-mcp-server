@@ -7,6 +7,7 @@ from uuid import UUID
 import pytest
 from fastmcp import Client
 from fastmcp.server.auth.providers.jwt import JWTVerifier
+from prefect.client.cloud import CloudUnauthorizedError
 from starlette.applications import Starlette
 from starlette.testclient import TestClient
 
@@ -137,6 +138,73 @@ async def test_get_identity_describes_oauth_grant_without_workspace() -> None:
     )
 
 
+async def test_get_identity_describes_service_account_oauth_grant_with_workspace() -> (
+    None
+):
+    workspace = cloud_oauth.WorkspaceRef(
+        account_id=ACCOUNT_ID,
+        account_handle="acme",
+        workspace_id=WORKSPACE_ID,
+        workspace_handle="prod",
+    )
+    mock_client = AsyncMock()
+    mock_client.api_url = (
+        f"https://api.prefect.cloud/api/accounts/{ACCOUNT_ID}/workspaces/{WORKSPACE_ID}"
+    )
+    mock_cloud_client = AsyncMock()
+    mock_cloud_client.get = AsyncMock(
+        side_effect=CloudUnauthorizedError(
+            "Only users (not service accounts) can access this endpoint."
+        )
+    )
+
+    with (
+        patch(
+            "prefect_mcp_server.cloud_oauth.current_oauth_access_token",
+            return_value="header.eyJtY3BfZ3JhbnRfaWQiOiAiZ3JhbnQtMSJ9.signature",
+        ),
+        patch(
+            "prefect_mcp_server._prefect_client.identity.get_prefect_client"
+        ) as mock_get_client,
+        patch(
+            "prefect_mcp_server._prefect_client.identity.get_prefect_cloud_client"
+        ) as mock_get_cloud_client,
+        patch(
+            "prefect_mcp_server.cloud_oauth.CloudOAuthSettings.enabled",
+            new_callable=PropertyMock,
+            return_value=True,
+        ),
+        patch(
+            "prefect_mcp_server.cloud_oauth.CloudOAuthSettings.resolved_api_base_url",
+            new_callable=PropertyMock,
+            return_value="https://api.prefect.cloud",
+        ),
+        patch(
+            "prefect_mcp_server.cloud_oauth.list_authorized_workspaces",
+            AsyncMock(return_value=[workspace]),
+        ) as mock_list_authorized_workspaces,
+    ):
+        mock_get_client.return_value.__aenter__.return_value = mock_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
+
+        result = await get_identity(workspace_id=WORKSPACE_ID)
+
+    assert result["success"] is True
+    assert result["identity"] == {
+        "api_url": "https://api.prefect.cloud",
+        "auth_mode": "prefect-cloud-oauth",
+        "grant_id": "grant-1",
+        "authorized_workspace_count": 1,
+        "authorized_workspaces": [workspace.as_dict()],
+        "selected_workspace": workspace.as_dict(),
+        "next_step": "Use selected_workspace for workspace-scoped tools.",
+    }
+    mock_list_authorized_workspaces.assert_awaited_once_with(
+        "header.eyJtY3BfZ3JhbnRfaWQiOiAiZ3JhbnQtMSJ9.signature"
+    )
+
+
 async def test_default_server_excludes_cloud_oauth_workspace_tools() -> None:
     server = build_prefect_mcp_server(
         include_docs_proxy=False,
@@ -225,8 +293,13 @@ async def test_exchange_client_credentials_posts_oauth_request(
         def raise_for_status(self) -> None:
             pass
 
-        def json(self) -> dict[str, str]:
-            return {"access_token": "mcp-access-token"}
+        def json(self) -> dict[str, str | int]:
+            return {
+                "access_token": "mcp-access-token",
+                "token_type": "bearer",
+                "expires_in": 1800,
+                "scope": "prefect-cloud:workspaces",
+            }
 
     class Client:
         def __init__(self, **kwargs):
@@ -251,12 +324,21 @@ async def test_exchange_client_credentials_posts_oauth_request(
     monkeypatch.setattr(cloud_oauth.settings, "environment", "stg")
     monkeypatch.setattr(cloud_oauth.httpx, "AsyncClient", Client)
 
-    token = await cloud_oauth.exchange_client_credentials(
+    token = await cloud_oauth.exchange_client_credentials_token(
         client_id="client-id",
         client_secret="client-secret",
     )
 
-    assert token == "mcp-access-token"
+    assert token.access_token == "mcp-access-token"
+    assert token.token_type == "bearer"
+    assert token.expires_in == 1800
+    assert token.scope == "prefect-cloud:workspaces"
+
+    token_string = await cloud_oauth.exchange_client_credentials(
+        client_id="client-id",
+        client_secret="client-secret",
+    )
+    assert token_string == "mcp-access-token"
 
 
 def test_exchange_client_credentials_requires_credentials(
