@@ -1,5 +1,8 @@
 """Tests for execution-plan MCP authoring surface."""
 
+import json
+from copy import deepcopy
+from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, call, patch
 from uuid import UUID
@@ -660,6 +663,204 @@ async def test_execution_plans_publish_preserves_create_validation_errors(
             f"/flows/{flow_id}/execution-plan/versions",
             workspace_id=workspace_id,
             json={"plan": valid_execution_plan, "layout": {"nodes": []}},
+        ),
+    ]
+
+
+async def test_execution_plans_authoring_loop_validates_repairs_publishes_and_reads_back(
+    monkeypatch: pytest.MonkeyPatch,
+    workspace_id: UUID,
+    flow_id: UUID,
+    version_id: UUID,
+    valid_execution_plan: dict[str, Any],
+    execution_plan_version: dict[str, Any],
+    active_execution_plan_version: dict[str, Any],
+) -> None:
+    monkeypatch.setattr(settings.experimental, "execution_plans_enabled", True)
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+    reference_path = (
+        Path(__file__).parent
+        / "fixtures"
+        / "execution_plan_authoring_loop_reference.json"
+    )
+    reference = json.loads(reference_path.read_text())
+    invalid_plan = deepcopy(valid_execution_plan)
+    invalid_plan["edges"] = [
+        {
+            "id": "input_to_research",
+            "from": {"type": "plan_input", "input": "question"},
+            "to": {"node": "research", "input": "question"},
+        },
+        {
+            "id": "missing_research_to_summary",
+            "from": {
+                "type": "node_output",
+                "node": "missing_research",
+                "output": "findings",
+            },
+            "to": {"node": "summarize", "input": "findings"},
+        },
+    ]
+    validation_error: dict[str, Any] = {
+        "code": "missing_source_node",
+        "phase": "semantic",
+        "path": ["edges", 1, "from", "node"],
+        "message": "Source node 'missing_research' is not defined.",
+    }
+    active_state = {"active_version": active_execution_plan_version}
+
+    with patch(
+        "prefect_mcp_server.execution_plans.call_execution_plan_api",
+        new=AsyncMock(
+            side_effect=[
+                {"valid": False, "errors": [validation_error]},
+                {"valid": True, "errors": []},
+                {"valid": True, "errors": []},
+                execution_plan_version,
+                active_state,
+                active_state,
+            ]
+        ),
+    ) as mock_call_execution_plan_api:
+        async with Client(server) as client:
+            tools = await client.list_tools()
+            invalid_validation_result = await client.call_tool(
+                "execution_plans_validate",
+                {
+                    "workspace_id": str(workspace_id),
+                    "plan": invalid_plan,
+                },
+            )
+            repaired_validation_result = await client.call_tool(
+                "execution_plans_validate",
+                {
+                    "workspace_id": str(workspace_id),
+                    "plan": valid_execution_plan,
+                },
+            )
+            publish_result = await client.call_tool(
+                "execution_plans_publish",
+                {
+                    "workspace_id": str(workspace_id),
+                    "flow_id": str(flow_id),
+                    "plan": valid_execution_plan,
+                },
+            )
+            get_result = await client.call_tool(
+                "execution_plans_get",
+                {
+                    "workspace_id": str(workspace_id),
+                    "flow_id": str(flow_id),
+                },
+            )
+
+    tool_names = {tool.name for tool in tools}
+    execution_plan_tool_names = {
+        name for name in tool_names if name.startswith("execution_plans_")
+    }
+    execution_tool_schema_text = json.dumps(
+        [
+            tool.model_dump(mode="json")
+            for tool in tools
+            if tool.name in execution_plan_tool_names
+        ],
+        sort_keys=True,
+    ).lower()
+
+    assert set(reference["tools"]) == execution_plans.EXECUTION_PLAN_TOOL_NAMES
+    assert len(json.dumps(reference)) < 1000
+    assert execution_plan_tool_names == execution_plans.EXECUTION_PLAN_TOOL_NAMES
+    assert "execution_plans_activate" not in execution_plan_tool_names
+    assert "execution_plans_create_version" not in execution_plan_tool_names
+    assert "execution_plans_run" not in execution_plan_tool_names
+    assert "execution_plans_schedule" not in execution_plan_tool_names
+    assert "schedule" not in execution_tool_schema_text
+    assert "storage" not in execution_tool_schema_text
+
+    invalid_validation_data = (
+        invalid_validation_result.structured_content.get("result")
+        or invalid_validation_result.structured_content
+    )
+    repaired_validation_data = (
+        repaired_validation_result.structured_content.get("result")
+        or repaired_validation_result.structured_content
+    )
+    publish_data = (
+        publish_result.structured_content.get("result")
+        or publish_result.structured_content
+    )
+    get_data = (
+        get_result.structured_content.get("result") or get_result.structured_content
+    )
+
+    assert invalid_validation_data == reference["validation_failure"]
+    assert invalid_validation_data["errors"][0]["code"] == "missing_source_node"
+    assert invalid_validation_data["errors"][0]["phase"] == "semantic"
+    assert invalid_validation_data["errors"][0]["path"] == [
+        "edges",
+        1,
+        "from",
+        "node",
+    ]
+    assert "missing_research" in invalid_validation_data["errors"][0]["message"]
+    assert repaired_validation_data["success"] is True
+    assert repaired_validation_data["valid"] is True
+    assert repaired_validation_data["errors"] == []
+    assert publish_data["success"] is True
+    assert publish_data["valid"] is True
+    assert publish_data["published"] is True
+    assert publish_data["activated"] is True
+    assert {
+        "success": publish_data["success"],
+        "valid": publish_data["valid"],
+        "published": publish_data["published"],
+        "activated": publish_data["activated"],
+    } == reference["publish_result"]
+    assert publish_data["version_id"] == str(version_id)
+    assert publish_data["created_version"]["plan"] == valid_execution_plan
+    assert get_data["success"] is True
+    assert get_data["source"] == "active"
+    assert get_data["active"] is True
+    assert {
+        "source": get_data["source"],
+        "active": get_data["active"],
+    } == reference["read_back"]
+    assert get_data["version_id"] == str(version_id)
+    assert get_data["version"]["plan"] == valid_execution_plan
+    assert mock_call_execution_plan_api.await_args_list == [
+        call(
+            "POST",
+            "/execution-plans/validate",
+            workspace_id=workspace_id,
+            json={"plan": invalid_plan},
+        ),
+        call(
+            "POST",
+            "/execution-plans/validate",
+            workspace_id=workspace_id,
+            json={"plan": valid_execution_plan},
+        ),
+        call(
+            "POST",
+            "/execution-plans/validate",
+            workspace_id=workspace_id,
+            json={"plan": valid_execution_plan},
+        ),
+        call(
+            "POST",
+            f"/flows/{flow_id}/execution-plan/versions",
+            workspace_id=workspace_id,
+            json={"plan": valid_execution_plan},
+        ),
+        call(
+            "POST",
+            f"/flows/{flow_id}/execution-plan/versions/{version_id}/activate",
+            workspace_id=workspace_id,
+        ),
+        call(
+            "GET",
+            f"/flows/{flow_id}/execution-plan",
+            workspace_id=workspace_id,
         ),
     ]
 
