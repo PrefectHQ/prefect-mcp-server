@@ -13,72 +13,10 @@ The server gives MCP clients read-only tools for inspecting Prefect Cloud and se
 
 | Use case | Recommended setup | Authentication |
 | --- | --- | --- |
-| Prefect Cloud with no local API key | Prefect Cloud OAuth MCP | Browser OAuth with workspace consent |
 | Claude Code on your machine | Claude Code plugin | Active local Prefect profile |
 | Local MCP client | `uvx` stdio server | Active local Prefect profile or env vars |
 | Self-hosted Prefect or custom Cloud workspace | Self-hosted HTTP or stdio server | API key, basic auth, env vars, or headers |
 | Team-operated shared server | HTTP deployment with per-request headers | User or service-account credentials in headers |
-
-## Prefect Cloud OAuth MCP
-
-Use this path when you want a remote MCP URL that authenticates to Prefect Cloud in the browser instead of asking users to create or paste API keys.
-
-> [!NOTE]
-> Prefect Cloud OAuth MCP is an experimental deployment path. It is available only where Prefect Cloud MCP OAuth is enabled.
-
-```bash
-claude mcp add prefect-cloud \
-  --transport http https://prefect-cloud-mcp-server.fastmcp.app/mcp
-```
-
-The MCP client discovers the OAuth metadata from the server, opens a browser for Prefect Cloud authentication, and asks the user to choose the workspaces this MCP client may read. After authentication, the assistant can list the consented workspaces and call the same read-only Prefect tools against those workspaces.
-
-Cloud OAuth mode:
-
-- uses HTTP MCP OAuth, not stdio credentials
-- does not require `PREFECT_API_KEY` in the MCP client
-- limits workspace-scoped tools to the workspaces selected during consent
-- requires workspace-scoped tool calls to include a `workspace_id`
-- keeps the shared read-only tool definitions from this repository
-
-Useful first prompts:
-
-- "Tell me what Prefect workspaces you can access."
-- "Look across all authorized workspaces and summarize recent failed flow runs."
-- "Compare deployment health between my staging and production workspaces."
-
-> [!NOTE]
-> The Cloud OAuth MCP path is for Prefect Cloud. Local stdio usage and self-hosted Prefect deployments continue to use local profiles, environment variables, API keys, basic auth, or HTTP headers.
-
-### Unattended Service-Account Clients
-
-Browser OAuth is the right flow for human-operated MCP clients. Workflow agents and other noninteractive runtimes should use service-account MCP OAuth credentials issued by Prefect Cloud, exchange those credentials for an MCP bearer token, and connect to the hosted MCP URL with an `Authorization` header.
-
-```bash
-export PREFECT_MCP_CLOUD_CLIENT_ID=...
-export PREFECT_MCP_CLOUD_CLIENT_SECRET=...
-
-uvx --from prefect-mcp prefect-mcp-cloud-token
-```
-
-Agents can also exchange credentials in process before constructing their MCP client:
-
-```python
-from fastmcp import Client
-from fastmcp.client.transports import StreamableHttpTransport
-from prefect_mcp_server.cloud_oauth import exchange_client_credentials_token
-
-token = await exchange_client_credentials_token()
-transport = StreamableHttpTransport(
-    url="https://prefect-cloud-mcp-server.fastmcp.app/mcp",
-    headers={"Authorization": f"Bearer {token.access_token}"},
-)
-
-async with Client(transport) as client:
-    print(await client.list_tools())
-```
-
-The token response includes `expires_in`. Treat an agent as long-running if it may keep using the MCP connection longer than that returned lifetime. In that case, request a new token with the same client credentials before reusing the MCP connection. This follows the OAuth client-credentials pattern: the client credentials are the renewable secret, and the access token is the time-limited bearer credential sent to the MCP server.
 
 ## Claude Code Plugin
 
@@ -149,7 +87,65 @@ Deploy your own server when you need a custom Prefect API target, self-hosted Pr
 > [!NOTE]
 > For self-hosted deployments, environment variables are configured on the deployed MCP server, not in your MCP client configuration. The MCP host authenticates access to the MCP server, while this server uses the configured Prefect credentials to access Prefect.
 
-## Cloud OAuth Deployment Entrypoint
+<details>
+<summary>Experimental Prefect Cloud OAuth MCP</summary>
+
+Prefect is experimenting with a hosted Prefect Cloud MCP deployment that uses HTTP MCP OAuth instead of asking users to create or paste API keys. This is not the default setup path yet, and it is only available where Prefect Cloud MCP OAuth has been enabled.
+
+When enabled, a user can add the hosted MCP URL to their client:
+
+```bash
+claude mcp add prefect-cloud \
+  --transport http https://prefect-cloud-mcp-server.fastmcp.app/mcp
+```
+
+The MCP client discovers OAuth metadata from the server, opens a browser for Prefect Cloud authentication, and asks the user to choose the workspaces this MCP client may read. After authentication, the assistant can list the consented workspaces and call the same read-only Prefect tools against those workspaces.
+
+Cloud OAuth mode:
+
+- uses HTTP MCP OAuth, not stdio credentials
+- does not require `PREFECT_API_KEY` in the MCP client
+- limits workspace-scoped tools to the workspaces selected during consent
+- requires workspace-scoped tool calls to include a `workspace_id`
+- keeps the shared read-only tool definitions from this repository
+
+Useful first prompts:
+
+- "Tell me what Prefect workspaces you can access."
+- "Look across all authorized workspaces and summarize recent failed flow runs."
+- "Compare deployment health between my staging and production workspaces."
+
+### Unattended Service-Account Clients
+
+Browser OAuth is the right flow for human-operated MCP clients. Workflow agents and other noninteractive runtimes should use service-account MCP OAuth credentials issued by Prefect Cloud, exchange those credentials for an MCP bearer token, and connect to the hosted MCP URL with an `Authorization` header.
+
+```bash
+export PREFECT_MCP_CLOUD_CLIENT_ID=...
+export PREFECT_MCP_CLOUD_CLIENT_SECRET=...
+
+uvx --from prefect-mcp prefect-mcp-cloud-token
+```
+
+Agents can also exchange credentials in process before constructing their MCP client:
+
+```python
+from fastmcp import Client
+from fastmcp.client.transports import StreamableHttpTransport
+from prefect_mcp_server.cloud_oauth import exchange_client_credentials_token
+
+token = await exchange_client_credentials_token()
+transport = StreamableHttpTransport(
+    url="https://prefect-cloud-mcp-server.fastmcp.app/mcp",
+    headers={"Authorization": f"Bearer {token.access_token}"},
+)
+
+async with Client(transport) as client:
+    print(await client.list_tools())
+```
+
+The token response includes `expires_in`. Treat an agent as long-running if it may keep using the MCP connection longer than that returned lifetime. In that case, request a new token with the same client credentials before reusing the MCP connection. This follows the OAuth client-credentials pattern: the client credentials are the renewable secret, and the access token is the time-limited bearer credential sent to the MCP server.
+
+### Cloud OAuth Deployment Entrypoint
 
 Prefect-operated Cloud OAuth deployments use a dedicated entrypoint:
 
@@ -175,6 +171,8 @@ Cloud OAuth settings use the `PREFECT_MCP_CLOUD_` prefix:
 | `PREFECT_MCP_CLOUD_CLIENT_SECRET` | Optional service-account MCP OAuth client secret for unattended token exchange |
 | `PREFECT_MCP_CLOUD_PUBLIC_BASE_URL` | Public base URL for the hosted MCP server |
 | `PREFECT_MCP_PUBLIC_BASE_URL` | Legacy alias for the public base URL |
+
+</details>
 
 </details>
 
@@ -388,12 +386,6 @@ This server enables MCP clients to interact with Prefect read-only APIs:
 - Retrieve detailed execution logs from flow runs
 - Track events across your workflow ecosystem
 - Review rate limit usage for Prefect Cloud
-
-**Cloud OAuth workspace access**
-
-- Authenticate with Prefect Cloud using browser OAuth
-- List workspaces selected during consent
-- Ask cross-workspace diagnostic questions across the authorized workspace set
 
 **Documentation access**
 
