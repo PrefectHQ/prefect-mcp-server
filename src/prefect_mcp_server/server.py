@@ -604,6 +604,14 @@ def build_prefect_mcp_server(
     for tool in EXECUTION_PLAN_TOOLS:
         server.add_tool(tool)
 
+    if settings.experimental.execution_plans_enabled:
+        server.resource(
+            execution_plans.EXECUTION_PLAN_AUTHORING_CONTEXT_URI,
+            name=execution_plans.EXECUTION_PLAN_AUTHORING_CONTEXT_RESOURCE_NAME,
+            description="Compact authoring context for MVP execution-plan drafts.",
+            mime_type="application/json",
+        )(execution_plans.execution_plans_authoring_context)
+
     return server
 
 
