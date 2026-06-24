@@ -32,12 +32,12 @@ EXECUTION_PLANS_NAMESPACE = "execution_plans"
 EXECUTION_PLAN_SCHEMA_VERSION = "0.1"
 EXECUTION_PLAN_TOOL_NAMES = {"execution_plans_validate"}
 EXECUTION_PLAN_API_BOUNDARY = (
-    "Execution-plan MCP tools use workspace-relative Prefect Cloud API routes "
-    "through get_prefect_client(workspace_id=...)."
+    "Execution-plan MCP tools are Cloud-only and use workspace-relative "
+    "Prefect Cloud API routes through get_prefect_client(workspace_id=...)."
 )
 EXECUTION_PLAN_AUTH_CONTEXT = (
-    "Uses existing Prefect MCP auth, workspace scoping, OAuth consent, header "
-    "credentials, and local profile fallback."
+    "Uses Prefect Cloud OAuth workspace scoping, Cloud workspace API "
+    "credentials from headers or environment, and local Cloud profile fallback."
 )
 
 
@@ -57,7 +57,7 @@ def execution_plans_disabled_response(
         "error": (
             "Execution-plan authoring is disabled for this MCP server. "
             "Set PREFECT_MCP_EXPERIMENTAL_EXECUTION_PLANS_ENABLED=true to enable the "
-            "execution_plans namespace."
+            "Cloud-only execution_plans namespace."
         ),
     }
 
@@ -96,6 +96,5 @@ async def execution_plans_validate(
         "workspace_id": str(workspace_id) if workspace_id else None,
         "error": None,
     }
-
 
 EXECUTION_PLAN_TOOLS = (execution_plans_validate,)

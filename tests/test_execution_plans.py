@@ -83,6 +83,7 @@ async def test_execution_plans_tools_report_disabled_when_hidden(
     assert data["namespace"] == "execution_plans"
     assert data["workspace_id"] == str(workspace_id)
     assert "PREFECT_MCP_EXPERIMENTAL_EXECUTION_PLANS_ENABLED=true" in data["error"]
+    assert "Cloud-only execution_plans namespace" in data["error"]
 
 
 async def test_execution_plans_validate_returns_valid_plan_result(
@@ -302,6 +303,9 @@ async def test_execution_plan_api_helper_uses_workspace_client(
         "prefect_mcp_server._prefect_client.execution_plans.get_prefect_client"
     ) as mock_get_client:
         mock_client = AsyncMock()
+        mock_client.api_url = (
+            "https://api.prefect.cloud/api/accounts/test/workspaces/test"
+        )
         mock_client.request = AsyncMock(return_value=api_response)
         mock_get_client.return_value.__aenter__.return_value = mock_client
 
@@ -321,3 +325,21 @@ async def test_execution_plan_api_helper_uses_workspace_client(
         params=None,
     )
     api_response.raise_for_status.assert_called_once()
+
+
+async def test_execution_plan_api_helper_rejects_non_cloud_workspace_client(
+    api_response: MagicMock,
+) -> None:
+    with patch(
+        "prefect_mcp_server._prefect_client.execution_plans.get_prefect_client"
+    ) as mock_get_client:
+        mock_client = AsyncMock()
+        mock_client.api_url = "http://localhost:4200/api"
+        mock_client.request = AsyncMock(return_value=api_response)
+        mock_get_client.return_value.__aenter__.return_value = mock_client
+
+        with pytest.raises(RuntimeError, match="only available for Prefect Cloud"):
+            await call_execution_plan_api("POST", "/execution-plans/validate")
+
+    mock_get_client.assert_called_once_with(workspace_id=None)
+    mock_client.request.assert_not_awaited()
