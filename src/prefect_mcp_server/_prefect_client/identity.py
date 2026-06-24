@@ -2,6 +2,8 @@
 
 from uuid import UUID
 
+from prefect.client.cloud import CloudUnauthorizedError
+
 from prefect_mcp_server import cloud_oauth
 from prefect_mcp_server._prefect_client.client import (
     get_prefect_client,
@@ -16,24 +18,41 @@ from prefect_mcp_server.types import (
 )
 
 
+async def _get_cloud_oauth_identity(
+    access_token: str, workspace_id: UUID | None = None
+) -> CloudOAuthIdentityInfo:
+    workspaces = await cloud_oauth.list_authorized_workspaces(access_token)
+    identity: CloudOAuthIdentityInfo = {
+        "api_url": cloud_oauth.settings.resolved_api_base_url,
+        "auth_mode": "prefect-cloud-oauth",
+        "grant_id": cloud_oauth.grant_id_from_access_token(access_token),
+        "authorized_workspace_count": len(workspaces),
+        "authorized_workspaces": [workspace.as_dict() for workspace in workspaces],
+    }
+    if workspace_id is None:
+        identity["next_step"] = (
+            "Pass one authorized workspace_id to workspace-scoped tools."
+        )
+        return identity
+
+    for workspace in workspaces:
+        if workspace.workspace_id == workspace_id:
+            identity["selected_workspace"] = workspace.as_dict()
+            identity["next_step"] = "Use selected_workspace for workspace-scoped tools."
+            return identity
+
+    raise ValueError(
+        "Workspace is not included in the OAuth consent grant. "
+        "Call list_authorized_workspaces and choose one of those workspace IDs."
+    )
+
+
 async def get_identity(workspace_id: UUID | None = None) -> IdentityResult:
     """Get identity and connection information for the current Prefect instance."""
     try:
         access_token = cloud_oauth.current_oauth_access_token()
         if workspace_id is None and cloud_oauth.settings.enabled and access_token:
-            workspaces = await cloud_oauth.list_authorized_workspaces(access_token)
-            identity: CloudOAuthIdentityInfo = {
-                "api_url": cloud_oauth.settings.resolved_api_base_url,
-                "auth_mode": "prefect-cloud-oauth",
-                "grant_id": cloud_oauth.grant_id_from_access_token(access_token),
-                "authorized_workspace_count": len(workspaces),
-                "authorized_workspaces": [
-                    workspace.as_dict() for workspace in workspaces
-                ],
-                "next_step": (
-                    "Pass one authorized workspace_id to workspace-scoped tools."
-                ),
-            }
+            identity = await _get_cloud_oauth_identity(access_token)
             return {
                 "success": True,
                 "identity": identity,
@@ -54,7 +73,20 @@ async def get_identity(workspace_id: UUID | None = None) -> IdentityResult:
                     workspace_id=workspace_id
                 ) as cloud_client:
                     # Get user info from /me/ endpoint
-                    me_data = await cloud_client.get("/me/")
+                    try:
+                        me_data = await cloud_client.get("/me/")
+                    except CloudUnauthorizedError:
+                        if cloud_oauth.settings.enabled and access_token:
+                            identity = await _get_cloud_oauth_identity(
+                                access_token, workspace_id=workspace_id
+                            )
+                            return {
+                                "success": True,
+                                "identity": identity,
+                                "error": None,
+                            }
+                        raise
+
                     user_info: UserInfo = {
                         "id": str(me_data.get("id")) if me_data.get("id") else None,
                         "email": me_data.get("email"),

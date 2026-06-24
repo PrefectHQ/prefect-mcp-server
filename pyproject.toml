@@ -10,6 +10,7 @@ dependencies = ["fastmcp>=3.0.0", "prefect>=3.4.22"]
 
 [project.scripts]
 prefect-mcp-server = "prefect_mcp_server.__main__:main"
+prefect-mcp-cloud-token = "prefect_mcp_server.cloud_token:main"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]

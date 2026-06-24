@@ -425,6 +425,7 @@ class CloudOAuthIdentityInfo(TypedDict, total=False):
     grant_id: str | None
     authorized_workspace_count: int
     authorized_workspaces: list[dict[str, str | None]]
+    selected_workspace: dict[str, str | None]
     next_step: str
 
 
