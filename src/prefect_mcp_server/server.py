@@ -12,8 +12,12 @@ from fastmcp.server.providers.proxy import ProxyClient
 from prefect.client.base import ServerType, determine_server_type
 from pydantic import Field
 
-from prefect_mcp_server import _prefect_client, cloud_oauth
-from prefect_mcp_server.middleware import PrefectAuthMiddleware
+from prefect_mcp_server import _prefect_client, cloud_oauth, execution_plans
+from prefect_mcp_server.middleware import (
+    FeatureFlag,
+    FeatureFlagMiddleware,
+    PrefectAuthMiddleware,
+)
 from prefect_mcp_server.settings import settings
 from prefect_mcp_server.types import (
     AutomationsResult,
@@ -545,6 +549,7 @@ CORE_TOOLS = (
 
 CLOUD_TOOLS = (review_rate_limits,)
 CLOUD_OAUTH_TOOLS = (list_authorized_workspaces,)
+EXECUTION_PLAN_TOOLS = execution_plans.EXECUTION_PLAN_TOOLS
 
 
 def build_prefect_mcp_server(
@@ -558,6 +563,17 @@ def build_prefect_mcp_server(
     """Build a Prefect MCP server from shared tools and optional Cloud adapters."""
     server = FastMCP(name, auth=auth_provider)
     server.add_middleware(PrefectAuthMiddleware())
+    server.add_middleware(
+        FeatureFlagMiddleware(
+            features=(
+                FeatureFlag(
+                    enabled=lambda: settings.experimental.execution_plans_enabled,
+                    tool_names=frozenset(execution_plans.EXECUTION_PLAN_TOOL_NAMES),
+                    disabled_response=execution_plans.execution_plans_disabled_response,
+                ),
+            )
+        )
+    )
 
     if include_docs_proxy:
         docs_proxy = create_proxy(
@@ -584,6 +600,9 @@ def build_prefect_mcp_server(
     if include_cloud_oauth_tools:
         for tool in CLOUD_OAUTH_TOOLS:
             server.add_tool(tool)
+
+    for tool in EXECUTION_PLAN_TOOLS:
+        server.add_tool(tool)
 
     return server
 

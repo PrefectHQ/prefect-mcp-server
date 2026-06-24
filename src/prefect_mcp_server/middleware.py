@@ -1,13 +1,68 @@
 """middleware for prefect mcp server."""
 
 import logging
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 import mcp.types as mt
 from fastmcp.server.dependencies import get_http_headers
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
+from fastmcp.tools import Tool, ToolResult
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class FeatureFlag:
+    """Configuration for one feature-gated tool namespace."""
+
+    enabled: Callable[[], bool]
+    tool_names: frozenset[str]
+    disabled_response: Callable[[Mapping[str, Any]], dict[str, Any]]
+
+
+class FeatureFlagMiddleware(Middleware):
+    """Return feature-specific disabled responses for gated tools."""
+
+    def __init__(self, features: Sequence[FeatureFlag]) -> None:
+        self._features = tuple(features)
+
+    async def on_call_tool(
+        self,
+        context: MiddlewareContext[mt.CallToolRequestParams],
+        call_next: CallNext[mt.CallToolRequestParams, Any],
+    ) -> Any:
+        """Short-circuit calls to known tools for disabled features."""
+        tool_name = context.message.name
+        arguments = context.message.arguments or {}
+
+        for feature in self._features:
+            if tool_name in feature.tool_names and not feature.enabled():
+                return ToolResult(
+                    structured_content=feature.disabled_response(arguments)
+                )
+
+        return await call_next(context)
+
+    async def on_list_tools(
+        self,
+        context: MiddlewareContext[mt.ListToolsRequest],
+        call_next: CallNext[mt.ListToolsRequest, Sequence[Tool]],
+    ) -> Sequence[Tool]:
+        """Hide tools for disabled features from tool discovery."""
+        tools = await call_next(context)
+        disabled_tool_names = {
+            tool_name
+            for feature in self._features
+            if not feature.enabled()
+            for tool_name in feature.tool_names
+        }
+
+        if not disabled_tool_names:
+            return tools
+
+        return [tool for tool in tools if tool.name not in disabled_tool_names]
 
 
 class PrefectAuthMiddleware(Middleware):

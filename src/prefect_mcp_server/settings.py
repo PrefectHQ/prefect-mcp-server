@@ -48,6 +48,21 @@ class LogfireSettings(BaseSettings):
     )
 
 
+class ExperimentalSettings(BaseSettings):
+    """Experimental MCP feature settings."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="PREFECT_MCP_EXPERIMENTAL_",
+        extra="ignore",
+        env_file=".env",
+    )
+
+    execution_plans_enabled: bool = Field(
+        default=False,
+        description="Whether to enable the experimental execution-plan authoring MCP surface",
+    )
+
+
 class Settings(BaseSettings):
     """Settings for the Prefect MCP server."""
 
@@ -66,6 +81,11 @@ class Settings(BaseSettings):
     logfire: LogfireSettings = Field(
         default_factory=LogfireSettings,
         description="Logfire settings",
+    )
+
+    experimental: ExperimentalSettings = Field(
+        default_factory=ExperimentalSettings,
+        description="Experimental MCP feature settings",
     )
 
 
