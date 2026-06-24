@@ -537,11 +537,14 @@ class RateLimitsResult(TypedDict):
     error: str | None
 
 
+ExecutionPlanValidationPhase = Literal["document_shape", "semantic", "layout"]
+
+
 class ExecutionPlanValidationError(TypedDict):
     """Validation issue returned by the Prefect Cloud execution-plan API."""
 
     code: str
-    phase: Literal["document_shape", "semantic"]
+    phase: ExecutionPlanValidationPhase
     path: list[str | int]
     message: str
 
@@ -552,5 +555,56 @@ class ExecutionPlansValidateResult(TypedDict):
     success: bool
     valid: bool | None
     errors: list[ExecutionPlanValidationError]
+    workspace_id: str | None
+    error: str | None
+
+
+class ExecutionPlanVersionInfo(TypedDict, total=False):
+    """Execution-plan version details returned by Prefect Cloud."""
+
+    id: str
+    flow_id: str
+    schema_version: str
+    semantic_hash: str
+    created: str
+    created_by: dict[str, Any] | None
+    activated: str | None
+    activated_by: dict[str, Any] | None
+    plan: dict[str, Any]
+    layout: dict[str, Any] | None
+
+
+class ExecutionPlanActiveState(TypedDict):
+    """Active execution-plan state returned by Prefect Cloud."""
+
+    active_version: ExecutionPlanVersionInfo | None
+
+
+class ExecutionPlansGetResult(TypedDict):
+    """Result of reading an execution-plan version through MCP."""
+
+    success: bool
+    flow_id: str
+    requested_version_id: str | None
+    version_id: str | None
+    source: Literal["active", "version"]
+    active: bool | None
+    version: ExecutionPlanVersionInfo | None
+    workspace_id: str | None
+    error: str | None
+
+
+class ExecutionPlansPublishResult(TypedDict):
+    """Result of validating and publishing an authored execution-plan draft."""
+
+    success: bool
+    valid: bool | None
+    errors: list[ExecutionPlanValidationError]
+    published: bool
+    activated: bool
+    flow_id: str
+    version_id: str | None
+    created_version: ExecutionPlanVersionInfo | None
+    active_state: ExecutionPlanActiveState | None
     workspace_id: str | None
     error: str | None

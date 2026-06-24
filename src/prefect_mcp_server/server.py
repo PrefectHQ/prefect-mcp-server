@@ -56,7 +56,9 @@ WorkspaceId = Annotated[
 def orientation() -> str:
     """Use this tool to get oriented with the Prefect MCP server."""
     return """
-    This is a read-only server. For mutations, use the CLI.
+    Default Prefect inspection tools are read-only. For ordinary mutations, use the CLI.
+
+    If experimental execution-plan authoring is enabled, execution_plans_publish can create and activate execution-plan versions and requires credentials with those write permissions.
 
     Use the attached docs MCP server to search for documentation on Prefect concepts, usage examples, and best practices.
 

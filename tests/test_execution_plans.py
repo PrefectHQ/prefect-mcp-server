@@ -1,16 +1,17 @@
 """Tests for execution-plan MCP authoring surface."""
 
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 from uuid import UUID
 
 import pytest
 from fastmcp import Client
+from httpx import HTTPStatusError, Request, Response
 
 from prefect_mcp_server import execution_plans
 from prefect_mcp_server import server as server_module
 from prefect_mcp_server._prefect_client.execution_plans import call_execution_plan_api
-from prefect_mcp_server.server import build_prefect_mcp_server
+from prefect_mcp_server.server import build_prefect_mcp_server, orientation
 from prefect_mcp_server.settings import ExperimentalSettings, settings
 
 
@@ -18,6 +19,18 @@ from prefect_mcp_server.settings import ExperimentalSettings, settings
 def workspace_id() -> UUID:
     """Return a workspace ID for execution-plan authoring tests."""
     return UUID("12345678-1234-5678-1234-567812345678")
+
+
+@pytest.fixture
+def flow_id() -> UUID:
+    """Return a flow ID for execution-plan authoring tests."""
+    return UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+
+
+@pytest.fixture
+def version_id() -> UUID:
+    """Return an execution-plan version ID for authoring tests."""
+    return UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
 
 
 @pytest.fixture
@@ -58,6 +71,37 @@ def valid_execution_plan() -> dict[str, Any]:
         "kind": "ExecutionPlan",
         "nodes": {},
         "edges": [],
+    }
+
+
+@pytest.fixture
+def execution_plan_version(
+    flow_id: UUID,
+    version_id: UUID,
+    valid_execution_plan: dict[str, Any],
+) -> dict[str, Any]:
+    """Return a persisted execution-plan version API payload."""
+    return {
+        "id": str(version_id),
+        "flow_id": str(flow_id),
+        "schema_version": execution_plans.EXECUTION_PLAN_SCHEMA_VERSION,
+        "semantic_hash": "sha256:abc123",
+        "created": "2026-06-24T12:00:00Z",
+        "created_by": {"id": "user-1", "type": "USER"},
+        "plan": valid_execution_plan,
+        "layout": {"nodes": {"classify_ticket": {"x": 0, "y": 0}}},
+    }
+
+
+@pytest.fixture
+def active_execution_plan_version(
+    execution_plan_version: dict[str, Any],
+) -> dict[str, Any]:
+    """Return an active execution-plan version API payload."""
+    return {
+        **execution_plan_version,
+        "activated": "2026-06-24T12:01:00Z",
+        "activated_by": {"id": "user-2", "type": "USER"},
     }
 
 
@@ -220,6 +264,412 @@ async def test_execution_plans_validate_surfaces_api_errors(
     assert data["errors"] == []
     assert data["workspace_id"] == str(workspace_id)
     assert "workspace authorization failed" in data["error"]
+
+async def test_execution_plans_get_reads_active_plan(
+    monkeypatch: pytest.MonkeyPatch,
+    workspace_id: UUID,
+    flow_id: UUID,
+    version_id: UUID,
+    active_execution_plan_version: dict[str, Any],
+) -> None:
+    monkeypatch.setattr(settings.experimental, "execution_plans_enabled", True)
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+
+    with patch(
+        "prefect_mcp_server.execution_plans.call_execution_plan_api",
+        new=AsyncMock(return_value={"active_version": active_execution_plan_version}),
+    ) as mock_call_execution_plan_api:
+        async with Client(server) as client:
+            result = await client.call_tool(
+                "execution_plans_get",
+                {
+                    "workspace_id": str(workspace_id),
+                    "flow_id": str(flow_id),
+                },
+            )
+
+    data = result.structured_content.get("result") or result.structured_content
+    assert data["success"] is True
+    assert data["source"] == "active"
+    assert data["active"] is True
+    assert data["flow_id"] == str(flow_id)
+    assert data["requested_version_id"] is None
+    assert data["version_id"] == str(version_id)
+    assert data["version"] == active_execution_plan_version
+    assert data["workspace_id"] == str(workspace_id)
+    assert data["error"] is None
+    mock_call_execution_plan_api.assert_awaited_once_with(
+        "GET",
+        f"/flows/{flow_id}/execution-plan",
+        workspace_id=workspace_id,
+    )
+
+
+async def test_execution_plans_get_reads_empty_active_plan(
+    monkeypatch: pytest.MonkeyPatch,
+    workspace_id: UUID,
+    flow_id: UUID,
+) -> None:
+    monkeypatch.setattr(settings.experimental, "execution_plans_enabled", True)
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+
+    with patch(
+        "prefect_mcp_server.execution_plans.call_execution_plan_api",
+        new=AsyncMock(return_value={"active_version": None}),
+    ) as mock_call_execution_plan_api:
+        async with Client(server) as client:
+            result = await client.call_tool(
+                "execution_plans_get",
+                {
+                    "workspace_id": str(workspace_id),
+                    "flow_id": str(flow_id),
+                },
+            )
+
+    data = result.structured_content.get("result") or result.structured_content
+    assert data["success"] is True
+    assert data["source"] == "active"
+    assert data["active"] is False
+    assert data["flow_id"] == str(flow_id)
+    assert data["requested_version_id"] is None
+    assert data["version_id"] is None
+    assert data["version"] is None
+    assert data["workspace_id"] == str(workspace_id)
+    assert data["error"] is None
+    mock_call_execution_plan_api.assert_awaited_once_with(
+        "GET",
+        f"/flows/{flow_id}/execution-plan",
+        workspace_id=workspace_id,
+    )
+
+
+async def test_execution_plans_get_reads_specific_version(
+    monkeypatch: pytest.MonkeyPatch,
+    workspace_id: UUID,
+    flow_id: UUID,
+    version_id: UUID,
+    execution_plan_version: dict[str, Any],
+) -> None:
+    monkeypatch.setattr(settings.experimental, "execution_plans_enabled", True)
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+
+    with patch(
+        "prefect_mcp_server.execution_plans.call_execution_plan_api",
+        new=AsyncMock(return_value=execution_plan_version),
+    ) as mock_call_execution_plan_api:
+        async with Client(server) as client:
+            result = await client.call_tool(
+                "execution_plans_get",
+                {
+                    "workspace_id": str(workspace_id),
+                    "flow_id": str(flow_id),
+                    "version_id": str(version_id),
+                },
+            )
+
+    data = result.structured_content.get("result") or result.structured_content
+    assert data["success"] is True
+    assert data["source"] == "version"
+    assert data["active"] is None
+    assert data["flow_id"] == str(flow_id)
+    assert data["requested_version_id"] == str(version_id)
+    assert data["version_id"] == str(version_id)
+    assert data["version"] == execution_plan_version
+    assert data["workspace_id"] == str(workspace_id)
+    assert data["error"] is None
+    mock_call_execution_plan_api.assert_awaited_once_with(
+        "GET",
+        f"/flows/{flow_id}/execution-plan/versions/{version_id}",
+        workspace_id=workspace_id,
+    )
+
+
+async def test_execution_plans_get_surfaces_workspace_api_errors(
+    monkeypatch: pytest.MonkeyPatch,
+    workspace_id: UUID,
+    flow_id: UUID,
+) -> None:
+    monkeypatch.setattr(settings.experimental, "execution_plans_enabled", True)
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+
+    with patch(
+        "prefect_mcp_server.execution_plans.call_execution_plan_api",
+        new=AsyncMock(side_effect=RuntimeError("workspace authorization failed")),
+    ):
+        async with Client(server) as client:
+            result = await client.call_tool(
+                "execution_plans_get",
+                {
+                    "workspace_id": str(workspace_id),
+                    "flow_id": str(flow_id),
+                },
+            )
+
+    data = result.structured_content.get("result") or result.structured_content
+    assert data["success"] is False
+    assert data["source"] == "active"
+    assert data["active"] is None
+    assert data["flow_id"] == str(flow_id)
+    assert data["version_id"] is None
+    assert data["version"] is None
+    assert data["workspace_id"] == str(workspace_id)
+    assert "workspace authorization failed" in data["error"]
+
+
+async def test_execution_plans_publish_inactive_validates_then_creates_version(
+    monkeypatch: pytest.MonkeyPatch,
+    workspace_id: UUID,
+    flow_id: UUID,
+    version_id: UUID,
+    valid_execution_plan: dict[str, Any],
+    execution_plan_version: dict[str, Any],
+) -> None:
+    monkeypatch.setattr(settings.experimental, "execution_plans_enabled", True)
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+    layout = {"nodes": {"classify_ticket": {"x": 10, "y": 20}}}
+
+    with patch(
+        "prefect_mcp_server.execution_plans.call_execution_plan_api",
+        new=AsyncMock(
+            side_effect=[
+                {"valid": True, "errors": []},
+                execution_plan_version,
+            ]
+        ),
+    ) as mock_call_execution_plan_api:
+        async with Client(server) as client:
+            result = await client.call_tool(
+                "execution_plans_publish",
+                {
+                    "workspace_id": str(workspace_id),
+                    "flow_id": str(flow_id),
+                    "plan": valid_execution_plan,
+                    "layout": layout,
+                    "activate": False,
+                },
+            )
+
+    data = result.structured_content.get("result") or result.structured_content
+    assert data["success"] is True
+    assert data["valid"] is True
+    assert data["errors"] == []
+    assert data["published"] is True
+    assert data["activated"] is False
+    assert data["flow_id"] == str(flow_id)
+    assert data["version_id"] == str(version_id)
+    assert data["created_version"] == execution_plan_version
+    assert data["active_state"] is None
+    assert data["workspace_id"] == str(workspace_id)
+    assert data["error"] is None
+    assert mock_call_execution_plan_api.await_args_list == [
+        call(
+            "POST",
+            "/execution-plans/validate",
+            workspace_id=workspace_id,
+            json={"plan": valid_execution_plan},
+        ),
+        call(
+            "POST",
+            f"/flows/{flow_id}/execution-plan/versions",
+            workspace_id=workspace_id,
+            json={"plan": valid_execution_plan, "layout": layout},
+        ),
+    ]
+
+
+async def test_execution_plans_publish_active_validates_creates_and_activates(
+    monkeypatch: pytest.MonkeyPatch,
+    workspace_id: UUID,
+    flow_id: UUID,
+    version_id: UUID,
+    valid_execution_plan: dict[str, Any],
+    execution_plan_version: dict[str, Any],
+    active_execution_plan_version: dict[str, Any],
+) -> None:
+    monkeypatch.setattr(settings.experimental, "execution_plans_enabled", True)
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+    active_state = {"active_version": active_execution_plan_version}
+
+    with patch(
+        "prefect_mcp_server.execution_plans.call_execution_plan_api",
+        new=AsyncMock(
+            side_effect=[
+                {"valid": True, "errors": []},
+                execution_plan_version,
+                active_state,
+            ]
+        ),
+    ) as mock_call_execution_plan_api:
+        async with Client(server) as client:
+            result = await client.call_tool(
+                "execution_plans_publish",
+                {
+                    "workspace_id": str(workspace_id),
+                    "flow_id": str(flow_id),
+                    "plan": valid_execution_plan,
+                },
+            )
+
+    data = result.structured_content.get("result") or result.structured_content
+    assert data["success"] is True
+    assert data["valid"] is True
+    assert data["published"] is True
+    assert data["activated"] is True
+    assert data["version_id"] == str(version_id)
+    assert data["created_version"] == execution_plan_version
+    assert data["active_state"] == active_state
+    assert data["error"] is None
+    assert mock_call_execution_plan_api.await_args_list == [
+        call(
+            "POST",
+            "/execution-plans/validate",
+            workspace_id=workspace_id,
+            json={"plan": valid_execution_plan},
+        ),
+        call(
+            "POST",
+            f"/flows/{flow_id}/execution-plan/versions",
+            workspace_id=workspace_id,
+            json={"plan": valid_execution_plan},
+        ),
+        call(
+            "POST",
+            f"/flows/{flow_id}/execution-plan/versions/{version_id}/activate",
+            workspace_id=workspace_id,
+        ),
+    ]
+
+
+async def test_execution_plans_publish_validation_failure_skips_persistence(
+    monkeypatch: pytest.MonkeyPatch,
+    workspace_id: UUID,
+    flow_id: UUID,
+    valid_execution_plan: dict[str, Any],
+) -> None:
+    monkeypatch.setattr(settings.experimental, "execution_plans_enabled", True)
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+    validation_error = {
+        "code": "missing_source_node",
+        "phase": "semantic",
+        "path": ["edges", 0, "from", "node"],
+        "message": "Source node 'missing' is not defined.",
+    }
+
+    with patch(
+        "prefect_mcp_server.execution_plans.call_execution_plan_api",
+        new=AsyncMock(return_value={"valid": False, "errors": [validation_error]}),
+    ) as mock_call_execution_plan_api:
+        async with Client(server) as client:
+            result = await client.call_tool(
+                "execution_plans_publish",
+                {
+                    "workspace_id": str(workspace_id),
+                    "flow_id": str(flow_id),
+                    "plan": valid_execution_plan,
+                },
+            )
+
+    data = result.structured_content.get("result") or result.structured_content
+    assert data["success"] is True
+    assert data["valid"] is False
+    assert data["errors"] == [validation_error]
+    assert data["published"] is False
+    assert data["activated"] is False
+    assert data["version_id"] is None
+    assert data["created_version"] is None
+    assert data["active_state"] is None
+    assert data["workspace_id"] == str(workspace_id)
+    assert data["error"] is None
+    mock_call_execution_plan_api.assert_awaited_once_with(
+        "POST",
+        "/execution-plans/validate",
+        workspace_id=workspace_id,
+        json={"plan": valid_execution_plan},
+    )
+
+
+async def test_execution_plans_publish_preserves_create_validation_errors(
+    monkeypatch: pytest.MonkeyPatch,
+    workspace_id: UUID,
+    flow_id: UUID,
+    valid_execution_plan: dict[str, Any],
+) -> None:
+    monkeypatch.setattr(settings.experimental, "execution_plans_enabled", True)
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+    validation_error = {
+        "code": "invalid_layout",
+        "phase": "layout",
+        "path": ["layout"],
+        "message": "Layout must be an object.",
+    }
+    request = Request(
+        "POST",
+        f"https://api.prefect.cloud/flows/{flow_id}/execution-plan/versions",
+    )
+    response = Response(
+        422,
+        request=request,
+        json={"detail": [validation_error]},
+    )
+    exc = HTTPStatusError(
+        "Unprocessable Entity",
+        request=request,
+        response=response,
+    )
+
+    with patch(
+        "prefect_mcp_server.execution_plans.call_execution_plan_api",
+        new=AsyncMock(
+            side_effect=[
+                {"valid": True, "errors": []},
+                exc,
+            ]
+        ),
+    ) as mock_call_execution_plan_api:
+        async with Client(server) as client:
+            result = await client.call_tool(
+                "execution_plans_publish",
+                {
+                    "workspace_id": str(workspace_id),
+                    "flow_id": str(flow_id),
+                    "plan": valid_execution_plan,
+                    "layout": {"nodes": []},
+                },
+            )
+
+    data = result.structured_content.get("result") or result.structured_content
+    assert data["success"] is True
+    assert data["valid"] is False
+    assert data["errors"] == [validation_error]
+    assert data["published"] is False
+    assert data["activated"] is False
+    assert data["version_id"] is None
+    assert data["created_version"] is None
+    assert data["active_state"] is None
+    assert data["workspace_id"] == str(workspace_id)
+    assert data["error"] is None
+    assert mock_call_execution_plan_api.await_args_list == [
+        call(
+            "POST",
+            "/execution-plans/validate",
+            workspace_id=workspace_id,
+            json={"plan": valid_execution_plan},
+        ),
+        call(
+            "POST",
+            f"/flows/{flow_id}/execution-plan/versions",
+            workspace_id=workspace_id,
+            json={"plan": valid_execution_plan, "layout": {"nodes": []}},
+        ),
+    ]
+
+
+def test_orientation_documents_execution_plan_publish_write_exception() -> None:
+    oriented_text = orientation()
+
+    assert "Default Prefect inspection tools are read-only" in oriented_text
+    assert "execution_plans_publish" in oriented_text
+    assert "requires credentials with those write permissions" in oriented_text
 
 
 def test_experimental_setting_reads_execution_plans_env_var(
