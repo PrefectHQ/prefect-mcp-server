@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import Field
 from typing_extensions import NotRequired, TypedDict
@@ -534,4 +534,23 @@ class RateLimitsResult(TypedDict):
     until: str | None
     summary: RateLimitSummary | None
     throttling_periods: list[ThrottlingPeriod] | None
+    error: str | None
+
+
+class ExecutionPlanValidationError(TypedDict):
+    """Validation issue returned by the Prefect Cloud execution-plan API."""
+
+    code: str
+    phase: Literal["document_shape", "semantic"]
+    path: list[str | int]
+    message: str
+
+
+class ExecutionPlansValidateResult(TypedDict):
+    """Result of validating an authored execution-plan document."""
+
+    success: bool
+    valid: bool | None
+    errors: list[ExecutionPlanValidationError]
+    workspace_id: str | None
     error: str | None
