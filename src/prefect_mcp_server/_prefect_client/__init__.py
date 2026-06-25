@@ -5,6 +5,7 @@ from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server._prefect_client.dashboard import fetch_dashboard
 from prefect_mcp_server._prefect_client.deployments import get_deployments
 from prefect_mcp_server._prefect_client.events import fetch_events
+from prefect_mcp_server._prefect_client.execution_plans import call_execution_plan_api
 from prefect_mcp_server._prefect_client.flow_runs import (
     get_flow_run,
     get_flow_run_logs,
@@ -19,6 +20,7 @@ from prefect_mcp_server._prefect_client.work_pools import get_work_pool, get_wor
 __all__ = [
     "fetch_dashboard",
     "fetch_events",
+    "call_execution_plan_api",
     "get_automations",
     "get_deployments",
     "get_flow_run",

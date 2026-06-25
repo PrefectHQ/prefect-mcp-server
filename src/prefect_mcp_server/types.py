@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import Field
 from typing_extensions import NotRequired, TypedDict
@@ -535,4 +535,93 @@ class RateLimitsResult(TypedDict):
     until: str | None
     summary: RateLimitSummary | None
     throttling_periods: list[ThrottlingPeriod] | None
+    error: str | None
+
+
+ExecutionPlanValidationPhase = Literal["document_shape", "semantic", "layout"]
+
+
+class ExecutionPlanValidationError(TypedDict):
+    """Validation issue returned by the Prefect Cloud execution-plan API."""
+
+    code: str
+    phase: ExecutionPlanValidationPhase
+    path: list[str | int]
+    message: str
+
+
+class ExecutionPlansValidateResult(TypedDict):
+    """Result of validating an authored execution-plan document."""
+
+    success: bool
+    valid: bool | None
+    errors: list[ExecutionPlanValidationError]
+    workspace_id: str | None
+    error: str | None
+
+
+class ExecutionPlansGetSchemaResult(TypedDict):
+    """Result of reading authored execution-plan schema metadata through MCP."""
+
+    success: bool
+    schema_version: str | None
+    schema: dict[str, Any] | None
+    supported_schema_versions: list[str]
+    current_schema_version: str | None
+    is_current: bool | None
+    is_deprecated: bool | None
+    document_shape_only: bool | None
+    validation_guidance: str | None
+    workspace_id: str | None
+    error: str | None
+
+
+class ExecutionPlanVersionInfo(TypedDict, total=False):
+    """Execution-plan version details returned by Prefect Cloud."""
+
+    id: str
+    flow_id: str
+    schema_version: str
+    semantic_hash: str
+    created: str
+    created_by: dict[str, Any] | None
+    activated: str | None
+    activated_by: dict[str, Any] | None
+    plan: dict[str, Any]
+    layout: dict[str, Any] | None
+
+
+class ExecutionPlanActiveState(TypedDict):
+    """Active execution-plan state returned by Prefect Cloud."""
+
+    active_version: ExecutionPlanVersionInfo | None
+
+
+class ExecutionPlansGetResult(TypedDict):
+    """Result of reading an execution-plan version through MCP."""
+
+    success: bool
+    flow_id: str
+    requested_version_id: str | None
+    version_id: str | None
+    source: Literal["active", "version"]
+    active: bool | None
+    version: ExecutionPlanVersionInfo | None
+    workspace_id: str | None
+    error: str | None
+
+
+class ExecutionPlansPublishResult(TypedDict):
+    """Result of validating and publishing an authored execution-plan draft."""
+
+    success: bool
+    valid: bool | None
+    errors: list[ExecutionPlanValidationError]
+    published: bool
+    activated: bool
+    flow_id: str
+    version_id: str | None
+    created_version: ExecutionPlanVersionInfo | None
+    active_state: ExecutionPlanActiveState | None
+    workspace_id: str | None
     error: str | None
