@@ -1,4 +1,4 @@
-"""Fixtures for rate limits evals."""
+"""Shared fixtures for Prefect Cloud evals."""
 
 import os
 import re
@@ -22,13 +22,6 @@ from pydantic_ai.mcp import MCPServer, MCPServerStdio, MCPServerStreamableHTTP
 from evals._tools.spy import ToolCallSpy
 
 CLOUD_OAUTH_TOKEN_KEY = "notArealACCESStokenKEY"
-
-# Retry tests on Anthropic API rate limiting or overload errors
-pytestmark = pytest.mark.flaky(
-    reruns=3,
-    reruns_delay=2,
-    only_rerun=["ModelHTTPError", "RateLimitError"],
-)
 
 
 @pytest.fixture(scope="module")
