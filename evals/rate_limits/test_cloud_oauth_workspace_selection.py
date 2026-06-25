@@ -61,9 +61,7 @@ async def duplicate_prod_workspace_runs(
             "account_id": ACME_ACCOUNT_ID,
             "flow_name": "billing-reconciliation",
             "run_name": "acme-prod-billing-reconciliation-failed",
-            "state": Failed(
-                message="Stripe invoice export returned 401 Unauthorized."
-            ),
+            "state": Failed(message="Stripe invoice export returned 401 Unauthorized."),
         },
         GLOBEX_PROD_WORKSPACE_ID: {
             "account_id": GLOBEX_ACCOUNT_ID,
