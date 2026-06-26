@@ -1,4 +1,4 @@
-"""Eval: Cloud OAuth MCP answers questions across authorized workspaces."""
+"""Eval: hosted Cloud MCP answers questions across authorized workspaces."""
 
 from collections.abc import Awaitable, Callable
 from typing import TypedDict
@@ -99,7 +99,7 @@ async def cross_workspace_flows(
     return workspace_flows
 
 
-async def test_cloud_oauth_agent_answers_across_workspaces(
+async def test_agent_answers_across_authorized_workspaces(
     cloud_oauth_simple_agent: Agent,
     cross_workspace_flows: dict[str, list[str]],
     tool_call_spy: ToolCallSpy,
@@ -171,7 +171,7 @@ async def cross_workspace_failed_run(
     }
 
 
-async def test_cloud_oauth_agent_triages_unknown_workspace_failure(
+async def test_agent_triages_unknown_workspace_failure(
     cloud_oauth_simple_agent: Agent,
     cross_workspace_failed_run: dict[str, str],
     evaluate_response: Callable[[str, str], Awaitable[None]],

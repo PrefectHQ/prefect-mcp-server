@@ -1,4 +1,4 @@
-"""Eval: Cloud OAuth MCP selects the intended workspace by account/handle."""
+"""Eval: hosted Cloud MCP selects the intended workspace by account/handle."""
 
 from collections.abc import Awaitable, Callable
 from typing import TypedDict
@@ -95,7 +95,7 @@ async def duplicate_prod_workspace_runs(
     }
 
 
-async def test_cloud_oauth_agent_selects_workspace_by_account_handle(
+async def test_agent_selects_workspace_by_account_handle(
     cloud_oauth_simple_agent: Agent,
     duplicate_prod_workspace_runs: dict[str, str],
     evaluate_response: Callable[[str, str], Awaitable[None]],
