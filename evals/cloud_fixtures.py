@@ -5,7 +5,7 @@ import re
 import subprocess
 import threading
 import time
-from collections.abc import AsyncGenerator, Callable, Generator
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
@@ -14,7 +14,9 @@ import jwt
 import pytest
 import uvicorn
 from fastapi import APIRouter, FastAPI, Request, Response
+from prefect import flow
 from prefect.client.orchestration import PrefectClient
+from prefect.client.schemas.objects import FlowRun, State
 from prefect.settings import get_current_settings
 from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPServer, MCPServerStdio, MCPServerStreamableHTTP
@@ -40,6 +42,18 @@ def cloud_workspace_id() -> str:
 def cloud_api_url(cloud_account_id: str, cloud_workspace_id: str) -> str:
     """Fake Cloud API URL for use in error messages and test data."""
     return f"https://api.prefect.cloud/api/accounts/{cloud_account_id}/workspaces/{cloud_workspace_id}"
+
+
+@pytest.fixture
+def cloud_workspace_api_url(cloud_proxy_server: str) -> Callable[[str, str], str]:
+    """Build a Cloud workspace API URL against the fake Cloud proxy."""
+
+    def build_url(account_id: str, workspace_id: str) -> str:
+        return (
+            f"{cloud_proxy_server}/api/accounts/{account_id}/workspaces/{workspace_id}"
+        )
+
+    return build_url
 
 
 @pytest.fixture(scope="module")
@@ -343,6 +357,46 @@ def cloud_proxy_server(
         server.should_exit = True
         # Wait for shutdown to complete
         thread.join(timeout=2.0)
+
+
+@pytest.fixture
+def create_cloud_flow_run(
+    cloud_workspace_api_url: Callable[[str, str], str],
+) -> Callable[[str, str, str, str, State], Awaitable[FlowRun]]:
+    """Create a flow run in one fake Cloud workspace."""
+
+    async def create_run(
+        account_id: str,
+        workspace_id: str,
+        flow_name: str,
+        run_name: str,
+        state: State,
+    ) -> FlowRun:
+        async with PrefectClient(
+            api=cloud_workspace_api_url(account_id, workspace_id)
+        ) as client:
+
+            @flow(name=flow_name)
+            def workspace_flow() -> str:
+                return "ok"
+
+            flow_id = await client.create_flow(workspace_flow)
+            deployment_id = await client.create_deployment(
+                flow_id=flow_id,
+                name=f"{flow_name}-deployment",
+            )
+            flow_run = await client.create_flow_run_from_deployment(
+                deployment_id=deployment_id,
+                name=run_name,
+            )
+            await client.set_flow_run_state(
+                flow_run_id=flow_run.id,
+                state=state,
+                force=True,
+            )
+            return flow_run
+
+    return create_run
 
 
 @pytest.fixture

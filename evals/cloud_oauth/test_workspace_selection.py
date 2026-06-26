@@ -1,10 +1,10 @@
 """Eval: Cloud OAuth MCP selects the intended workspace by account/handle."""
 
 from collections.abc import Awaitable, Callable
+from typing import TypedDict
 
 import pytest
-from prefect import flow
-from prefect.client.orchestration import PrefectClient
+from prefect.client.schemas.objects import FlowRun, State
 from prefect.states import Completed, Failed
 from pydantic_ai import Agent
 
@@ -14,6 +14,13 @@ ACME_PROD_WORKSPACE_ID = "11111111-2222-3333-4444-555555555555"
 GLOBEX_PROD_WORKSPACE_ID = "66666666-7777-8888-9999-000000000000"
 ACME_ACCOUNT_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 GLOBEX_ACCOUNT_ID = "ffffffff-1111-2222-3333-444444444444"
+
+
+class WorkspaceRun(TypedDict):
+    account_id: str
+    flow_name: str
+    run_name: str
+    state: State
 
 
 @pytest.fixture(scope="module")
@@ -53,10 +60,10 @@ def workspace_flow_run_name_prefixes() -> dict[str, str]:
 
 @pytest.fixture
 async def duplicate_prod_workspace_runs(
-    cloud_proxy_server: str,
+    create_cloud_flow_run: Callable[[str, str, str, str, State], Awaitable[FlowRun]],
 ) -> dict[str, str]:
     """Create similarly named prod workspaces where only acme/prod is failing."""
-    workspace_runs = {
+    workspace_runs: dict[str, WorkspaceRun] = {
         ACME_PROD_WORKSPACE_ID: {
             "account_id": ACME_ACCOUNT_ID,
             "flow_name": "billing-reconciliation",
@@ -72,30 +79,13 @@ async def duplicate_prod_workspace_runs(
     }
 
     for workspace_id, run_data in workspace_runs.items():
-        api_url = (
-            f"{cloud_proxy_server}/api/accounts/{run_data['account_id']}"
-            f"/workspaces/{workspace_id}"
+        await create_cloud_flow_run(
+            run_data["account_id"],
+            workspace_id,
+            run_data["flow_name"],
+            run_data["run_name"],
+            run_data["state"],
         )
-        async with PrefectClient(api=api_url) as client:
-
-            @flow(name=run_data["flow_name"])
-            def workspace_flow() -> str:
-                return "ok"
-
-            flow_id = await client.create_flow(workspace_flow)
-            deployment_id = await client.create_deployment(
-                flow_id=flow_id,
-                name=f"{run_data['flow_name']}-deployment",
-            )
-            flow_run = await client.create_flow_run_from_deployment(
-                deployment_id=deployment_id,
-                name=run_data["run_name"],
-            )
-            await client.set_flow_run_state(
-                flow_run_id=flow_run.id,
-                state=run_data["state"],
-                force=True,
-            )
 
     return {
         "target_workspace": "acme/prod",

@@ -1,10 +1,12 @@
 """Eval: Cloud OAuth MCP answers questions across authorized workspaces."""
 
 from collections.abc import Awaitable, Callable
+from typing import TypedDict
 
 import pytest
 from prefect import flow
 from prefect.client.orchestration import PrefectClient
+from prefect.client.schemas.objects import FlowRun, State
 from prefect.states import Completed, Failed
 from pydantic_ai import Agent
 
@@ -12,6 +14,12 @@ from evals._tools.spy import ToolCallSpy
 
 OBSERVABILITY_WORKSPACE_ID = "11111111-2222-3333-4444-555555555555"
 PLATFORM_WORKSPACE_ID = "66666666-7777-8888-9999-000000000000"
+
+
+class WorkspaceRun(TypedDict):
+    flow_name: str
+    run_name: str
+    state: State
 
 
 @pytest.fixture(scope="module")
@@ -123,11 +131,11 @@ async def test_cloud_oauth_agent_answers_across_workspaces(
 
 @pytest.fixture
 async def cross_workspace_failed_run(
-    cloud_proxy_server: str,
     cloud_account_id: str,
+    create_cloud_flow_run: Callable[[str, str, str, str, State], Awaitable[FlowRun]],
 ) -> dict[str, str]:
     """Create a support-style incident isolated to one authorized workspace."""
-    workspace_runs = {
+    workspace_runs: dict[str, WorkspaceRun] = {
         OBSERVABILITY_WORKSPACE_ID: {
             "flow_name": "observability-metrics-export",
             "run_name": "observability-metrics-export-healthy",
@@ -145,30 +153,13 @@ async def cross_workspace_failed_run(
     }
 
     for workspace_id, run_data in workspace_runs.items():
-        api_url = (
-            f"{cloud_proxy_server}/api/accounts/{cloud_account_id}"
-            f"/workspaces/{workspace_id}"
+        await create_cloud_flow_run(
+            cloud_account_id,
+            workspace_id,
+            run_data["flow_name"],
+            run_data["run_name"],
+            run_data["state"],
         )
-        async with PrefectClient(api=api_url) as client:
-
-            @flow(name=run_data["flow_name"])
-            def workspace_flow() -> str:
-                return "ok"
-
-            flow_id = await client.create_flow(workspace_flow)
-            deployment_id = await client.create_deployment(
-                flow_id=flow_id,
-                name=f"{run_data['flow_name']}-deployment",
-            )
-            flow_run = await client.create_flow_run_from_deployment(
-                deployment_id=deployment_id,
-                name=run_data["run_name"],
-            )
-            await client.set_flow_run_state(
-                flow_run_id=flow_run.id,
-                state=run_data["state"],
-                force=True,
-            )
 
     return {
         "failed_workspace_id": PLATFORM_WORKSPACE_ID,
