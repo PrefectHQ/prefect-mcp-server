@@ -1,0 +1,38 @@
+{
+  "tools": [
+    "execution_plans_get_schema",
+    "execution_plans_validate",
+    "execution_plans_get",
+    "execution_plans_publish"
+  ],
+  "schema_result": {
+    "schema_version": "0.1",
+    "current_schema_version": "0.1",
+    "document_shape_only": true,
+    "is_current": true
+  },
+  "validation_failure": {
+    "success": true,
+    "valid": false,
+    "errors": [
+      {
+        "code": "missing_source_node",
+        "phase": "semantic",
+        "path": ["edges", 1, "from", "node"],
+        "message": "Source node 'missing_research' is not defined."
+      }
+    ],
+    "workspace_id": "12345678-1234-5678-1234-567812345678",
+    "error": null
+  },
+  "publish_result": {
+    "success": true,
+    "valid": true,
+    "published": true,
+    "activated": true
+  },
+  "read_back": {
+    "source": "active",
+    "active": true
+  }
+}
