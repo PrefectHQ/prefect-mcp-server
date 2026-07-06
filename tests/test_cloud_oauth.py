@@ -83,11 +83,7 @@ async def test_get_prefect_client_requires_workspace_in_oauth_mode() -> None:
             "prefect_mcp_server._prefect_client.client.cloud_oauth.current_oauth_access_token",
             return_value="oauth-token",
         ),
-        patch(
-            "prefect_mcp_server.cloud_oauth.CloudOAuthSettings.enabled",
-            new_callable=PropertyMock,
-            return_value=True,
-        ),
+        patch.object(cloud_oauth.settings, "enabled", True),
     ):
         with pytest.raises(RuntimeError, match="workspace_id is required"):
             async with get_prefect_client():
@@ -107,11 +103,7 @@ async def test_get_identity_describes_oauth_grant_without_workspace() -> None:
             "prefect_mcp_server.cloud_oauth.current_oauth_access_token",
             return_value="header.eyJtY3BfZ3JhbnRfaWQiOiAiZ3JhbnQtMSJ9.signature",
         ),
-        patch(
-            "prefect_mcp_server.cloud_oauth.CloudOAuthSettings.enabled",
-            new_callable=PropertyMock,
-            return_value=True,
-        ),
+        patch.object(cloud_oauth.settings, "enabled", True),
         patch(
             "prefect_mcp_server.cloud_oauth.CloudOAuthSettings.resolved_api_base_url",
             new_callable=PropertyMock,
@@ -169,11 +161,7 @@ async def test_get_identity_describes_service_account_oauth_grant_with_workspace
         patch(
             "prefect_mcp_server._prefect_client.identity.get_prefect_cloud_client"
         ) as mock_get_cloud_client,
-        patch(
-            "prefect_mcp_server.cloud_oauth.CloudOAuthSettings.enabled",
-            new_callable=PropertyMock,
-            return_value=True,
-        ),
+        patch.object(cloud_oauth.settings, "enabled", True),
         patch(
             "prefect_mcp_server.cloud_oauth.CloudOAuthSettings.resolved_api_base_url",
             new_callable=PropertyMock,
@@ -224,11 +212,8 @@ async def test_default_server_excludes_cloud_oauth_workspace_tools() -> None:
 async def test_cloud_oauth_server_includes_oauth_workspace_tools(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        cloud_oauth.settings,
-        "auth_token_key",
-        "notArealACCESStokenKEY",
-    )
+    monkeypatch.setattr(cloud_oauth.settings, "enabled", True)
+    monkeypatch.setattr(cloud_oauth.settings, "auth_token_key", None)
 
     server = build_cloud_mcp_server(include_docs_proxy=False)
 
@@ -244,10 +229,38 @@ async def test_cloud_oauth_server_includes_oauth_workspace_tools(
 def test_cloud_oauth_server_requires_oauth_configuration(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(cloud_oauth.settings, "enabled", False)
     monkeypatch.setattr(cloud_oauth.settings, "auth_token_key", None)
 
-    with pytest.raises(RuntimeError, match="PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY"):
+    with pytest.raises(RuntimeError, match="PREFECT_MCP_CLOUD_ENABLED=true"):
         build_cloud_mcp_server()
+
+
+def test_build_auth_provider_uses_cloud_jwks_without_runtime_secret(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(cloud_oauth.settings, "enabled", True)
+    monkeypatch.setattr(cloud_oauth.settings, "auth_token_key", None)
+    monkeypatch.setattr(
+        cloud_oauth.settings, "auth_base_url", "https://api.prefect.cloud"
+    )
+    monkeypatch.setattr(
+        cloud_oauth.settings,
+        "public_base_url",
+        "https://prefect-cloud-mcp-server.fastmcp.app/mcp",
+    )
+
+    with patch("prefect_mcp_server.cloud_oauth.JWTVerifier") as mock_verifier:
+        cloud_oauth.build_auth_provider(require_enabled=True)
+
+    mock_verifier.assert_called_once_with(
+        jwks_uri="https://api.prefect.cloud/auth/mcp/oauth/jwks.json",
+        issuer="AuthServerID",
+        audience="https://prefect-cloud-mcp-server.fastmcp.app/mcp",
+        algorithm="RS256",
+        required_scopes=["prefect-cloud:workspaces"],
+        base_url="https://prefect-cloud-mcp-server.fastmcp.app/mcp",
+    )
 
 
 def test_workspace_ref_display_name_prefers_handles() -> None:

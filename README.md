@@ -150,11 +150,11 @@ The token response includes `expires_in`. Treat an agent as long-running if it m
 Prefect-operated Cloud OAuth deployments use a dedicated entrypoint:
 
 - server path: `src/prefect_mcp_server/cloud.py`
-- required runtime secret: `PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY`
+- required runtime flag: `PREFECT_MCP_CLOUD_ENABLED=true`
 
 This entrypoint reuses the same read-only tool definitions as the local/API-key server, adds Prefect Cloud OAuth, and adds Cloud OAuth-only workspace discovery. If OAuth is not configured, the Cloud OAuth entrypoint fails at import time instead of starting an unprotected server.
 
-Cloud OAuth mode is selected by deploying `src/prefect_mcp_server/cloud.py`. The token key is the required runtime secret for validating Prefect Cloud-issued MCP OAuth access tokens; it is not a user-provided Prefect API key.
+Cloud OAuth mode is selected by deploying `src/prefect_mcp_server/cloud.py`. The hosted server validates Prefect Cloud-issued MCP OAuth access tokens against Prefect Cloud's JWKS endpoint, so the MCP runtime does not need access to Cloud token-signing secrets.
 
 <details>
 <summary>Cloud OAuth configuration reference</summary>
@@ -163,10 +163,12 @@ Cloud OAuth settings use the `PREFECT_MCP_CLOUD_` prefix:
 
 | Environment variable | Purpose |
 | --- | --- |
-| `PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY` | Required signing/verification key for Prefect Cloud issued MCP OAuth access tokens |
+| `PREFECT_MCP_CLOUD_ENABLED` | Set to `true` for hosted Cloud OAuth mode |
 | `PREFECT_MCP_CLOUD_API_BASE_URL` | Optional override for the Prefect API base URL |
 | `PREFECT_MCP_CLOUD_AUTH_BASE_URL` | Optional override for auth helper endpoints |
+| `PREFECT_MCP_CLOUD_AUTH_JWKS_URI` | Optional override for the Prefect Cloud MCP OAuth JWKS endpoint |
 | `PREFECT_MCP_CLOUD_AUTHORIZATION_SERVER` | Optional override for advertised OAuth authorization server |
+| `PREFECT_MCP_CLOUD_AUTH_AUDIENCE` | Optional override for the expected token audience; defaults to the hosted MCP public URL |
 | `PREFECT_MCP_CLOUD_CLIENT_ID` | Optional service-account MCP OAuth client id for unattended token exchange |
 | `PREFECT_MCP_CLOUD_CLIENT_SECRET` | Optional service-account MCP OAuth client secret for unattended token exchange |
 | `PREFECT_MCP_CLOUD_PUBLIC_BASE_URL` | Public base URL for the hosted MCP server |

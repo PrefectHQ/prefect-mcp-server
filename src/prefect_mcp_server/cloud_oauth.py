@@ -41,7 +41,9 @@ class CloudOAuthSettings(BaseSettings):
         extra="ignore",
     )
 
+    enabled: bool = Field(default=False)
     auth_token_key: str | None = Field(default=None)
+    auth_jwks_uri: str | None = Field(default=None)
     environment: CloudEnvironment = Field(default="prod")
     public_base_url: str = Field(
         default_factory=lambda: os.environ.get(
@@ -53,14 +55,10 @@ class CloudOAuthSettings(BaseSettings):
     auth_base_url: str | None = Field(default=None)
     authorization_server: str | None = Field(default=None)
     auth_issuer: str = Field(default="AuthServerID")
-    auth_audience: str = Field(default="AuthServerID")
-    auth_algorithm: str = Field(default="HS256")
+    auth_audience: str | None = Field(default=None)
+    auth_algorithm: str | None = Field(default=None)
     client_id: str | None = Field(default=None)
     client_secret: str | None = Field(default=None)
-
-    @property
-    def enabled(self) -> bool:
-        return self.auth_token_key is not None
 
     @property
     def resolved_api_base_url(self) -> str:
@@ -81,6 +79,28 @@ class CloudOAuthSettings(BaseSettings):
     @property
     def resolved_public_base_url(self) -> str:
         return self.public_base_url.rstrip("/")
+
+    @property
+    def resolved_auth_jwks_uri(self) -> str:
+        if self.auth_jwks_uri:
+            return self.auth_jwks_uri
+        return f"{self.resolved_auth_base_url}/auth/mcp/oauth/jwks.json"
+
+    @property
+    def resolved_auth_audience(self) -> str:
+        if self.auth_audience:
+            return self.auth_audience.rstrip("/")
+        if self.auth_token_key:
+            return "AuthServerID"
+        return self.resolved_public_base_url
+
+    @property
+    def resolved_auth_algorithm(self) -> str:
+        if self.auth_algorithm:
+            return self.auth_algorithm
+        if self.auth_token_key:
+            return "HS256"
+        return "RS256"
 
 
 @dataclass(frozen=True)
@@ -167,24 +187,31 @@ class PrefectCloudRemoteAuthProvider(RemoteAuthProvider):
 
 def build_auth_provider(*, require_enabled: bool = False) -> RemoteAuthProvider | None:
     """Build the FastMCP auth provider when Cloud OAuth is configured."""
-    if not settings.enabled:
+    if not settings.enabled and settings.auth_token_key is None:
         if require_enabled:
             raise RuntimeError(
-                "Prefect Cloud OAuth mode requires PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY."
+                "Prefect Cloud OAuth mode requires PREFECT_MCP_CLOUD_ENABLED=true."
             )
         return None
 
-    if settings.auth_token_key is None:
-        raise RuntimeError("Cloud OAuth token key was not configured.")
-
-    token_verifier = JWTVerifier(
-        public_key=settings.auth_token_key,
-        issuer=settings.auth_issuer,
-        audience=settings.auth_audience,
-        algorithm=settings.auth_algorithm,
-        required_scopes=["prefect-cloud:workspaces"],
-        base_url=settings.resolved_public_base_url,
-    )
+    if settings.auth_token_key is not None:
+        token_verifier = JWTVerifier(
+            public_key=settings.auth_token_key,
+            issuer=settings.auth_issuer,
+            audience=settings.resolved_auth_audience,
+            algorithm=settings.resolved_auth_algorithm,
+            required_scopes=["prefect-cloud:workspaces"],
+            base_url=settings.resolved_public_base_url,
+        )
+    else:
+        token_verifier = JWTVerifier(
+            jwks_uri=settings.resolved_auth_jwks_uri,
+            issuer=settings.auth_issuer,
+            audience=settings.resolved_auth_audience,
+            algorithm=settings.resolved_auth_algorithm,
+            required_scopes=["prefect-cloud:workspaces"],
+            base_url=settings.resolved_public_base_url,
+        )
     return PrefectCloudRemoteAuthProvider(
         token_verifier=token_verifier,
         authorization_servers=[AnyHttpUrl(settings.resolved_authorization_server)],
