@@ -60,7 +60,7 @@ def orientation() -> str:
 
     If experimental execution-plan authoring is enabled, execution_plans_get_schema can retrieve the Cloud-authored document schema, and execution_plans_publish can create and activate execution-plan versions with credentials that have those write permissions.
 
-    Use the attached docs MCP server to search for documentation on Prefect concepts, usage examples, and best practices.
+    Use docs_get_release_notes for the latest or version-specific Prefect OSS release notes. Use docs_search_prefect for other Prefect concepts, usage examples, and best practices.
 
     Use get_object_schema to get JSON schemas for complex objects like automations.
     """

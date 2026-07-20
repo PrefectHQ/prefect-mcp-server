@@ -7,9 +7,9 @@
   "plugins": [
     {
       "name": "prefect",
-      "description": "Prefect workflow orchestration - read-only MCP server for diagnostics, CLI skill for mutations",
+      "description": "Prefect workflow orchestration - MCP tools for diagnostics and release notes, CLI guidance for mutations",
       "source": "./",
-      "skills": ["./skills/cli"]
+      "skills": ["./skills/cli", "./skills/release-notes"]
     }
   ]
 }
