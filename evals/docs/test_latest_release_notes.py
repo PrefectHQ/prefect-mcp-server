@@ -18,10 +18,6 @@ def release_notes_mcp_server(tool_call_spy: ToolCallSpy) -> MCPServer:
     return MCPServerStdio(
         command="uv",
         args=["run", "-m", "docs_mcp_server"],
-        env={
-            "OPENAI_API_KEY": "unused-by-release-notes",
-            "TURBOPUFFER_API_KEY": "unused-by-release-notes",
-        },
         tool_prefix="docs",
         process_tool_call=tool_call_spy,
         max_retries=3,
