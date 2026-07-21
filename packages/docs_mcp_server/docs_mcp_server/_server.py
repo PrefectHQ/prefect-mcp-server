@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Annotated, Any
 
+import httpx
 import logfire
 from fastmcp import FastMCP
 from openai import AsyncOpenAI, OpenAIError
@@ -18,6 +19,7 @@ from turbopuffer import (
 )
 from turbopuffer.types.row import Row
 
+from docs_mcp_server._release_notes import ReleaseNotes, fetch_release_notes
 from docs_mcp_server._settings import settings
 
 logfire.configure(
@@ -68,10 +70,21 @@ async def search_prefect(
         ),
     ] = None,
 ) -> dict[str, Any]:
-    """Search the Prefect knowledgebase for documentation on concepts, usage examples, and best practices."""
+    """Search Prefect documentation for concepts, examples, and best practices.
+
+    For latest or version-specific Prefect OSS release notes, use
+    get_release_notes instead.
+    """
 
     if not query.strip():
         raise ValueError("Query must not be empty.")
+
+    if settings.turbopuffer.api_key is None:
+        return _build_response(
+            query,
+            [],
+            "TurboPuffer is not configured; set TURBOPUFFER_API_KEY to use documentation search.",
+        )
 
     result_limit = top_k or settings.top_k
     include_attributes = list(dict.fromkeys(settings.include_attributes))
@@ -184,6 +197,28 @@ async def search_prefect(
 
     logfire.force_flush()
     return response
+
+
+@app.tool
+async def get_release_notes(
+    version: Annotated[
+        str,
+        Field(
+            description=(
+                "'latest' for the latest stable Prefect OSS release, or an exact "
+                "version such as '3.7.8'"
+            ),
+            examples=["latest", "3.7.8"],
+        ),
+    ] = "latest",
+) -> ReleaseNotes:
+    """Get authoritative, structured release notes for a Prefect OSS release.
+
+    Use this for questions like "what changed in the latest Prefect release?"
+    instead of semantic documentation search.
+    """
+    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
+        return await fetch_release_notes(version, client=client)
 
 
 def row_to_dict(row: Row) -> dict[str, Any]:

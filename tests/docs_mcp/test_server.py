@@ -34,15 +34,16 @@ def docs_mcp_server() -> FastMCP:
     return docs_mcp
 
 
-async def test_docs_mcp_server_has_search_tool(
+async def test_docs_mcp_server_has_documentation_tools(
     snapshot: SnapshotAssertion, docs_mcp_server: FastMCP
 ) -> None:
-    """Test that the docs MCP server exposes the search_prefect tool."""
+    """Test that the docs MCP server exposes its documentation tools."""
     async with Client(docs_mcp_server) as client:
         tools = await client.list_tools()
         tool_names = [t.name for t in tools]
 
         assert "search_prefect" in tool_names
+        assert "get_release_notes" in tool_names
 
         # Verify tool has expected properties
         search_tool = next((t for t in tools if t.name == "search_prefect"), None)
@@ -81,6 +82,24 @@ async def test_search_prefect_empty_query(
         assert "empty" in result.content[0].text.lower()
 
         assert result == snapshot
+
+
+async def test_search_prefect_reports_missing_configuration(
+    docs_mcp_server: FastMCP,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from docs_mcp_server._server import settings
+
+    monkeypatch.setattr(settings.turbopuffer, "api_key", None)
+
+    async with Client(docs_mcp_server) as client:
+        result = await client.call_tool(
+            "search_prefect",
+            {"query": "how to create a flow"},
+        )
+
+    assert result.data["results"] == []
+    assert "TURBOPUFFER_API_KEY" in result.data["error"]
 
 
 @pytest.mark.vcr

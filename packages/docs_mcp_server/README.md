@@ -6,7 +6,8 @@ OpenAI and a TurboPuffer vector store.
 
 ## Features
 
-- `SearchPrefect` MCP tool returns high-signal Prefect documentation excerpts
+- `search_prefect` returns high-signal Prefect documentation excerpts
+- `get_release_notes` returns one authoritative Prefect OSS release with its exact version and date
 - Configurable namespace and result sizes via environment variables
 
 ## Prerequisites
@@ -41,6 +42,13 @@ uv run -m docs_mcp_server
 Search the Prefect knowledge base for relevant passages. Accepts a natural-language
 `query` and optional `top_k` override. Responses include the namespace, query, and a
 list of snippet results with scores, titles, and links when available.
+
+### `get_release_notes`
+
+Get structured release notes for the latest stable Prefect OSS release or an
+exact patch version. It resolves `latest` from PyPI and reads the corresponding
+official Prefect documentation page rather than relying on semantic relevance
+to determine recency.
 
 ## Minimal Client Example
 

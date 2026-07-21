@@ -1,6 +1,6 @@
 {
   "name": "prefect",
-  "description": "Prefect workflow orchestration - read-only MCP server for diagnostics, CLI skill for mutations",
+  "description": "Prefect workflow orchestration - MCP tools for diagnostics and release notes, CLI guidance for mutations",
   "author": {
     "name": "Prefect Technologies",
     "email": "help@prefect.io",

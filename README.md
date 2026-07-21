@@ -30,7 +30,8 @@ The easiest local setup for Claude Code is the Prefect plugin:
 /plugin install prefect
 ```
 
-This installs both the MCP server for read-only diagnostics and a CLI skill for mutations like triggering deployments or cancelling runs.
+This installs the MCP server for read-only diagnostics and current release notes,
+plus a CLI skill for mutations like triggering deployments or cancelling runs.
 
 > [!NOTE]
 > The plugin uses your local Prefect configuration from `~/.prefect/profiles.toml`. For explicit credentials, use the local `uvx` setup below.

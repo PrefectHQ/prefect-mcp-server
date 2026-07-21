@@ -76,6 +76,13 @@ def test_turbopuffer_settings_defaults() -> None:
     assert settings.namespace == "docs-v1"
 
 
+def test_turbopuffer_api_key_is_optional_until_search() -> None:
+    from docs_mcp_server._settings import TurboPufferSettings
+
+    settings = TurboPufferSettings(api_key=None)
+    assert settings.api_key is None
+
+
 def test_turbopuffer_settings_custom_namespace() -> None:
     """Test TurboPufferSettings with custom namespace."""
     from docs_mcp_server._settings import TurboPufferSettings
