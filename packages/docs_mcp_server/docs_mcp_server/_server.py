@@ -8,6 +8,7 @@ from typing import Annotated, Any
 import httpx
 import logfire
 from fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 from openai import AsyncOpenAI, OpenAIError
 from pydantic import Field
 from turbopuffer import (
@@ -35,6 +36,11 @@ logfire.instrument_openai(AsyncOpenAI)
 
 
 app = FastMCP("Prefect Docs MCP", version="0.1.0")
+READ_ONLY_TOOL_ANNOTATIONS = ToolAnnotations(
+    readOnlyHint=True,
+    openWorldHint=False,
+    destructiveHint=False,
+)
 
 
 def _build_response(
@@ -51,7 +57,7 @@ def _build_response(
     return payload
 
 
-@app.tool
+@app.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
 async def search_prefect(
     query: Annotated[
         str,
@@ -199,7 +205,7 @@ async def search_prefect(
     return response
 
 
-@app.tool
+@app.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
 async def get_release_notes(
     version: Annotated[
         str,

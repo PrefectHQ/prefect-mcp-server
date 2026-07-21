@@ -49,6 +49,12 @@ async def test_docs_mcp_server_has_documentation_tools(
         search_tool = next((t for t in tools if t.name == "search_prefect"), None)
         assert search_tool == snapshot
 
+        for tool in tools:
+            assert tool.annotations is not None
+            assert tool.annotations.readOnlyHint is True
+            assert tool.annotations.openWorldHint is False
+            assert tool.annotations.destructiveHint is False
+
 
 @pytest.mark.vcr
 async def test_search_prefect_successful_query(

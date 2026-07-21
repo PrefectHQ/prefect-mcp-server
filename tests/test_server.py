@@ -7,6 +7,9 @@ from fastmcp import FastMCP
 from fastmcp.client import Client
 from prefect.client.orchestration import PrefectClient
 
+from prefect_mcp_server.server import build_prefect_mcp_server
+from prefect_mcp_server.settings import settings
+
 # Apply timeout to all tests in this module
 # CI can hang when interacting with the server, especially the docs proxy
 pytestmark = pytest.mark.timeout(30)
@@ -36,6 +39,26 @@ async def test_server_has_expected_capabilities(prefect_mcp_server: FastMCP) -> 
         assert "read_events" in tool_names
         assert "get_object_schema" in tool_names
         assert len(tools) >= 10
+
+
+async def test_all_prefect_tools_declare_submission_annotations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings.experimental, "execution_plans_enabled", True)
+    server = build_prefect_mcp_server(
+        include_docs_proxy=False,
+        include_cloud_tools=True,
+        include_cloud_oauth_tools=True,
+    )
+
+    async with Client(server) as client:
+        tools = await client.list_tools()
+
+    for tool in tools:
+        assert tool.annotations is not None
+        assert tool.annotations.openWorldHint is False
+        assert tool.annotations.destructiveHint is False
+        assert tool.annotations.readOnlyHint is (tool.name != "execution_plans_publish")
 
 
 async def test_get_deployments_with_test_data(

@@ -1,0 +1,272 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "Prefect",
+    "subtitle": "Inspect Prefect workflows",
+    "description": "Prefect helps users inspect Prefect Cloud and self-hosted workflows, diagnose failed, late, or stuck runs, review workspace health and rate limits, and look up current Prefect documentation and release notes.",
+    "category": "DEVELOPER_TOOLS"
+  },
+  "tools": {
+    "orientation": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns guidance about the available Prefect tools without accessing or changing workspace data.",
+        "open_world_justification": "Does not write to public internet state or any external system.",
+        "destructive_justification": "Does not delete, overwrite, revoke, or otherwise modify data."
+      }
+    },
+    "get_identity": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves the connected Prefect instance and user identity without modifying either.",
+        "open_world_justification": "Only reads private Prefect connection information and does not publish externally.",
+        "destructive_justification": "Does not delete, overwrite, revoke, or otherwise modify Prefect resources."
+      }
+    },
+    "get_dashboard": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves flow-run, work-pool, and concurrency-limit summaries without changing workspace state.",
+        "open_world_justification": "Only reads private Prefect workspace data and does not publish externally.",
+        "destructive_justification": "Does not delete, overwrite, revoke, or otherwise modify Prefect resources."
+      }
+    },
+    "get_deployments": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists or retrieves Prefect deployments and their recent runs without changing them.",
+        "open_world_justification": "Only reads private Prefect workspace data and does not publish externally.",
+        "destructive_justification": "Does not create, update, pause, or delete deployments."
+      }
+    },
+    "get_flows": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists or retrieves registered Prefect flows without changing them.",
+        "open_world_justification": "Only reads private Prefect workspace data and does not publish externally.",
+        "destructive_justification": "Does not create, update, or delete flows."
+      }
+    },
+    "get_flow_runs": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists or retrieves Prefect flow-run state and metadata without changing any run.",
+        "open_world_justification": "Only reads private Prefect workspace data and does not publish externally.",
+        "destructive_justification": "Does not start, cancel, retry, or delete flow runs."
+      }
+    },
+    "get_flow_run_logs": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves existing execution logs for a selected flow run without writing new logs.",
+        "open_world_justification": "Only reads private Prefect workspace logs and does not transmit them to another system.",
+        "destructive_justification": "Does not alter or delete logs or flow runs."
+      }
+    },
+    "get_task_runs": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists or retrieves Prefect task-run state and metadata without changing any run.",
+        "open_world_justification": "Only reads private Prefect workspace data and does not publish externally.",
+        "destructive_justification": "Does not start, cancel, retry, or delete task runs."
+      }
+    },
+    "get_work_pools": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves work-pool, queue, and worker-health information without changing configuration.",
+        "open_world_justification": "Only reads private Prefect workspace data and does not publish externally.",
+        "destructive_justification": "Does not create, pause, update, or delete work pools or queues."
+      }
+    },
+    "read_events": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reads existing Prefect event records for a requested time range without emitting events.",
+        "open_world_justification": "Only reads private Prefect workspace events and does not publish externally.",
+        "destructive_justification": "Does not alter or delete event records."
+      }
+    },
+    "get_automations": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists or retrieves Prefect automation configuration without changing it.",
+        "open_world_justification": "Only reads private Prefect workspace data and does not execute automation actions.",
+        "destructive_justification": "Does not create, enable, disable, update, or delete automations."
+      }
+    },
+    "get_object_schema": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Computes and returns a Prefect object schema without accessing or changing workspace state.",
+        "open_world_justification": "Does not write to public internet state or any external system.",
+        "destructive_justification": "Does not delete, overwrite, revoke, or otherwise modify data."
+      }
+    },
+    "review_rate_limits": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves Prefect Cloud rate-limit usage and throttling periods without changing account limits.",
+        "open_world_justification": "Only reads private Prefect Cloud account telemetry and does not publish externally.",
+        "destructive_justification": "Does not modify limits, usage records, or account configuration."
+      }
+    },
+    "list_authorized_workspaces": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists Prefect Cloud workspaces already selected during OAuth consent without changing authorization.",
+        "open_world_justification": "Only reads private OAuth grant scope and does not publish externally.",
+        "destructive_justification": "Does not grant, revoke, or modify workspace access."
+      }
+    },
+    "docs_search_prefect": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Searches the Prefect documentation index and returns matching excerpts without changing documentation.",
+        "open_world_justification": "Retrieves public Prefect documentation and does not publish or modify internet content.",
+        "destructive_justification": "Does not delete, overwrite, revoke, or otherwise modify data."
+      }
+    },
+    "docs_get_release_notes": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves authoritative Prefect OSS release notes without changing release or documentation data.",
+        "open_world_justification": "Retrieves public release information and does not publish or modify internet content.",
+        "destructive_justification": "Does not delete, overwrite, revoke, or otherwise modify data."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "Diagnose a recent failed flow run from its state and execution logs.",
+      "user_prompt": "Why did my latest Prefect flow run fail?",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_flow_runs, get_flow_run_logs",
+      "expected_output": "Identifies the latest failed run, summarizes the concrete failure from its logs, and suggests a relevant next diagnostic step.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Diagnose late or stuck runs using workspace and worker health.",
+      "user_prompt": "Which Prefect runs are late or stuck, and what is blocking them?",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_dashboard, get_flow_runs, get_work_pools, get_deployments",
+      "expected_output": "Summarizes affected runs and correlates them with work-pool, queue, deployment, or concurrency-limit health.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Retrieve the latest authoritative Prefect OSS release notes.",
+      "user_prompt": "What changed in the latest Prefect release?",
+      "file_attachment_urls": null,
+      "tools_triggered": "docs_get_release_notes",
+      "expected_output": "Returns the latest stable Prefect OSS version, release date and URL when available, and a concise summary of enhancements and fixes.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Answer a Prefect usage question from current documentation.",
+      "user_prompt": "How should I configure retries for a Prefect flow?",
+      "file_attachment_urls": null,
+      "tools_triggered": "docs_search_prefect",
+      "expected_output": "Explains the relevant current Prefect guidance using matching documentation excerpts and source links when available.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Review Prefect Cloud throttling for a recent incident.",
+      "user_prompt": "Were Prefect Cloud rate limits responsible for our 429 errors during the last three days?",
+      "file_attachment_urls": null,
+      "tools_triggered": "review_rate_limits",
+      "expected_output": "Reports whether throttling occurred, the affected operation groups and periods, and the observed denial counts without changing account settings.",
+      "expected_output_url": null
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "Do not invoke read-only MCP tools to trigger a deployment.",
+      "user_prompt": "Trigger my production Prefect deployment now.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not invoke an MCP tool because the server is read-only; it should explain that the Prefect CLI is required for this mutation.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not invoke read-only MCP tools to cancel or delete a run.",
+      "user_prompt": "Cancel and delete this Prefect flow run.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not invoke an MCP tool because cancellation and deletion are mutations; it should direct the user to the Prefect CLI.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not invoke Prefect for an unrelated consumer request.",
+      "user_prompt": "What will the weather be tomorrow?",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because weather information is outside its supported Prefect workflows.",
+      "expected_output_url": null
+    }
+  ]
+}
