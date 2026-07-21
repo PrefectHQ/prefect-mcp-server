@@ -79,13 +79,6 @@ async def search_prefect(
     if not query.strip():
         raise ValueError("Query must not be empty.")
 
-    if settings.turbopuffer.api_key is None:
-        return _build_response(
-            query,
-            [],
-            "TurboPuffer is not configured; set TURBOPUFFER_API_KEY to use documentation search.",
-        )
-
     result_limit = top_k or settings.top_k
     include_attributes = list(dict.fromkeys(settings.include_attributes))
 

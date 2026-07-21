@@ -15,9 +15,8 @@ class TurboPufferSettings(BaseSettings):
         extra="ignore",
     )
 
-    api_key: SecretStr | None = Field(
-        default=None,
-        description="The API key for the TurboPuffer instance when search is used.",
+    api_key: SecretStr = Field(
+        default=..., description="The API key for the TurboPuffer instance."
     )
     region: str = Field(default="api", description="The TurboPuffer region.")
     namespace: str = Field(default="docs-v1")

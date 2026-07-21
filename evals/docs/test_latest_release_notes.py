@@ -5,35 +5,9 @@ from datetime import datetime
 from typing import Any
 
 import httpx
-import pytest
 from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServer, MCPServerStdio
 
 from evals._tools.spy import ToolCallSpy
-
-
-@pytest.fixture
-def release_notes_mcp_server(tool_call_spy: ToolCallSpy) -> MCPServer:
-    """Run the local docs MCP with the namespace used by the Prefect proxy."""
-    return MCPServerStdio(
-        command="uv",
-        args=["run", "-m", "docs_mcp_server"],
-        tool_prefix="docs",
-        process_tool_call=tool_call_spy,
-        max_retries=3,
-    )
-
-
-@pytest.fixture
-def release_notes_agent(
-    release_notes_mcp_server: MCPServer,
-    simple_model: str,
-) -> Agent:
-    return Agent(
-        name="Prefect Release Notes Agent",
-        toolsets=[release_notes_mcp_server],
-        model=simple_model,
-    )
 
 
 async def _latest_release() -> dict[str, Any]:
@@ -53,7 +27,7 @@ async def _latest_release() -> dict[str, Any]:
 
 
 async def test_agent_reports_latest_prefect_release(
-    release_notes_agent: Agent,
+    simple_agent: Agent,
     tool_call_spy: ToolCallSpy,
     evaluate_response: Callable[[str, str], Awaitable[None]],
 ) -> None:
@@ -62,8 +36,8 @@ async def test_agent_reports_latest_prefect_release(
     version = str(release["tag_name"])
     released_on = datetime.fromisoformat(release["published_at"]).date().isoformat()
 
-    async with release_notes_agent:
-        result = await release_notes_agent.run(
+    async with simple_agent:
+        result = await simple_agent.run(
             "What changed in the latest stable Prefect OSS release? Include the "
             "exact patch version, release date, a concise summary of the important "
             "changes, and a source link."

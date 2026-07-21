@@ -84,24 +84,6 @@ async def test_search_prefect_empty_query(
         assert result == snapshot
 
 
-async def test_search_prefect_reports_missing_configuration(
-    docs_mcp_server: FastMCP,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from docs_mcp_server._server import settings
-
-    monkeypatch.setattr(settings.turbopuffer, "api_key", None)
-
-    async with Client(docs_mcp_server) as client:
-        result = await client.call_tool(
-            "search_prefect",
-            {"query": "how to create a flow"},
-        )
-
-    assert result.data["results"] == []
-    assert "TURBOPUFFER_API_KEY" in result.data["error"]
-
-
 @pytest.mark.vcr
 async def test_search_prefect_handles_validation_error(
     snapshot: SnapshotAssertion, docs_mcp_server: FastMCP
