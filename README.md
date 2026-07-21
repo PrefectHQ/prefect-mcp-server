@@ -13,7 +13,7 @@ The server gives MCP clients read-only tools for inspecting Prefect Cloud and se
 
 | Use case | Recommended setup | Authentication |
 | --- | --- | --- |
-| Claude Code on your machine | Claude Code plugin | Active local Prefect profile |
+| Claude Code or Codex on your machine | Prefect plugin for your client | Active local Prefect profile |
 | Local MCP client | `uvx` stdio server | Active local Prefect profile or env vars |
 | Self-hosted Prefect or custom Cloud workspace | Self-hosted HTTP or stdio server | API key, basic auth, env vars, or headers |
 | Team-operated shared server | HTTP deployment with per-request headers | User or service-account credentials in headers |
@@ -35,6 +35,21 @@ plus a CLI skill for mutations like triggering deployments or cancelling runs.
 
 > [!NOTE]
 > The plugin uses your local Prefect configuration from `~/.prefect/profiles.toml`. For explicit credentials, use the local `uvx` setup below.
+
+## Codex Plugin
+
+The same MCP server and CLI skill are available as a Codex plugin:
+
+```bash
+# add from marketplace
+codex plugin marketplace add prefecthq/prefect-mcp-server
+
+# install the plugin
+codex plugin add prefect@prefect
+```
+
+Like the Claude Code plugin, the Codex plugin uses your local Prefect profile and
+does not require credentials in its plugin configuration.
 
 ## Run Locally
 

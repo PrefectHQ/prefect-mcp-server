@@ -1,5 +1,6 @@
 {
   "name": "prefect",
+  "description": "Prefect workflow orchestration plugins",
   "owner": {
     "name": "Prefect Technologies",
     "email": "help@prefect.io"
@@ -9,7 +10,7 @@
       "name": "prefect",
       "description": "Prefect workflow orchestration - MCP tools for diagnostics and release notes, CLI guidance for mutations",
       "source": "./",
-      "skills": ["./skills/cli"]
+      "skills": ["./plugins/prefect/skills/cli"]
     }
   ]
 }

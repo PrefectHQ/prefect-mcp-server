@@ -1,0 +1,20 @@
+{
+  "name": "prefect",
+  "interface": {
+    "displayName": "Prefect"
+  },
+  "plugins": [
+    {
+      "name": "prefect",
+      "source": {
+        "source": "local",
+        "path": "./plugins/prefect"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Engineering"
+    }
+  ]
+}
