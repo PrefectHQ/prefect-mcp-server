@@ -12,6 +12,8 @@ from fastmcp.server.providers.proxy import ProxyClient
 from mcp.types import ToolAnnotations
 from prefect.client.base import ServerType, determine_server_type
 from pydantic import Field
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse, Response
 
 from prefect_mcp_server import _prefect_client, cloud_oauth, execution_plans
 from prefect_mcp_server.middleware import (
@@ -566,6 +568,18 @@ PRIVATE_WRITE_TOOL_ANNOTATIONS = ToolAnnotations(
 )
 
 
+async def openai_apps_challenge(_: Request) -> Response:
+    """Return the configured OpenAI public plugin domain challenge token."""
+    token = settings.openai_apps_challenge_token
+    if token is None:
+        return PlainTextResponse("", status_code=404)
+
+    return PlainTextResponse(
+        token,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 def build_prefect_mcp_server(
     *,
     name: str = "Prefect MCP Server",
@@ -576,6 +590,11 @@ def build_prefect_mcp_server(
 ) -> FastMCP:
     """Build a Prefect MCP server from shared tools and optional Cloud adapters."""
     server = FastMCP(name, auth=auth_provider)
+    server.custom_route(
+        "/.well-known/openai-apps-challenge",
+        methods=["GET"],
+        include_in_schema=False,
+    )(openai_apps_challenge)
     server.add_middleware(PrefectAuthMiddleware())
     server.add_middleware(
         FeatureFlagMiddleware(

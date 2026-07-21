@@ -73,6 +73,11 @@ class Settings(BaseSettings):
         description="Default time window to look back for events",
     )
 
+    openai_apps_challenge_token: str | None = Field(
+        default=None,
+        description="Token returned for OpenAI public plugin domain verification",
+    )
+
     docs_mcp: DocsMcpSettings = Field(
         default_factory=DocsMcpSettings,
         description="Docs MCP proxy settings",
