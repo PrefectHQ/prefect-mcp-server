@@ -21,6 +21,7 @@ logfire = ["logfire"]
 
 [dependency-groups]
 dev = [
+    "docs-mcp-server",
     "ipython",
     "pre-commit>=4.3.0",
     "pydantic-ai>=1.0.10",
@@ -74,5 +75,8 @@ members = [
     "packages/docs_mcp_server",
     "packages/ingestion_pipeline",
 ]
+
+[tool.uv.sources]
+docs-mcp-server = { workspace = true }
 # "__init__.py" = ["F401", "I001", "RUF013"]
 # "src/prefect_mcp_server/__init__.py" = ["E402"]

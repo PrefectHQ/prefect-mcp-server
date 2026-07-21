@@ -3007,6 +3007,7 @@ logfire = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "docs-mcp-server" },
     { name = "ipython", version = "8.39.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "ipython", version = "9.13.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pre-commit" },
@@ -3033,6 +3034,7 @@ provides-extras = ["logfire"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "docs-mcp-server", editable = "packages/docs_mcp_server" },
     { name = "ipython" },
     { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "pydantic-ai", specifier = ">=1.0.10" },

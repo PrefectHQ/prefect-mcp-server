@@ -5,9 +5,26 @@ from datetime import datetime
 from typing import Any
 
 import httpx
+import pytest
 from pydantic_ai import Agent
+from pydantic_ai.toolsets.fastmcp import FastMCPToolset
 
 from evals._tools.spy import ToolCallSpy
+from prefect_mcp_server.server import build_prefect_mcp_server
+
+
+@pytest.fixture
+def prefect_mcp_server(tool_call_spy: ToolCallSpy) -> FastMCPToolset:
+    """Use this branch's docs server through the real Prefect docs namespace."""
+    from docs_mcp_server._server import app as docs_mcp
+
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+    server.mount(docs_mcp, namespace="docs")
+    return FastMCPToolset(
+        server,
+        process_tool_call=tool_call_spy,
+        max_retries=3,
+    )
 
 
 async def _latest_release() -> dict[str, Any]:
