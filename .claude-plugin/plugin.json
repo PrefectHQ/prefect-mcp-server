@@ -17,6 +17,6 @@
     "flow-runs",
     "observability"
   ],
-  "skills": "./skills/",
-  "mcpServers": "./.mcp.json"
+  "skills": "./plugins/prefect/skills/",
+  "mcpServers": "./plugins/prefect/.mcp.json"
 }

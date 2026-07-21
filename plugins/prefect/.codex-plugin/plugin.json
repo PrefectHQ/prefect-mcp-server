@@ -1,6 +1,6 @@
 {
   "name": "prefect",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260721185029",
   "description": "Prefect workflow orchestration - MCP tools for diagnostics and release notes, CLI guidance for mutations",
   "author": {
     "name": "Prefect Technologies",
@@ -35,6 +35,10 @@
       "Which Prefect runs are late or stuck?",
       "What changed in the latest Prefect release?"
     ],
+    "brandColor": "#06000E",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg",
+    "logoDark": "./assets/logo-dark.svg",
     "screenshots": []
   }
 }

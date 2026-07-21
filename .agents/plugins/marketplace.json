@@ -7,9 +7,8 @@
     {
       "name": "prefect",
       "source": {
-        "source": "url",
-        "url": "https://github.com/PrefectHQ/prefect-mcp-server.git",
-        "ref": "main"
+        "source": "local",
+        "path": "./plugins/prefect"
       },
       "policy": {
         "installation": "AVAILABLE",
