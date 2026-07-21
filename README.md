@@ -93,6 +93,7 @@ Deploy your own server when you need a custom Prefect API target, self-hosted Pr
      - `PREFECT_API_URL`: `https://api.prefect.cloud/api/accounts/[ACCOUNT_ID]/workspaces/[WORKSPACE_ID]`
      - `PREFECT_API_KEY`: your Prefect Cloud API key
      - `PREFECT_API_AUTH_STRING`: basic auth credentials for self-hosted Prefect, if needed
+     - `OPENAI_APPS_CHALLENGE_TOKEN`: domain-verification token for an OpenAI public plugin submission, if needed
 
 4. Add the deployed HTTP URL to your MCP client:
 

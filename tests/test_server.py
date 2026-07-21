@@ -6,6 +6,7 @@ import pytest
 from fastmcp import FastMCP
 from fastmcp.client import Client
 from prefect.client.orchestration import PrefectClient
+from starlette.testclient import TestClient
 
 from prefect_mcp_server.server import build_prefect_mcp_server
 from prefect_mcp_server.settings import settings
@@ -59,6 +60,38 @@ async def test_all_prefect_tools_declare_submission_annotations(
         assert tool.annotations.openWorldHint is False
         assert tool.annotations.destructiveHint is False
         assert tool.annotations.readOnlyHint is (tool.name != "execution_plans_publish")
+
+
+def test_openai_apps_challenge_returns_configured_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        settings,
+        "openai_apps_challenge_token",
+        "domain-verification-token",
+    )
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+
+    with TestClient(server.http_app()) as client:
+        response = client.get("/.well-known/openai-apps-challenge")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "text/plain; charset=utf-8"
+    assert response.headers["cache-control"] == "no-store"
+    assert response.text == "domain-verification-token"
+
+
+def test_openai_apps_challenge_is_unavailable_without_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "openai_apps_challenge_token", None)
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+
+    with TestClient(server.http_app()) as client:
+        response = client.get("/.well-known/openai-apps-challenge")
+
+    assert response.status_code == 404
+    assert response.text == ""
 
 
 async def test_get_deployments_with_test_data(
