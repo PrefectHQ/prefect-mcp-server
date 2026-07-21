@@ -9,6 +9,7 @@ from fastmcp import FastMCP
 from fastmcp.server import create_proxy
 from fastmcp.server.auth import AuthProvider
 from fastmcp.server.providers.proxy import ProxyClient
+from mcp.types import ToolAnnotations
 from prefect.client.base import ServerType, determine_server_type
 from pydantic import Field
 
@@ -553,6 +554,17 @@ CLOUD_TOOLS = (review_rate_limits,)
 CLOUD_OAUTH_TOOLS = (list_authorized_workspaces,)
 EXECUTION_PLAN_TOOLS = execution_plans.EXECUTION_PLAN_TOOLS
 
+READ_ONLY_TOOL_ANNOTATIONS = ToolAnnotations(
+    readOnlyHint=True,
+    openWorldHint=False,
+    destructiveHint=False,
+)
+PRIVATE_WRITE_TOOL_ANNOTATIONS = ToolAnnotations(
+    readOnlyHint=False,
+    openWorldHint=False,
+    destructiveHint=False,
+)
+
 
 def build_prefect_mcp_server(
     *,
@@ -588,7 +600,7 @@ def build_prefect_mcp_server(
         server.mount(docs_proxy, namespace="docs")
 
     for tool in CORE_TOOLS:
-        server.add_tool(tool)
+        server.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(tool)
 
     should_include_cloud_tools = (
         include_cloud_tools
@@ -597,14 +609,19 @@ def build_prefect_mcp_server(
     )
     if should_include_cloud_tools:
         for tool in CLOUD_TOOLS:
-            server.add_tool(tool)
+            server.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(tool)
 
     if include_cloud_oauth_tools:
         for tool in CLOUD_OAUTH_TOOLS:
-            server.add_tool(tool)
+            server.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(tool)
 
     for tool in EXECUTION_PLAN_TOOLS:
-        server.add_tool(tool)
+        annotations = (
+            PRIVATE_WRITE_TOOL_ANNOTATIONS
+            if tool is execution_plans.execution_plans_publish
+            else READ_ONLY_TOOL_ANNOTATIONS
+        )
+        server.tool(annotations=annotations)(tool)
 
     return server
 
