@@ -1,0 +1,40 @@
+{
+  "name": "prefect",
+  "version": "0.1.0",
+  "description": "Prefect workflow orchestration - MCP tools for diagnostics and release notes, CLI guidance for mutations",
+  "author": {
+    "name": "Prefect Technologies",
+    "email": "help@prefect.io",
+    "url": "https://github.com/prefecthq"
+  },
+  "homepage": "https://docs.prefect.io/",
+  "repository": "https://github.com/prefecthq/prefect-mcp-server",
+  "keywords": [
+    "prefect",
+    "workflows",
+    "orchestration",
+    "data-pipelines",
+    "flow-runs",
+    "observability"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Prefect",
+    "shortDescription": "Inspect and troubleshoot Prefect workflows",
+    "longDescription": "Inspect Prefect Cloud and self-hosted workflows, diagnose failed or late runs, look up current documentation and release notes, and use guided Prefect CLI workflows for mutations.",
+    "developerName": "Prefect Technologies",
+    "category": "Engineering",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://www.prefect.io/",
+    "defaultPrompt": [
+      "Why did my latest Prefect flow run fail?",
+      "Which Prefect runs are late or stuck?",
+      "What changed in the latest Prefect release?"
+    ],
+    "screenshots": []
+  }
+}

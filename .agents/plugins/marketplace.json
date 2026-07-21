@@ -1,0 +1,21 @@
+{
+  "name": "prefect",
+  "interface": {
+    "displayName": "Prefect"
+  },
+  "plugins": [
+    {
+      "name": "prefect",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/PrefectHQ/prefect-mcp-server.git",
+        "ref": "main"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Engineering"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 {
   "name": "prefect",
+  "description": "Prefect workflow orchestration plugins",
   "owner": {
     "name": "Prefect Technologies",
     "email": "help@prefect.io"

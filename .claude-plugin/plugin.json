@@ -1,11 +1,13 @@
 {
   "name": "prefect",
+  "version": "0.1.0",
   "description": "Prefect workflow orchestration - MCP tools for diagnostics and release notes, CLI guidance for mutations",
   "author": {
     "name": "Prefect Technologies",
     "email": "help@prefect.io",
     "url": "https://github.com/prefecthq"
   },
+  "homepage": "https://docs.prefect.io/",
   "repository": "https://github.com/prefecthq/prefect-mcp-server",
   "keywords": [
     "prefect",
@@ -15,5 +17,6 @@
     "flow-runs",
     "observability"
   ],
+  "skills": "./skills/",
   "mcpServers": "./.mcp.json"
 }
