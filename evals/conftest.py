@@ -31,7 +31,7 @@ from prefect.settings import get_current_settings
 from prefect.testing.utilities import prefect_test_harness
 from pydantic import BaseModel
 from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServer, MCPServerStdio
+from pydantic_ai.mcp import MCPToolset, StdioTransport
 
 from evals._tools.spy import ToolCallSpy
 
@@ -146,23 +146,33 @@ def reset_tool_call_spy(tool_call_spy: ToolCallSpy) -> None:
 
 
 @pytest.fixture(scope="session")
-def prefect_mcp_server(tool_call_spy: ToolCallSpy) -> Generator[MCPServer, None, None]:
+def prefect_mcp_server(tool_call_spy: ToolCallSpy) -> Generator[MCPToolset, None, None]:
     with prefect_test_harness():
         api_url = get_current_settings().api.url
         env = {}
         if api_url:
             env["PREFECT_API_URL"] = api_url
-        yield MCPServerStdio(
-            command="uv",
-            args=["run", "-m", "prefect_mcp_server"],
-            env=env,
+        yield MCPToolset(
+            StdioTransport(
+                command="uv",
+                args=["run", "-m", "prefect_mcp_server"],
+                env=env,
+                # This fixture is session-scoped but pytest-asyncio gives each test its
+                # own event loop. keep_alive would cache the first test's session and
+                # hand it to the next one, which fails with "Event loop is closed".
+                keep_alive=False,
+            ),
             process_tool_call=tool_call_spy,
             max_retries=3,
+            # Each xdist worker cold-starts its own `uv run -m prefect_mcp_server`,
+            # and importing prefect under that much parallelism routinely exceeds
+            # the 5s default.
+            init_timeout=60,
         )
 
 
 @pytest.fixture
-def simple_agent(prefect_mcp_server: MCPServer, simple_model: str) -> Agent:
+def simple_agent(prefect_mcp_server: MCPToolset, simple_model: str) -> Agent:
     """Simple evaluation agent for straightforward diagnostic tasks.
 
     Use this agent for tasks that require basic information gathering and
@@ -182,7 +192,7 @@ def simple_agent(prefect_mcp_server: MCPServer, simple_model: str) -> Agent:
 
 
 @pytest.fixture
-def reasoning_agent(prefect_mcp_server: MCPServer, reasoning_model: str) -> Agent:
+def reasoning_agent(prefect_mcp_server: MCPToolset, reasoning_model: str) -> Agent:
     """Reasoning evaluation agent for complex diagnostic tasks requiring conceptual connections.
 
     Use this agent for tasks that require:

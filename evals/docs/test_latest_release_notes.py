@@ -7,20 +7,20 @@ from typing import Any
 import httpx
 import pytest
 from pydantic_ai import Agent
-from pydantic_ai.toolsets.fastmcp import FastMCPToolset
+from pydantic_ai.mcp import MCPToolset
 
 from evals._tools.spy import ToolCallSpy
 from prefect_mcp_server.server import build_prefect_mcp_server
 
 
 @pytest.fixture
-def prefect_mcp_server(tool_call_spy: ToolCallSpy) -> FastMCPToolset:
+def prefect_mcp_server(tool_call_spy: ToolCallSpy) -> MCPToolset:
     """Use this branch's docs server through the real Prefect docs namespace."""
     from docs_mcp_server._server import app as docs_mcp
 
     server = build_prefect_mcp_server(include_docs_proxy=False)
     server.mount(docs_mcp, namespace="docs")
-    return FastMCPToolset(
+    return MCPToolset(
         server,
         process_tool_call=tool_call_spy,
         max_retries=3,
@@ -68,12 +68,20 @@ async def test_agent_reports_latest_prefect_release(
 
 Expected version: {version}
 Expected release date: {released_on}
+Expected release title: {release["name"]}
 Expected source URL: {release["html_url"]}
 Authoritative release notes:
 {release["body"]}
 
-The response must identify the exact patch version and release date, summarize
-important user-facing changes without inventing any, and link to an official
-Prefect docs or GitHub release-notes page.""",
+The response must identify the exact patch version and release date, and
+summarize important user-facing changes without inventing any.
+
+Judge only against the criteria above. In particular, do not fail the response
+for either of these, which are correct:
+- Naming the release title. It is part of the release metadata above even though
+  it does not appear in the body text.
+- Linking to a docs.prefect.io release-notes page. Any official Prefect docs or
+  GitHub release-notes URL is acceptable; the expected source URL above is not
+  the only permitted link.""",
         result.output,
     )

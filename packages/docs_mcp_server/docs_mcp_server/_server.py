@@ -8,7 +8,7 @@ from typing import Annotated, Any
 import httpx
 import logfire
 from fastmcp import FastMCP
-from mcp.types import ToolAnnotations
+from mcp_types import ToolAnnotations
 from openai import AsyncOpenAI, OpenAIError
 from pydantic import Field
 from turbopuffer import (
@@ -37,9 +37,9 @@ logfire.instrument_openai(AsyncOpenAI)
 
 app = FastMCP("Prefect Docs MCP", version="0.1.0")
 READ_ONLY_TOOL_ANNOTATIONS = ToolAnnotations(
-    readOnlyHint=True,
-    openWorldHint=False,
-    destructiveHint=False,
+    read_only_hint=True,
+    open_world_hint=False,
+    destructive_hint=False,
 )
 
 

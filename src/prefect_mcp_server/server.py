@@ -9,7 +9,7 @@ from fastmcp import FastMCP
 from fastmcp.server import create_proxy
 from fastmcp.server.auth import AuthProvider
 from fastmcp.server.providers.proxy import ProxyClient
-from mcp.types import ToolAnnotations
+from mcp_types import ToolAnnotations
 from prefect.client.base import ServerType, determine_server_type
 from pydantic import Field
 from starlette.requests import Request
@@ -557,14 +557,14 @@ CLOUD_OAUTH_TOOLS = (list_authorized_workspaces,)
 EXECUTION_PLAN_TOOLS = execution_plans.EXECUTION_PLAN_TOOLS
 
 READ_ONLY_TOOL_ANNOTATIONS = ToolAnnotations(
-    readOnlyHint=True,
-    openWorldHint=False,
-    destructiveHint=False,
+    read_only_hint=True,
+    open_world_hint=False,
+    destructive_hint=False,
 )
 PRIVATE_WRITE_TOOL_ANNOTATIONS = ToolAnnotations(
-    readOnlyHint=False,
-    openWorldHint=False,
-    destructiveHint=False,
+    read_only_hint=False,
+    open_world_hint=False,
+    destructive_hint=False,
 )
 
 

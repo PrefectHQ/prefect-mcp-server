@@ -191,8 +191,9 @@ async def test_cloud_oauth_agent_triages_unknown_workspace_failure(
         result = await cloud_oauth_simple_agent.run(
             "A customer says their release sync started failing in Prefect Cloud, "
             "but they are not sure which authorized workspace it is in. Look across "
-            "the workspaces you can access, identify the affected workspace, and "
-            "explain the concrete failure we should report back."
+            "the workspaces you can access, identify the affected workspace, name "
+            "the specific failed flow run, and explain the concrete failure we "
+            "should report back."
         )
 
     await evaluate_response(
@@ -201,7 +202,12 @@ async def test_cloud_oauth_agent_triages_unknown_workspace_failure(
         '{cross_workspace_failed_run["healthy_workspace_handle"]}', and explain
         that the failed run '{cross_workspace_failed_run["run_name"]}' from flow
         '{cross_workspace_failed_run["flow_name"]}' failed because
-        '{cross_workspace_failed_run["failure_message"]}'?""",
+        '{cross_workspace_failed_run["failure_message"]}'?
+
+        Judge only against the criteria above. The run was launched from a
+        deployment named '{cross_workspace_failed_run["flow_name"]}-deployment';
+        also mentioning that deployment is correct and must not count against the
+        response, so long as the failed run name itself is present.""",
         result.output,
     )
 

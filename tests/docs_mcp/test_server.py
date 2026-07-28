@@ -6,7 +6,7 @@ import os
 import pytest
 from fastmcp import FastMCP
 from fastmcp.client import Client
-from mcp.types import TextContent
+from mcp_types import TextContent
 from syrupy.assertion import SnapshotAssertion
 
 pytestmark = pytest.mark.timeout(30)
@@ -51,9 +51,9 @@ async def test_docs_mcp_server_has_documentation_tools(
 
         for tool in tools:
             assert tool.annotations is not None
-            assert tool.annotations.readOnlyHint is True
-            assert tool.annotations.openWorldHint is False
-            assert tool.annotations.destructiveHint is False
+            assert tool.annotations.read_only_hint is True
+            assert tool.annotations.open_world_hint is False
+            assert tool.annotations.destructive_hint is False
 
 
 @pytest.mark.vcr

@@ -5,7 +5,7 @@ readme = "README.md"
 dynamic = ["version"]
 authors = [{ name = "Prefect Technologies", email = "help@prefect.io" }]
 requires-python = ">=3.10"
-dependencies = ["fastmcp>=3.0.0", "prefect>=3.4.22"]
+dependencies = ["fastmcp==4.0.0a2", "prefect>=3.4.22"]
 
 
 [project.scripts]
@@ -70,6 +70,20 @@ extend-select = ["I", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
 
+[tool.uv]
+constraint-dependencies = [
+    "fastmcp-slim==4.0.0a2",
+    "mcp==2.0.0b2",
+    "mcp-types==2.0.0b2",
+]
+# pydantic-ai still ships `fastmcp-slim[client]<4` (pydantic/pydantic-ai#6737). The v4
+# compat code lands in #6738 but that PR intentionally leaves the cap in place, so
+# lifting it here is what lets us exercise the branch. Drop both this override and the
+# git sources below once the follow-up widens the range upstream.
+# The extras must match what `fastmcp` itself asks for — an override replaces every
+# requirement on the package, so narrowing to [client] here strips server support.
+override-dependencies = ["fastmcp-slim[client,server]>=4.0.0a2"]
+
 [tool.uv.workspace]
 members = [
     "packages/docs_mcp_server",
@@ -78,5 +92,7 @@ members = [
 
 [tool.uv.sources]
 docs-mcp-server = { workspace = true }
+pydantic-ai = { git = "https://github.com/pydantic/pydantic-ai.git", branch = "codex/issue-6661-fastmcp-4-alpha" }
+pydantic-ai-slim = { git = "https://github.com/pydantic/pydantic-ai.git", subdirectory = "pydantic_ai_slim", branch = "codex/issue-6661-fastmcp-4-alpha" }
 # "__init__.py" = ["F401", "I001", "RUF013"]
 # "src/prefect_mcp_server/__init__.py" = ["E402"]
