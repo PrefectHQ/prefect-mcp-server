@@ -247,7 +247,7 @@ def test_build_auth_provider_uses_cloud_jwks_without_runtime_secret(
     monkeypatch.setattr(
         cloud_oauth.settings,
         "public_base_url",
-        "https://prefect-cloud-mcp-server.fastmcp.app/mcp",
+        "https://prefect.fastmcp.app",
     )
 
     with patch("prefect_mcp_server.cloud_oauth.JWTVerifier") as mock_verifier:
@@ -256,10 +256,37 @@ def test_build_auth_provider_uses_cloud_jwks_without_runtime_secret(
     mock_verifier.assert_called_once_with(
         jwks_uri="https://api.prefect.cloud/auth/mcp/oauth/jwks.json",
         issuer="https://api.prefect.cloud",
-        audience="https://prefect-cloud-mcp-server.fastmcp.app/mcp",
+        audience="https://prefect.fastmcp.app/mcp",
         algorithm="RS256",
         required_scopes=["prefect-cloud:workspaces"],
-        base_url="https://prefect-cloud-mcp-server.fastmcp.app/mcp",
+        base_url="https://prefect.fastmcp.app",
+    )
+
+
+def test_build_auth_provider_does_not_double_append_mcp_resource_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(cloud_oauth.settings, "enabled", True)
+    monkeypatch.setattr(cloud_oauth.settings, "auth_token_key", None)
+    monkeypatch.setattr(
+        cloud_oauth.settings, "auth_base_url", "https://api.prefect.cloud"
+    )
+    monkeypatch.setattr(
+        cloud_oauth.settings,
+        "public_base_url",
+        "https://prefect.fastmcp.app/mcp",
+    )
+
+    with patch("prefect_mcp_server.cloud_oauth.JWTVerifier") as mock_verifier:
+        cloud_oauth.build_auth_provider(require_enabled=True)
+
+    mock_verifier.assert_called_once_with(
+        jwks_uri="https://api.prefect.cloud/auth/mcp/oauth/jwks.json",
+        issuer="https://api.prefect.cloud",
+        audience="https://prefect.fastmcp.app/mcp",
+        algorithm="RS256",
+        required_scopes=["prefect-cloud:workspaces"],
+        base_url="https://prefect.fastmcp.app/mcp",
     )
 
 

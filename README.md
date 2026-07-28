@@ -185,7 +185,7 @@ Cloud OAuth settings use the `PREFECT_MCP_CLOUD_` prefix:
 | `PREFECT_MCP_CLOUD_AUTH_BASE_URL` | Optional override for auth helper endpoints |
 | `PREFECT_MCP_CLOUD_AUTH_JWKS_URI` | Optional override for the Prefect Cloud MCP OAuth JWKS endpoint |
 | `PREFECT_MCP_CLOUD_AUTHORIZATION_SERVER` | Optional override for advertised OAuth authorization server |
-| `PREFECT_MCP_CLOUD_AUTH_AUDIENCE` | Optional override for the expected token audience; defaults to the hosted MCP public URL |
+| `PREFECT_MCP_CLOUD_AUTH_AUDIENCE` | Optional override for the expected token audience; defaults to the hosted MCP resource URL (`<public base URL>/mcp`) |
 | `PREFECT_MCP_CLOUD_CLIENT_ID` | Optional service-account MCP OAuth client id for unattended token exchange |
 | `PREFECT_MCP_CLOUD_CLIENT_SECRET` | Optional service-account MCP OAuth client secret for unattended token exchange |
 | `PREFECT_MCP_CLOUD_PUBLIC_BASE_URL` | Public base URL for the hosted MCP server |
