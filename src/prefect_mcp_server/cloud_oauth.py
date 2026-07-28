@@ -54,7 +54,7 @@ class CloudOAuthSettings(BaseSettings):
     api_base_url: str | None = Field(default=None)
     auth_base_url: str | None = Field(default=None)
     authorization_server: str | None = Field(default=None)
-    auth_issuer: str = Field(default="AuthServerID")
+    auth_issuer: str | None = Field(default=None)
     auth_audience: str | None = Field(default=None)
     auth_algorithm: str | None = Field(default=None)
     client_id: str | None = Field(default=None)
@@ -85,6 +85,14 @@ class CloudOAuthSettings(BaseSettings):
         if self.auth_jwks_uri:
             return self.auth_jwks_uri
         return f"{self.resolved_auth_base_url}/auth/mcp/oauth/jwks.json"
+
+    @property
+    def resolved_auth_issuer(self) -> str:
+        if self.auth_issuer:
+            return self.auth_issuer.rstrip("/")
+        if self.auth_token_key:
+            return "AuthServerID"
+        return self.resolved_auth_base_url
 
     @property
     def resolved_auth_audience(self) -> str:
@@ -197,7 +205,7 @@ def build_auth_provider(*, require_enabled: bool = False) -> RemoteAuthProvider 
     if settings.auth_token_key is not None:
         token_verifier = JWTVerifier(
             public_key=settings.auth_token_key,
-            issuer=settings.auth_issuer,
+            issuer=settings.resolved_auth_issuer,
             audience=settings.resolved_auth_audience,
             algorithm=settings.resolved_auth_algorithm,
             required_scopes=["prefect-cloud:workspaces"],
@@ -206,7 +214,7 @@ def build_auth_provider(*, require_enabled: bool = False) -> RemoteAuthProvider 
     else:
         token_verifier = JWTVerifier(
             jwks_uri=settings.resolved_auth_jwks_uri,
-            issuer=settings.auth_issuer,
+            issuer=settings.resolved_auth_issuer,
             audience=settings.resolved_auth_audience,
             algorithm=settings.resolved_auth_algorithm,
             required_scopes=["prefect-cloud:workspaces"],
