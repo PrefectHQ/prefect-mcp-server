@@ -20,6 +20,7 @@ from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 CloudEnvironment = Literal["local", "stg", "prod"]
+DEFAULT_MCP_PATH = "/mcp"
 
 
 def cloud_origin(environment: CloudEnvironment) -> str:
@@ -81,6 +82,13 @@ class CloudOAuthSettings(BaseSettings):
         return self.public_base_url.rstrip("/")
 
     @property
+    def resolved_resource_url(self) -> str:
+        base_url = self.resolved_public_base_url
+        if urlparse(base_url).path.rstrip("/") == DEFAULT_MCP_PATH:
+            return base_url
+        return f"{base_url}{DEFAULT_MCP_PATH}"
+
+    @property
     def resolved_auth_jwks_uri(self) -> str:
         if self.auth_jwks_uri:
             return self.auth_jwks_uri
@@ -100,7 +108,7 @@ class CloudOAuthSettings(BaseSettings):
             return self.auth_audience.rstrip("/")
         if self.auth_token_key:
             return "AuthServerID"
-        return self.resolved_public_base_url
+        return self.resolved_resource_url
 
     @property
     def resolved_auth_algorithm(self) -> str:
