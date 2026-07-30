@@ -14,12 +14,8 @@ members = [
     "ingestion-pipeline",
     "prefect-mcp",
 ]
-constraints = [
-    { name = "fastmcp-slim", specifier = "==4.0.0a2" },
-    { name = "mcp", specifier = "==2.0.0b2" },
-    { name = "mcp-types", specifier = "==2.0.0b2" },
-]
-overrides = [{ name = "fastmcp-slim", extras = ["client", "server"], specifier = ">=4.0.0a2" }]
+constraints = [{ name = "fastmcp-slim", specifier = "==4.0.0b1" }]
+overrides = [{ name = "fastmcp-slim", extras = ["client", "server"], specifier = ">=4.0.0b1" }]
 
 [[package]]
 name = "aiofile"
@@ -915,7 +911,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastmcp", specifier = "==4.0.0a2" },
+    { name = "fastmcp", specifier = "==4.0.0b1" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "logfire", specifier = ">=4.9.0" },
     { name = "openai", specifier = ">=1.109.1" },
@@ -992,19 +988,19 @@ wheels = [
 
 [[package]]
 name = "fastmcp"
-version = "4.0.0a2"
+version = "4.0.0b1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fastmcp-slim", extra = ["client", "server"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/15/e4/03878943f2308e391cb6fa644e9731ae667a43fdd10e943f49bcb212a119/fastmcp-4.0.0a2.tar.gz", hash = "sha256:85400ada91a87c3c31796b7deb3592a055d1623ef7f5417c05ff11688bbc4f3c", size = 41970107, upload-time = "2026-07-24T01:02:41.868Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/eb/fd/e513c524bb3e296203f65bd8e9e726e9236bd3b59315e7cbdeb095662c01/fastmcp-4.0.0b1.tar.gz", hash = "sha256:f98d69588a73e1672840558641d5d0f111e207baffe001f3465713a53ebb6b4c", size = 42065171, upload-time = "2026-07-28T21:18:15.312Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b4/03/5de3e24041f7ae3b7b98a6c4756c42af862ea6dd8a7b46a8cd2dca0055c4/fastmcp-4.0.0a2-py3-none-any.whl", hash = "sha256:4c66d02688330bc84a106b3b944b71cf4943d5cf1e009413d2c3195dac3ed376", size = 8037, upload-time = "2026-07-24T01:02:38.049Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/66/41b503ef852eff83f3f0c04f46cd1fc738c5374fd509384fc6b96e45918f/fastmcp-4.0.0b1-py3-none-any.whl", hash = "sha256:d66eb7b0763ffff2ae0fc573778ea25604dcb7e59769e5afaf9851a806eb1129", size = 8064, upload-time = "2026-07-28T21:18:12.688Z" },
 ]
 
 [[package]]
 name = "fastmcp-slim"
-version = "4.0.0a2"
+version = "4.0.0b1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mcp-types" },
@@ -1015,9 +1011,9 @@ dependencies = [
     { name = "rich" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4e/26/cc9a459f6abf5321eb73959c5cbc9884893eace1b855173c9832c9fa73a3/fastmcp_slim-4.0.0a2.tar.gz", hash = "sha256:9486717b1de8ddc624b48bc2bf66a9c451ad04052429b14b5a2add6c987e27cd", size = 649518, upload-time = "2026-07-24T01:01:12.134Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bc/33/f207166aac88c6d8be1b2a82c54fecd1e04b075ef12d027aa17b3134fc0f/fastmcp_slim-4.0.0b1.tar.gz", hash = "sha256:158efb25720e0cb301711146b2d05d181de95cd91fe70e87c251ad14b123d665", size = 660081, upload-time = "2026-07-28T21:17:50.171Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f3/87/d62fc901f167237e6266156031b790c36f848d5038ad268fabc35b2957c9/fastmcp_slim-4.0.0a2-py3-none-any.whl", hash = "sha256:325ae95e311f07a759a699aef5fb43b2c217f02e947f680ab6f928d4764edf56", size = 819056, upload-time = "2026-07-24T01:01:10.551Z" },
+    { url = "https://files.pythonhosted.org/packages/90/5d/fbe192d2ab50bb31b284fd0eb6c72d4347df7a57d836bee4f1973ffd1d7d/fastmcp_slim-4.0.0b1-py3-none-any.whl", hash = "sha256:dd907a3db5a2f479ca958c30157e227b4f7b340a56d333eb91de95719254597a", size = 827975, upload-time = "2026-07-28T21:17:48.747Z" },
 ]
 
 [package.optional-dependencies]
@@ -1195,15 +1191,15 @@ wheels = [
 
 [[package]]
 name = "genai-prices"
-version = "0.0.72"
+version = "0.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx2" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6f/c8/2549fa8ceaaf0bd61114cf392250a107be657233723bc4e65cb91dba934f/genai_prices-0.0.72.tar.gz", hash = "sha256:a7e481d0ea85922fcf48df6864f2491fc81a4f03dcf0ecbd9aa8c2c6d9fcdbe8", size = 82753, upload-time = "2026-07-22T21:11:03.997Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/30/4d/cc5a70b9ea9381d36fb8ba8792569009971f504131e7d1dbd2c9a6bed69b/genai_prices-0.1.0.tar.gz", hash = "sha256:a6e3386a1de1220a49ed080f6f136069f47b1e5ff2741706d405287afcbe20d7", size = 90982, upload-time = "2026-07-30T13:01:19.969Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/22/2e/1e2c31666f7e4e2d0327a80f1c920fd8764ccd27672c4bc389d79219ece6/genai_prices-0.0.72-py3-none-any.whl", hash = "sha256:21281d8df34d9bfbb736e0763a60ceda02226938cd47379ae437a44fcf8ba23d", size = 85238, upload-time = "2026-07-22T21:11:02.911Z" },
+    { url = "https://files.pythonhosted.org/packages/e8/56/a9dfac68e8b32a6f050a15ab62cc291803a3fb626f0bcb81a751704ecb97/genai_prices-0.1.0-py3-none-any.whl", hash = "sha256:337695a7d4d4f63bcd2ee91c3aa07e7b34b947745edafd6d1e47edfad3476d05", size = 95075, upload-time = "2026-07-30T13:01:18.917Z" },
 ]
 
 [[package]]
@@ -2077,7 +2073,7 @@ wheels = [
 
 [[package]]
 name = "mcp"
-version = "2.0.0b2"
+version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -2086,7 +2082,6 @@ dependencies = [
     { name = "mcp-types" },
     { name = "opentelemetry-api" },
     { name = "pydantic" },
-    { name = "pydantic-settings" },
     { name = "pyjwt", extra = ["crypto"] },
     { name = "python-multipart" },
     { name = "pywin32", marker = "sys_platform == 'win32'" },
@@ -2096,22 +2091,22 @@ dependencies = [
     { name = "typing-inspection" },
     { name = "uvicorn", marker = "sys_platform != 'emscripten'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a1/aa/c5d38e0199304494be6370667d04d93d8681d9bdc864d56678250dbd3f3b/mcp-2.0.0b2.tar.gz", hash = "sha256:0528d0d38ae798fbff251616ec687faaaa8f5309571e0b2bc553c530fa10b8b1", size = 1590650, upload-time = "2026-07-14T16:47:57.897Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/74/33/32d4dff2c95bb5d897c3ef4c83649a08996b17b58f0a326d2495d4c81179/mcp-2.0.0.tar.gz", hash = "sha256:0f440e735c13ece8bb19bc62cf0b86f4313448432fbb77d35e14034f4e050728", size = 1662284, upload-time = "2026-07-28T13:45:32.346Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a7/90/187d6283a304acc6954987992ef17e2515739a649f148dc8b67b302e1bbd/mcp-2.0.0b2-py3-none-any.whl", hash = "sha256:9c50ae5afa08960ab76d50aa3adab3184952d9bea7ef87f4a4a5ba68bdefcf0a", size = 334286, upload-time = "2026-07-14T16:47:54.768Z" },
+    { url = "https://files.pythonhosted.org/packages/67/72/7d7897418912c1d12e87556630dfb7bf0eac71160e9bef8b447960804ee3/mcp-2.0.0-py3-none-any.whl", hash = "sha256:1cb4c75d2d2c7b8c1d756355e5d82a39f2822cc7f13e22a2051d7ca3592349d6", size = 349980, upload-time = "2026-07-28T13:45:28.853Z" },
 ]
 
 [[package]]
 name = "mcp-types"
-version = "2.0.0b2"
+version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ad/21/db529130ac8edd1d844fc322862afeceaf2b7f610a591fa528002b022e07/mcp_types-2.0.0b2.tar.gz", hash = "sha256:094fa7160106819ab39a1586179c3a9f070bfd833d0a6f8fcb30a54a986cc402", size = 65877, upload-time = "2026-07-14T16:47:59.198Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bb/56/9b8e1c152f61f6c6b07c4b5896c88c7d0ae90bac6ee6306f852fcc5c1eb0/mcp_types-2.0.0.tar.gz", hash = "sha256:d7d939b9285c9961ae8866ba75ef85da34d12bafe276efbf4eb6a131786d8379", size = 66632, upload-time = "2026-07-28T13:45:33.804Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1e/e1/c466ceacdaa929396d35ad45176398acd0c416fead0970d3ad22618a19d7/mcp_types-2.0.0b2-py3-none-any.whl", hash = "sha256:35c9c33abb90a77dc6ad1daecaa6407c788c2f32d14d52dad8f843c4f008eae2", size = 68944, upload-time = "2026-07-14T16:47:56.493Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/4c/c78d78c3d52b0ac594ad7cc8ef5972adfe070e3597a8a4c6ce0cd39196ea/mcp_types-2.0.0-py3-none-any.whl", hash = "sha256:6b2de797ca2797f568b79529e1b25948e34de511bcc0bd82fef1039a6d1b8eb0", size = 69649, upload-time = "2026-07-28T13:45:30.713Z" },
 ]
 
 [[package]]
@@ -2774,7 +2769,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastmcp", specifier = "==4.0.0a2" },
+    { name = "fastmcp", specifier = "==4.0.0b1" },
     { name = "logfire", marker = "extra == 'logfire'" },
     { name = "prefect", specifier = ">=3.4.22" },
 ]
@@ -3262,16 +3257,16 @@ email = [
 
 [[package]]
 name = "pydantic-ai"
-version = "2.18.1.dev8+184c3bbd"
-source = { git = "https://github.com/pydantic/pydantic-ai.git?branch=codex%2Fissue-6661-fastmcp-4-alpha#184c3bbd7c96bdfea9a7df18ad794e6899878c0e" }
+version = "2.21.1.dev18+43e87cd8"
+source = { git = "https://github.com/pydantic/pydantic-ai.git?branch=codex%2Fissue-6661-fastmcp-4-alpha#43e87cd8ed29d32543ee471f1aa8a9e4c7652dec" }
 dependencies = [
     { name = "pydantic-ai-slim", extra = ["anthropic", "cli", "evals", "google", "logfire", "mcp", "openai", "retries", "web"] },
 ]
 
 [[package]]
 name = "pydantic-ai-slim"
-version = "2.18.1.dev8+184c3bbd"
-source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_ai_slim&branch=codex%2Fissue-6661-fastmcp-4-alpha#184c3bbd7c96bdfea9a7df18ad794e6899878c0e" }
+version = "2.21.1.dev18+43e87cd8"
+source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_ai_slim&branch=codex%2Fissue-6661-fastmcp-4-alpha#43e87cd8ed29d32543ee471f1aa8a9e4c7652dec" }
 dependencies = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "genai-prices" },
@@ -3437,8 +3432,8 @@ wheels = [
 
 [[package]]
 name = "pydantic-evals"
-version = "2.18.1.dev8+184c3bbd"
-source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_evals&branch=codex%2Fissue-6661-fastmcp-4-alpha#184c3bbd7c96bdfea9a7df18ad794e6899878c0e" }
+version = "2.21.1.dev18+43e87cd8"
+source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_evals&branch=codex%2Fissue-6661-fastmcp-4-alpha#43e87cd8ed29d32543ee471f1aa8a9e4c7652dec" }
 dependencies = [
     { name = "anyio" },
     { name = "logfire-api" },
@@ -3463,8 +3458,8 @@ wheels = [
 
 [[package]]
 name = "pydantic-graph"
-version = "2.18.1.dev8+184c3bbd"
-source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_graph&branch=codex%2Fissue-6661-fastmcp-4-alpha#184c3bbd7c96bdfea9a7df18ad794e6899878c0e" }
+version = "2.21.1.dev18+43e87cd8"
+source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_graph&branch=codex%2Fissue-6661-fastmcp-4-alpha#43e87cd8ed29d32543ee471f1aa8a9e4c7652dec" }
 dependencies = [
     { name = "httpx" },
     { name = "logfire-api" },

@@ -66,22 +66,21 @@ async def test_agent_reports_latest_prefect_release(
     await evaluate_response(
         f"""Does the response accurately summarize the authoritative latest Prefect OSS release?
 
-Expected version: {version}
-Expected release date: {released_on}
-Expected release title: {release["name"]}
-Expected source URL: {release["html_url"]}
+Required — the response must identify these:
+- Version: {version}
+- Release date: {released_on}
+- A summary of important user-facing changes, inventing none of them
+- A link to an official Prefect docs or GitHub release-notes page
+
 Authoritative release notes:
 {release["body"]}
 
-The response must identify the exact patch version and release date, and
-summarize important user-facing changes without inventing any.
-
-Judge only against the criteria above. In particular, do not fail the response
-for either of these, which are correct:
-- Naming the release title. It is part of the release metadata above even though
-  it does not appear in the body text.
-- Linking to a docs.prefect.io release-notes page. Any official Prefect docs or
-  GitHub release-notes URL is acceptable; the expected source URL above is not
-  the only permitted link.""",
+Judge only against the "Required" list above. The following are context for you,
+not requirements on the response — do not fail it over either one:
+- The release is titled "{release["name"]}". Stating it, abbreviating it, or
+  omitting it entirely are all acceptable; the prompt never asked for a title.
+- Any official Prefect docs or GitHub release-notes URL satisfies the link
+  requirement. A docs.prefect.io release-notes page is valid; {release["html_url"]}
+  is not the only permitted link.""",
         result.output,
     )
