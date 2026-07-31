@@ -57,8 +57,11 @@ async def test_all_prefect_tools_declare_submission_annotations(
 
     for tool in tools:
         assert tool.annotations is not None
+        assert tool.annotations.title
         assert tool.annotations.openWorldHint is False
-        assert tool.annotations.destructiveHint is False
+        assert tool.annotations.destructiveHint is (
+            tool.name == "execution_plans_publish"
+        )
         assert tool.annotations.readOnlyHint is (tool.name != "execution_plans_publish")
 
 

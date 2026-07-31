@@ -13,14 +13,15 @@ The server gives MCP clients read-only tools for inspecting Prefect Cloud and se
 
 | Use case | Recommended setup | Authentication |
 | --- | --- | --- |
-| Claude Code or Codex on your machine | Prefect plugin for your client | Active local Prefect profile |
+| Claude Code or Codex | Prefect plugin for your client | Prefect Cloud OAuth |
+| Claude Tag or Cowork | The same Prefect plugin | Organization-managed Prefect Cloud OAuth |
 | Local MCP client | `uvx` stdio server | Active local Prefect profile or env vars |
 | Self-hosted Prefect or custom Cloud workspace | Self-hosted HTTP or stdio server | API key, basic auth, env vars, or headers |
 | Team-operated shared server | HTTP deployment with per-request headers | User or service-account credentials in headers |
 
 ## Claude Code Plugin
 
-The easiest local setup for Claude Code is the Prefect plugin:
+The easiest setup for Claude Code is the Prefect plugin:
 
 ```bash
 # add from marketplace
@@ -30,15 +31,18 @@ The easiest local setup for Claude Code is the Prefect plugin:
 /plugin install prefect
 ```
 
-This installs the MCP server for read-only diagnostics and current release notes,
-plus a CLI skill for mutations like triggering deployments or cancelling runs.
+This connects Claude to Prefect's hosted, read-only MCP server for diagnostics,
+documentation, and current release notes. Claude opens Prefect Cloud OAuth during
+installation so you can select the workspaces it may access.
 
 > [!NOTE]
-> The plugin uses your local Prefect configuration from `~/.prefect/profiles.toml`. For explicit credentials, use the local `uvx` setup below.
+> The plugin does not read `~/.prefect/profiles.toml` or require a local Prefect
+> installation. For self-hosted Prefect or explicit credentials, use the local
+> `uvx` setup below.
 
 ## Codex Plugin
 
-The same MCP server and CLI skill are available as a Codex plugin:
+The same hosted MCP server and workflow guidance are available as a Codex plugin:
 
 ```bash
 # add from marketplace
@@ -48,8 +52,15 @@ codex plugin marketplace add prefecthq/prefect-mcp-server
 codex plugin add prefect@prefect
 ```
 
-Like the Claude Code plugin, the Codex plugin uses your local Prefect profile and
-does not require credentials in its plugin configuration.
+Like the Claude Code plugin, Codex authenticates directly with Prefect Cloud OAuth.
+The plugin contains no API keys or placeholder credentials.
+
+The same plugin bundle is suitable for Cowork and Claude Tag because it references
+the hosted MCP URL instead of launching a process on the user's machine. Claude Tag
+administrators attach it and its Prefect credential to the appropriate Access bundle.
+
+Prefect's [privacy policy](https://www.prefect.io/legal/privacy-policy) and
+[terms and conditions](https://www.prefect.io/legal/terms) apply to the hosted service.
 
 ## Run Locally
 
@@ -105,15 +116,15 @@ Deploy your own server when you need a custom Prefect API target, self-hosted Pr
 > For self-hosted deployments, environment variables are configured on the deployed MCP server, not in your MCP client configuration. The MCP host authenticates access to the MCP server, while this server uses the configured Prefect credentials to access Prefect.
 
 <details>
-<summary>Experimental Prefect Cloud OAuth MCP</summary>
+<summary>Hosted Prefect Cloud OAuth MCP</summary>
 
-Prefect is experimenting with a hosted Prefect Cloud MCP deployment that uses HTTP MCP OAuth instead of asking users to create or paste API keys. This is not the default setup path yet, and it is only available where Prefect Cloud MCP OAuth has been enabled.
+Prefect operates a hosted MCP deployment that uses HTTP MCP OAuth instead of asking users to create or paste API keys. This is the endpoint used by the Prefect plugin.
 
-When enabled, a user can add the hosted MCP URL to their client:
+A user can also add the hosted MCP URL directly to a compatible client:
 
 ```bash
-claude mcp add prefect-cloud \
-  --transport http https://prefect-cloud-mcp-server.fastmcp.app/mcp
+claude mcp add prefect \
+  --transport http https://prefect.fastmcp.app/mcp
 ```
 
 The MCP client discovers OAuth metadata from the server, opens a browser for Prefect Cloud authentication, and asks the user to choose the workspaces this MCP client may read. After authentication, the assistant can list the consented workspaces and call the same read-only Prefect tools against those workspaces.
@@ -152,7 +163,7 @@ from prefect_mcp_server.cloud_oauth import exchange_client_credentials_token
 
 token = await exchange_client_credentials_token()
 transport = StreamableHttpTransport(
-    url="https://prefect-cloud-mcp-server.fastmcp.app/mcp",
+    url="https://prefect.fastmcp.app/mcp",
     headers={"Authorization": f"Bearer {token.access_token}"},
 )
 
