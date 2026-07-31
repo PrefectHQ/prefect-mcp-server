@@ -556,16 +556,15 @@ CLOUD_TOOLS = (review_rate_limits,)
 CLOUD_OAUTH_TOOLS = (list_authorized_workspaces,)
 EXECUTION_PLAN_TOOLS = execution_plans.EXECUTION_PLAN_TOOLS
 
-READ_ONLY_TOOL_ANNOTATIONS = ToolAnnotations(
-    readOnlyHint=True,
-    openWorldHint=False,
-    destructiveHint=False,
-)
-PRIVATE_WRITE_TOOL_ANNOTATIONS = ToolAnnotations(
-    readOnlyHint=False,
-    openWorldHint=False,
-    destructiveHint=False,
-)
+
+def tool_annotations(tool: Any, *, read_only: bool) -> ToolAnnotations:
+    """Return directory-ready safety annotations for a registered tool."""
+    return ToolAnnotations(
+        title=tool.__name__.replace("_", " ").title(),
+        readOnlyHint=read_only,
+        openWorldHint=False,
+        destructiveHint=not read_only,
+    )
 
 
 async def openai_apps_challenge(_: Request) -> Response:
@@ -619,7 +618,7 @@ def build_prefect_mcp_server(
         server.mount(docs_proxy, namespace="docs")
 
     for tool in CORE_TOOLS:
-        server.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(tool)
+        server.tool(annotations=tool_annotations(tool, read_only=True))(tool)
 
     should_include_cloud_tools = (
         include_cloud_tools
@@ -628,17 +627,16 @@ def build_prefect_mcp_server(
     )
     if should_include_cloud_tools:
         for tool in CLOUD_TOOLS:
-            server.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(tool)
+            server.tool(annotations=tool_annotations(tool, read_only=True))(tool)
 
     if include_cloud_oauth_tools:
         for tool in CLOUD_OAUTH_TOOLS:
-            server.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)(tool)
+            server.tool(annotations=tool_annotations(tool, read_only=True))(tool)
 
     for tool in EXECUTION_PLAN_TOOLS:
-        annotations = (
-            PRIVATE_WRITE_TOOL_ANNOTATIONS
-            if tool is execution_plans.execution_plans_publish
-            else READ_ONLY_TOOL_ANNOTATIONS
+        annotations = tool_annotations(
+            tool,
+            read_only=tool is not execution_plans.execution_plans_publish,
         )
         server.tool(annotations=annotations)(tool)
 
