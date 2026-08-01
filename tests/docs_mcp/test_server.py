@@ -51,6 +51,7 @@ async def test_docs_mcp_server_has_documentation_tools(
 
         for tool in tools:
             assert tool.annotations is not None
+            assert tool.annotations.title
             assert tool.annotations.read_only_hint is True
             assert tool.annotations.open_world_hint is False
             assert tool.annotations.destructive_hint is False

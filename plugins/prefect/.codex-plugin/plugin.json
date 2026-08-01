@@ -1,7 +1,7 @@
 {
   "name": "prefect",
-  "version": "0.1.0+codex.20260721185029",
-  "description": "Prefect workflow orchestration - MCP tools for diagnostics and release notes, CLI guidance for mutations",
+  "version": "0.1.0+codex.20260731183019",
+  "description": "Prefect workflow orchestration - hosted MCP tools for diagnostics, documentation, and release notes",
   "author": {
     "name": "Prefect Technologies",
     "email": "help@prefect.io",
@@ -22,14 +22,15 @@
   "interface": {
     "displayName": "Prefect",
     "shortDescription": "Inspect and troubleshoot Prefect workflows",
-    "longDescription": "Inspect Prefect Cloud and self-hosted workflows, diagnose failed or late runs, look up current documentation and release notes, and use guided Prefect CLI workflows for mutations.",
+    "longDescription": "Inspect Prefect Cloud workflows, diagnose failed or late runs, and look up current documentation and release notes through Prefect's hosted MCP server.",
     "developerName": "Prefect Technologies",
     "category": "Engineering",
     "capabilities": [
-      "Read",
-      "Write"
+      "Read"
     ],
     "websiteURL": "https://www.prefect.io/",
+    "privacyPolicyURL": "https://www.prefect.io/legal/privacy-policy",
+    "termsOfServiceURL": "https://www.prefect.io/legal/terms",
     "defaultPrompt": [
       "Why did my latest Prefect flow run fail?",
       "Which Prefect runs are late or stuck?",

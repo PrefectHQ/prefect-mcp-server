@@ -36,7 +36,14 @@ logfire.instrument_openai(AsyncOpenAI)
 
 
 app = FastMCP("Prefect Docs MCP", version="0.1.0")
-READ_ONLY_TOOL_ANNOTATIONS = ToolAnnotations(
+SEARCH_TOOL_ANNOTATIONS = ToolAnnotations(
+    title="Search Prefect Documentation",
+    read_only_hint=True,
+    open_world_hint=False,
+    destructive_hint=False,
+)
+RELEASE_NOTES_TOOL_ANNOTATIONS = ToolAnnotations(
+    title="Get Prefect Release Notes",
     read_only_hint=True,
     open_world_hint=False,
     destructive_hint=False,
@@ -57,7 +64,7 @@ def _build_response(
     return payload
 
 
-@app.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
+@app.tool(annotations=SEARCH_TOOL_ANNOTATIONS)
 async def search_prefect(
     query: Annotated[
         str,
@@ -205,7 +212,7 @@ async def search_prefect(
     return response
 
 
-@app.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
+@app.tool(annotations=RELEASE_NOTES_TOOL_ANNOTATIONS)
 async def get_release_notes(
     version: Annotated[
         str,
