@@ -57,7 +57,12 @@ WorkspaceId = Annotated[
 
 
 def orientation() -> str:
-    """Use this tool to get oriented with the Prefect MCP server."""
+    """Explain which Prefect MCP tool to use for common Prefect operations.
+
+    Covers workspace inspection, failure diagnosis, documentation, release notes,
+    object schemas, and the separately gated execution-plan authoring tools.
+    Returns routing guidance only and does not access or modify Prefect data.
+    """
     return """
     Default Prefect inspection tools are read-only. For ordinary mutations, use the CLI.
 
