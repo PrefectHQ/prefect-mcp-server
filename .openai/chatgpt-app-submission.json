@@ -1,10 +1,10 @@
 {
-  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "$schema": "https://developers.openai.com/plugins/schemas/chatgpt-app-submission.v1.json",
   "schema_version": 1,
   "app_info": {
     "display_name": "Prefect",
     "subtitle": "Inspect Prefect workflows",
-    "description": "Prefect helps users inspect Prefect Cloud and self-hosted workflows, diagnose failed, late, or stuck runs, review workspace health and rate limits, and look up current Prefect documentation and release notes.",
+    "description": "Connect Prefect Cloud to inspect workflows, diagnose failed, late, or stuck runs, review workspace health and rate limits, and search current Prefect documentation and release notes. The hosted tools are read-only.",
     "category": "DEVELOPER_TOOLS"
   },
   "tools": {
@@ -203,19 +203,19 @@
   },
   "test_cases": [
     {
-      "description": "Diagnose a recent failed flow run from its state and execution logs.",
-      "user_prompt": "Why did my latest Prefect flow run fail?",
+      "description": "Inspect recent flow runs in any authorized Prefect Cloud workspace and explain failures when present.",
+      "user_prompt": "Summarize my recent Prefect flow runs and explain any failures you find.",
       "file_attachment_urls": null,
       "tools_triggered": "get_flow_runs, get_flow_run_logs",
-      "expected_output": "Identifies the latest failed run, summarizes the concrete failure from its logs, and suggests a relevant next diagnostic step.",
+      "expected_output": "Summarizes recent runs. If a failed run is present, retrieves its logs, explains the observed failure, and suggests a relevant next diagnostic step; otherwise, clearly reports that no failure was found.",
       "expected_output_url": null
     },
     {
-      "description": "Diagnose late or stuck runs using workspace and worker health.",
-      "user_prompt": "Which Prefect runs are late or stuck, and what is blocking them?",
+      "description": "Review workspace health in any authorized Prefect Cloud workspace, including the valid case where no problems are present.",
+      "user_prompt": "Check my Prefect workspace health and tell me whether any runs are late or stuck.",
       "file_attachment_urls": null,
       "tools_triggered": "get_dashboard, get_flow_runs, get_work_pools, get_deployments",
-      "expected_output": "Summarizes affected runs and correlates them with work-pool, queue, deployment, or concurrency-limit health.",
+      "expected_output": "Reports workspace and worker health. When late or stuck runs exist, correlates them with work-pool, queue, deployment, or concurrency-limit health; otherwise, clearly reports that none were found.",
       "expected_output_url": null
     },
     {
@@ -235,11 +235,11 @@
       "expected_output_url": null
     },
     {
-      "description": "Review Prefect Cloud throttling for a recent incident.",
-      "user_prompt": "Were Prefect Cloud rate limits responsible for our 429 errors during the last three days?",
+      "description": "Review recent Prefect Cloud throttling, including the valid case where no throttling occurred.",
+      "user_prompt": "Did Prefect Cloud throttle any of my API operations during the last 24 hours?",
       "file_attachment_urls": null,
       "tools_triggered": "review_rate_limits",
-      "expected_output": "Reports whether throttling occurred, the affected operation groups and periods, and the observed denial counts without changing account settings.",
+      "expected_output": "Reports whether throttling occurred. If present, identifies the affected operation groups, periods, and denial counts; otherwise, clearly reports that no throttling was observed. It does not change account settings.",
       "expected_output_url": null
     }
   ],

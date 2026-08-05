@@ -29,4 +29,8 @@ async def test_docs_proxy_tools_available(prefect_mcp_server: FastMCP) -> None:
 
 
 def test_orientation_routes_release_note_questions() -> None:
+    docstring = orientation.__doc__
+    assert docstring is not None
+    assert "which Prefect MCP tool to use" in docstring
+    assert "does not access or modify Prefect data" in docstring
     assert "docs_get_release_notes" in orientation()
