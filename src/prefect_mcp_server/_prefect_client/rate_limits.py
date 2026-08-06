@@ -1,6 +1,7 @@
 """Rate limits inspection for Prefect Cloud."""
 
 from datetime import datetime, timedelta, timezone
+from uuid import UUID
 
 from prefect_mcp_server._prefect_client.client import (
     get_prefect_client,
@@ -37,12 +38,15 @@ DEFAULT_KEYS = [
 async def get_rate_limits(
     since: datetime | None = None,
     until: datetime | None = None,
+    workspace_id: UUID | None = None,
 ) -> RateLimitsResult:
     """Get rate limit usage for the Cloud account across all common operation groups.
 
     Args:
         since: Start time for usage data (defaults to 3 days ago)
         until: End time for usage data (defaults to 1 minute ago)
+        workspace_id: Workspace to resolve the account from (required in
+            Prefect Cloud OAuth mode)
 
     Returns:
         RateLimitsResult with grouped throttling periods showing which operation
@@ -50,7 +54,7 @@ async def get_rate_limits(
         consecutive stretch of throttling
     """
     try:
-        async with get_prefect_client() as client:
+        async with get_prefect_client(workspace_id=workspace_id) as client:
             api_url = str(client.api_url)
 
             # Extract account_id from Cloud API URL
@@ -65,7 +69,9 @@ async def get_rate_limits(
             if until is None:
                 until = datetime.now(timezone.utc) - timedelta(minutes=1)
 
-            async with get_prefect_cloud_client() as cloud_client:
+            async with get_prefect_cloud_client(
+                workspace_id=workspace_id
+            ) as cloud_client:
                 # Query all keys in one request
                 params = {
                     "since": since.isoformat(),
