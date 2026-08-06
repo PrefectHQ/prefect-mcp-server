@@ -2,8 +2,12 @@
 
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, patch
+from uuid import UUID
+
+from fastmcp import Client
 
 from prefect_mcp_server._prefect_client.rate_limits import get_rate_limits
+from prefect_mcp_server.server import build_prefect_mcp_server
 
 
 async def test_get_rate_limits_empty_response() -> None:
@@ -816,3 +820,56 @@ async def test_get_rate_limits_handles_errors() -> None:
     assert result["account_id"] is None
     assert result["summary"] is None
     assert result["throttling_periods"] is None
+
+
+async def test_get_rate_limits_passes_workspace_id_to_clients() -> None:
+    """workspace_id must reach both clients so OAuth mode can scope the request."""
+    workspace_id = UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+
+    mock_client = AsyncMock()
+    mock_client.api_url = (
+        f"https://api.prefect.cloud/api/accounts/abc-123/workspaces/{workspace_id}"
+    )
+
+    mock_cloud_client = AsyncMock()
+    mock_cloud_client.get = AsyncMock(
+        return_value={
+            "account": "abc-123",
+            "since": "2025-09-30T00:00:00Z",
+            "until": "2025-10-01T00:00:00Z",
+            "minutes": [],
+            "keys": {},
+        }
+    )
+
+    with (
+        patch(
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_client"
+        ) as mock_get_client,
+        patch(
+            "prefect_mcp_server._prefect_client.rate_limits.get_prefect_cloud_client"
+        ) as mock_get_cloud_client,
+    ):
+        mock_get_client.return_value.__aenter__.return_value = mock_client
+        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
+        mock_get_cloud_client.return_value.__aexit__.return_value = None
+
+        result = await get_rate_limits(workspace_id=workspace_id)
+
+    assert result["success"] is True
+    mock_get_client.assert_called_once_with(workspace_id=workspace_id)
+    mock_get_cloud_client.assert_called_once_with(workspace_id=workspace_id)
+
+
+async def test_review_rate_limits_tool_accepts_workspace_id() -> None:
+    """The MCP tool schema must expose workspace_id for OAuth mode."""
+    server = build_prefect_mcp_server(
+        include_docs_proxy=False,
+        include_cloud_tools=True,
+    )
+
+    async with Client(server) as client:
+        tools = {tool.name: tool for tool in await client.list_tools()}
+
+    schema = tools["review_rate_limits"].inputSchema
+    assert "workspace_id" in schema["properties"]
