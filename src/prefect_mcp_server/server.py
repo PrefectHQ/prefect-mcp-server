@@ -500,6 +500,7 @@ async def get_object_schema(
 
 
 async def review_rate_limits(
+    workspace_id: WorkspaceId | None = None,
     since: Annotated[
         datetime | None,
         Field(
@@ -539,7 +540,9 @@ async def review_rate_limits(
         - Check recent throttling: review_rate_limits()
         - Custom time range: review_rate_limits(since="2025-09-30T00:00:00Z", until="2025-10-01T00:00:00Z")
     """
-    return await _prefect_client.get_rate_limits(since=since, until=until)
+    return await _prefect_client.get_rate_limits(
+        since=since, until=until, workspace_id=workspace_id
+    )
 
 
 CORE_TOOLS = (

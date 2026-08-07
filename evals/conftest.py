@@ -13,7 +13,7 @@ Environment Variables:
         - Default for anthropic: "anthropic:claude-sonnet-4-5"
         - Default for openai: "openai:gpt-4.1"
 
-    EVALUATOR_MODEL: Override default evaluator model (default: "anthropic:claude-opus-4-1-20250805")
+    EVALUATOR_MODEL: Override default evaluator model (default: "anthropic:claude-opus-5")
 """
 
 import os
@@ -221,9 +221,7 @@ def evaluate_response() -> Callable[[str, str], Awaitable[None]]:
         Raises:
             AssertionError: If evaluation fails, with explanation
         """
-        evaluator_model = os.getenv(
-            "EVALUATOR_MODEL", "anthropic:claude-opus-4-1-20250805"
-        )
+        evaluator_model = os.getenv("EVALUATOR_MODEL", "anthropic:claude-opus-5")
         evaluator = Agent(
             name="Response Evaluator",
             model=evaluator_model,
