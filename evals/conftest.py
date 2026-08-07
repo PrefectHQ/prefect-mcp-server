@@ -221,9 +221,7 @@ def evaluate_response() -> Callable[[str, str], Awaitable[None]]:
         Raises:
             AssertionError: If evaluation fails, with explanation
         """
-        evaluator_model = os.getenv(
-            "EVALUATOR_MODEL", "anthropic:claude-opus-5"
-        )
+        evaluator_model = os.getenv("EVALUATOR_MODEL", "anthropic:claude-opus-5")
         evaluator = Agent(
             name="Response Evaluator",
             model=evaluator_model,
