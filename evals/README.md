@@ -36,7 +36,7 @@ MODEL_PROVIDER=openai just evals
 SIMPLE_AGENT_MODEL=openai:gpt-4o REASONING_AGENT_MODEL=openai:gpt-4.1 just evals
 
 # override just one model
-REASONING_AGENT_MODEL=anthropic:claude-opus-4-1-20250805 just evals
+REASONING_AGENT_MODEL=anthropic:claude-opus-5 just evals
 ```
 
 Provider defaults:
