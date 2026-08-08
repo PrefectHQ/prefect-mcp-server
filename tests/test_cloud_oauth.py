@@ -210,7 +210,7 @@ async def test_cloud_oauth_server_includes_oauth_workspace_tools(
     assert "get_identity" in tool_names
     assert "get_flow_runs" in tool_names
     assert "list_authorized_workspaces" in tool_names
-    assert "review_rate_limits" in tool_names
+    assert "review_rate_limits" not in tool_names
 
 
 def test_cloud_oauth_server_requires_oauth_configuration(

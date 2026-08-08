@@ -633,7 +633,10 @@ def build_prefect_mcp_server(
         if include_cloud_tools is not None
         else determine_server_type() == ServerType.CLOUD or cloud_oauth.settings.enabled
     )
-    if should_include_cloud_tools:
+    # Browser-issued Cloud OAuth grants are restricted to workspace-scoped API
+    # paths. Account-level tools remain available to direct Cloud connections,
+    # but must not be advertised by the hosted OAuth server.
+    if should_include_cloud_tools and not include_cloud_oauth_tools:
         for tool in CLOUD_TOOLS:
             server.tool(annotations=tool_annotations(tool, read_only=True))(tool)
 
