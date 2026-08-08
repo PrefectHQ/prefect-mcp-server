@@ -7,7 +7,6 @@ from uuid import UUID
 import pytest
 from fastmcp import Client
 from fastmcp.server.auth.providers.jwt import JWTVerifier
-from prefect.client.cloud import CloudUnauthorizedError
 from starlette.applications import Starlette
 from starlette.testclient import TestClient
 
@@ -130,24 +129,13 @@ async def test_get_identity_describes_oauth_grant_without_workspace() -> None:
     )
 
 
-async def test_get_identity_describes_service_account_oauth_grant_with_workspace() -> (
-    None
-):
+async def test_get_identity_with_workspace_never_calls_account_endpoints() -> None:
+    """OAuth tokens are workspace-scoped; account-level endpoints return 403."""
     workspace = cloud_oauth.WorkspaceRef(
         account_id=ACCOUNT_ID,
         account_handle="acme",
         workspace_id=WORKSPACE_ID,
         workspace_handle="prod",
-    )
-    mock_client = AsyncMock()
-    mock_client.api_url = (
-        f"https://api.prefect.cloud/api/accounts/{ACCOUNT_ID}/workspaces/{WORKSPACE_ID}"
-    )
-    mock_cloud_client = AsyncMock()
-    mock_cloud_client.get = AsyncMock(
-        side_effect=CloudUnauthorizedError(
-            "Only users (not service accounts) can access this endpoint."
-        )
     )
 
     with (
@@ -172,11 +160,10 @@ async def test_get_identity_describes_service_account_oauth_grant_with_workspace
             AsyncMock(return_value=[workspace]),
         ) as mock_list_authorized_workspaces,
     ):
-        mock_get_client.return_value.__aenter__.return_value = mock_client
-        mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
-        mock_get_cloud_client.return_value.__aexit__.return_value = None
-
         result = await get_identity(workspace_id=WORKSPACE_ID)
+
+    mock_get_client.assert_not_called()
+    mock_get_cloud_client.assert_not_called()
 
     assert result["success"] is True
     assert result["identity"] == {

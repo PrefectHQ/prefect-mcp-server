@@ -2,8 +2,6 @@
 
 from uuid import UUID
 
-from prefect.client.cloud import CloudUnauthorizedError
-
 from prefect_mcp_server import cloud_oauth
 from prefect_mcp_server._prefect_client.client import (
     get_prefect_client,
@@ -51,8 +49,13 @@ async def get_identity(workspace_id: UUID | None = None) -> IdentityResult:
     """Get identity and connection information for the current Prefect instance."""
     try:
         access_token = cloud_oauth.current_oauth_access_token()
-        if workspace_id is None and cloud_oauth.settings.enabled and access_token:
-            identity = await _get_cloud_oauth_identity(access_token)
+        if cloud_oauth.settings.enabled and access_token:
+            # OAuth tokens are workspace-scoped and cannot call account-level
+            # endpoints like /me/ or /accounts/{id}, so always describe the
+            # grant instead of fetching full Cloud identity.
+            identity = await _get_cloud_oauth_identity(
+                access_token, workspace_id=workspace_id
+            )
             return {
                 "success": True,
                 "identity": identity,
@@ -73,19 +76,7 @@ async def get_identity(workspace_id: UUID | None = None) -> IdentityResult:
                     workspace_id=workspace_id
                 ) as cloud_client:
                     # Get user info from /me/ endpoint
-                    try:
-                        me_data = await cloud_client.get("/me/")
-                    except CloudUnauthorizedError:
-                        if cloud_oauth.settings.enabled and access_token:
-                            identity = await _get_cloud_oauth_identity(
-                                access_token, workspace_id=workspace_id
-                            )
-                            return {
-                                "success": True,
-                                "identity": identity,
-                                "error": None,
-                            }
-                        raise
+                    me_data = await cloud_client.get("/me/")
 
                     user_info: UserInfo = {
                         "id": str(me_data.get("id")) if me_data.get("id") else None,
