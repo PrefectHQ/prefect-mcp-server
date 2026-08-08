@@ -14,8 +14,8 @@ members = [
     "ingestion-pipeline",
     "prefect-mcp",
 ]
-constraints = [{ name = "fastmcp-slim", specifier = "==4.0.0b1" }]
-overrides = [{ name = "fastmcp-slim", extras = ["client", "server"], specifier = ">=4.0.0b1" }]
+constraints = [{ name = "fastmcp-slim", specifier = "==4.0.0b2" }]
+overrides = [{ name = "fastmcp-slim", extras = ["client", "server"], specifier = ">=4.0.0b2" }]
 
 [[package]]
 name = "aiofile"
@@ -911,7 +911,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastmcp", specifier = "==4.0.0b1" },
+    { name = "fastmcp", specifier = "==4.0.0b2" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "logfire", specifier = ">=4.9.0" },
     { name = "openai", specifier = ">=1.109.1" },
@@ -988,19 +988,19 @@ wheels = [
 
 [[package]]
 name = "fastmcp"
-version = "4.0.0b1"
+version = "4.0.0b2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fastmcp-slim", extra = ["client", "server"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/eb/fd/e513c524bb3e296203f65bd8e9e726e9236bd3b59315e7cbdeb095662c01/fastmcp-4.0.0b1.tar.gz", hash = "sha256:f98d69588a73e1672840558641d5d0f111e207baffe001f3465713a53ebb6b4c", size = 42065171, upload-time = "2026-07-28T21:18:15.312Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/08/b1/a9270d6ddcfc85c26d0d5de8174c4c55abe28d1143b2bc5a78bbdb72c40e/fastmcp-4.0.0b2.tar.gz", hash = "sha256:e0f272a2677da9e3683c55e3274ceccdf9026116abc3bc8c6a56aa0ae6a323ce", size = 42134183, upload-time = "2026-08-07T00:18:24.453Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2c/66/41b503ef852eff83f3f0c04f46cd1fc738c5374fd509384fc6b96e45918f/fastmcp-4.0.0b1-py3-none-any.whl", hash = "sha256:d66eb7b0763ffff2ae0fc573778ea25604dcb7e59769e5afaf9851a806eb1129", size = 8064, upload-time = "2026-07-28T21:18:12.688Z" },
+    { url = "https://files.pythonhosted.org/packages/96/2f/535f9d1d6d2e5ba0e64d2e56ab92eb71dc6cd37af21f65696e566a8a6ad4/fastmcp-4.0.0b2-py3-none-any.whl", hash = "sha256:367eaf66444116b95c148cade3300f42b12c667ce38463743574c8c948fb5baf", size = 8086, upload-time = "2026-08-07T00:18:20.106Z" },
 ]
 
 [[package]]
 name = "fastmcp-slim"
-version = "4.0.0b1"
+version = "4.0.0b2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mcp-types" },
@@ -1011,9 +1011,9 @@ dependencies = [
     { name = "rich" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bc/33/f207166aac88c6d8be1b2a82c54fecd1e04b075ef12d027aa17b3134fc0f/fastmcp_slim-4.0.0b1.tar.gz", hash = "sha256:158efb25720e0cb301711146b2d05d181de95cd91fe70e87c251ad14b123d665", size = 660081, upload-time = "2026-07-28T21:17:50.171Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/ec/c7d2f91ea6027fa92240ba25bb0d7601b9e1f5f5e69f079bb0ee203df403/fastmcp_slim-4.0.0b2.tar.gz", hash = "sha256:b222d52c4883695f2bafb973c6fd55694bbcc8eaaa64886ebb2168d0267add3c", size = 664066, upload-time = "2026-08-07T00:16:24.158Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/90/5d/fbe192d2ab50bb31b284fd0eb6c72d4347df7a57d836bee4f1973ffd1d7d/fastmcp_slim-4.0.0b1-py3-none-any.whl", hash = "sha256:dd907a3db5a2f479ca958c30157e227b4f7b340a56d333eb91de95719254597a", size = 827975, upload-time = "2026-07-28T21:17:48.747Z" },
+    { url = "https://files.pythonhosted.org/packages/7b/45/3aabf3cc93cda2e3ad580f75eba771371b4434bb7364be2781e3e5823bdc/fastmcp_slim-4.0.0b2-py3-none-any.whl", hash = "sha256:b96c96372713a2d1d504cc2913549a0201b985add128ddd5a5520faff6bc28ff", size = 833078, upload-time = "2026-08-07T00:16:22.717Z" },
 ]
 
 [package.optional-dependencies]
@@ -2769,7 +2769,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastmcp", specifier = "==4.0.0b1" },
+    { name = "fastmcp", specifier = "==4.0.0b2" },
     { name = "logfire", marker = "extra == 'logfire'" },
     { name = "prefect", specifier = ">=3.4.22" },
 ]
@@ -2780,7 +2780,7 @@ dev = [
     { name = "docs-mcp-server", editable = "packages/docs_mcp_server" },
     { name = "ipython" },
     { name = "pre-commit", specifier = ">=4.3.0" },
-    { name = "pydantic-ai", git = "https://github.com/pydantic/pydantic-ai.git?branch=codex%2Fissue-6661-fastmcp-4-alpha" },
+    { name = "pydantic-ai", git = "https://github.com/pydantic/pydantic-ai.git?rev=fe724b467946e48865510e61a17ff0326137d209" },
     { name = "pytest-asyncio", specifier = ">=0.21.0" },
     { name = "pytest-env", specifier = ">=1.2.0" },
     { name = "pytest-recording", specifier = ">=0.13.4" },
@@ -3257,17 +3257,18 @@ email = [
 
 [[package]]
 name = "pydantic-ai"
-version = "2.21.1.dev18+43e87cd8"
-source = { git = "https://github.com/pydantic/pydantic-ai.git?branch=codex%2Fissue-6661-fastmcp-4-alpha#43e87cd8ed29d32543ee471f1aa8a9e4c7652dec" }
+version = "2.23.1.dev36+fe724b46"
+source = { git = "https://github.com/pydantic/pydantic-ai.git?rev=fe724b467946e48865510e61a17ff0326137d209#fe724b467946e48865510e61a17ff0326137d209" }
 dependencies = [
     { name = "pydantic-ai-slim", extra = ["anthropic", "cli", "evals", "google", "logfire", "mcp", "openai", "retries", "web"] },
 ]
 
 [[package]]
 name = "pydantic-ai-slim"
-version = "2.21.1.dev18+43e87cd8"
-source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_ai_slim&branch=codex%2Fissue-6661-fastmcp-4-alpha#43e87cd8ed29d32543ee471f1aa8a9e4c7652dec" }
+version = "2.23.1.dev36+fe724b46"
+source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_ai_slim&rev=fe724b467946e48865510e61a17ff0326137d209#fe724b467946e48865510e61a17ff0326137d209" }
 dependencies = [
+    { name = "anyio" },
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "genai-prices" },
     { name = "griffelib" },
@@ -3432,8 +3433,8 @@ wheels = [
 
 [[package]]
 name = "pydantic-evals"
-version = "2.21.1.dev18+43e87cd8"
-source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_evals&branch=codex%2Fissue-6661-fastmcp-4-alpha#43e87cd8ed29d32543ee471f1aa8a9e4c7652dec" }
+version = "2.23.1.dev36+fe724b46"
+source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_evals&rev=fe724b467946e48865510e61a17ff0326137d209#fe724b467946e48865510e61a17ff0326137d209" }
 dependencies = [
     { name = "anyio" },
     { name = "logfire-api" },
@@ -3458,9 +3459,10 @@ wheels = [
 
 [[package]]
 name = "pydantic-graph"
-version = "2.21.1.dev18+43e87cd8"
-source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_graph&branch=codex%2Fissue-6661-fastmcp-4-alpha#43e87cd8ed29d32543ee471f1aa8a9e4c7652dec" }
+version = "2.23.1.dev36+fe724b46"
+source = { git = "https://github.com/pydantic/pydantic-ai.git?subdirectory=pydantic_graph&rev=fe724b467946e48865510e61a17ff0326137d209#fe724b467946e48865510e61a17ff0326137d209" }
 dependencies = [
+    { name = "anyio" },
     { name = "httpx" },
     { name = "logfire-api" },
     { name = "pydantic" },

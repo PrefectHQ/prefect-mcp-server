@@ -5,7 +5,7 @@ readme = "README.md"
 dynamic = ["version"]
 authors = [{ name = "Prefect Technologies", email = "help@prefect.io" }]
 requires-python = ">=3.10"
-dependencies = ["fastmcp==4.0.0b1", "prefect>=3.4.22"]
+dependencies = ["fastmcp==4.0.0b2", "prefect>=3.4.22"]
 
 
 [project.scripts]
@@ -73,14 +73,13 @@ extend-select = ["I", "UP"]
 [tool.uv]
 # fastmcp 4.0.0b1 dropped the exact `mcp==2.0.0b2` pin its alphas carried, and mcp /
 # mcp-types are stable at 2.0.0, so only the prerelease opt-in for fastmcp-slim remains.
-constraint-dependencies = ["fastmcp-slim==4.0.0b1"]
-# pydantic-ai still ships `fastmcp-slim[client]<4` (pydantic/pydantic-ai#6737). The v4
-# compat code lands in #6738 but that PR intentionally leaves the cap in place, so
-# lifting it here is what lets us exercise the branch. Drop both this override and the
-# git sources below once the follow-up widens the range upstream.
+constraint-dependencies = ["fastmcp-slim==4.0.0b2"]
+# Released pydantic-ai still caps `fastmcp-slim[client]<4`, so this override is what
+# lets the pinned revision below resolve against FastMCP 4. Drop it, and the git
+# sources, once a pydantic-ai release carries the widened range.
 # The extras must match what `fastmcp` itself asks for — an override replaces every
 # requirement on the package, so narrowing to [client] here strips server support.
-override-dependencies = ["fastmcp-slim[client,server]>=4.0.0b1"]
+override-dependencies = ["fastmcp-slim[client,server]>=4.0.0b2"]
 
 [tool.uv.workspace]
 members = [
@@ -90,7 +89,10 @@ members = [
 
 [tool.uv.sources]
 docs-mcp-server = { workspace = true }
-pydantic-ai = { git = "https://github.com/pydantic/pydantic-ai.git", branch = "codex/issue-6661-fastmcp-4-alpha" }
-pydantic-ai-slim = { git = "https://github.com/pydantic/pydantic-ai.git", subdirectory = "pydantic_ai_slim", branch = "codex/issue-6661-fastmcp-4-alpha" }
+# Pinned to an exact revision of pydantic/pydantic-ai#6738 rather than its branch: a
+# branch ref moves under CI, so the same commit here could build differently from one
+# run to the next. Bump this SHA deliberately when picking up upstream changes.
+pydantic-ai = { git = "https://github.com/pydantic/pydantic-ai.git", rev = "fe724b467946e48865510e61a17ff0326137d209" }
+pydantic-ai-slim = { git = "https://github.com/pydantic/pydantic-ai.git", subdirectory = "pydantic_ai_slim", rev = "fe724b467946e48865510e61a17ff0326137d209" }
 # "__init__.py" = ["F401", "I001", "RUF013"]
 # "src/prefect_mcp_server/__init__.py" = ["E402"]
