@@ -233,19 +233,19 @@
   ],
   "negative_test_cases": [
     {
-      "description": "Do not invoke read-only MCP tools to trigger a deployment.",
-      "user_prompt": "Trigger my production Prefect deployment now.",
+      "description": "Do not invoke Prefect for a GitHub Actions deployment request.",
+      "user_prompt": "Trigger my production GitHub Actions workflow now.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "The app should not invoke an MCP tool because the server is read-only; it should explain that the Prefect CLI is required for this mutation.",
+      "expected_output": "The Prefect app should not be invoked because the request concerns GitHub Actions rather than Prefect.",
       "expected_output_url": null
     },
     {
-      "description": "Do not invoke read-only MCP tools to cancel or delete a run.",
-      "user_prompt": "Cancel and delete this Prefect flow run.",
+      "description": "Do not invoke Prefect for logs from a local Docker container.",
+      "user_prompt": "Show me the logs from my local Docker container.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "The app should not invoke an MCP tool because cancellation and deletion are mutations; it should direct the user to the Prefect CLI.",
+      "expected_output": "The Prefect app should not be invoked because local Docker logs are outside its supported Prefect workspace data; ChatGPT may explain how to use docker logs.",
       "expected_output_url": null
     },
     {
