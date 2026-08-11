@@ -4,7 +4,7 @@
   "app_info": {
     "display_name": "Prefect",
     "subtitle": "Inspect Prefect workflows",
-    "description": "Connect Prefect Cloud to inspect workflows, diagnose failed, late, or stuck runs, review workspace health and rate limits, and search current Prefect documentation and release notes. The hosted tools are read-only.",
+    "description": "Connect Prefect Cloud to inspect workflows, diagnose failed, late, or stuck runs, review workspace and worker health, and search current Prefect documentation and release notes. The hosted tools are read-only.",
     "category": "DEVELOPER_TOOLS"
   },
   "tools": {
@@ -152,18 +152,6 @@
         "destructive_justification": "Does not delete, overwrite, revoke, or otherwise modify data."
       }
     },
-    "review_rate_limits": {
-      "annotations": {
-        "readOnlyHint": true,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Retrieves Prefect Cloud rate-limit usage and throttling periods without changing account limits.",
-        "open_world_justification": "Only reads private Prefect Cloud account telemetry and does not publish externally.",
-        "destructive_justification": "Does not modify limits, usage records, or account configuration."
-      }
-    },
     "list_authorized_workspaces": {
       "annotations": {
         "readOnlyHint": true,
@@ -203,24 +191,24 @@
   },
   "test_cases": [
     {
-      "description": "Inspect recent flow runs in any authorized Prefect Cloud workspace and explain failures when present.",
-      "user_prompt": "Summarize my recent Prefect flow runs and explain any failures you find.",
+      "description": "List recent flow runs from a Prefect Cloud workspace selected during OAuth consent.",
+      "user_prompt": "Using the first Prefect workspace I authorized, list my five most recent flow runs and summarize their states.",
       "file_attachment_urls": null,
-      "tools_triggered": "get_flow_runs, get_flow_run_logs",
-      "expected_output": "Summarizes recent runs. If a failed run is present, retrieves its logs, explains the observed failure, and suggests a relevant next diagnostic step; otherwise, clearly reports that no failure was found.",
+      "tools_triggered": "list_authorized_workspaces, get_flow_runs",
+      "expected_output": "Selects an authorized workspace, then returns up to five recent flow runs with their names, states, and relevant timestamps; if no runs exist, clearly says so.",
       "expected_output_url": null
     },
     {
-      "description": "Review workspace health in any authorized Prefect Cloud workspace, including the valid case where no problems are present.",
-      "user_prompt": "Check my Prefect workspace health and tell me whether any runs are late or stuck.",
+      "description": "Retrieve a high-level health dashboard for a Prefect Cloud workspace selected during OAuth consent.",
+      "user_prompt": "Using the first Prefect workspace I authorized, show me a high-level health summary.",
       "file_attachment_urls": null,
-      "tools_triggered": "get_dashboard, get_flow_runs, get_work_pools, get_deployments",
-      "expected_output": "Reports workspace and worker health. When late or stuck runs exist, correlates them with work-pool, queue, deployment, or concurrency-limit health; otherwise, clearly reports that none were found.",
+      "tools_triggered": "list_authorized_workspaces, get_dashboard",
+      "expected_output": "Selects an authorized workspace, then summarizes flow-run states, work-pool status, and active concurrency limits from the dashboard response.",
       "expected_output_url": null
     },
     {
       "description": "Retrieve the latest authoritative Prefect OSS release notes.",
-      "user_prompt": "What changed in the latest Prefect release?",
+      "user_prompt": "Using Prefect, what changed in the latest Prefect release?",
       "file_attachment_urls": null,
       "tools_triggered": "docs_get_release_notes",
       "expected_output": "Returns the latest stable Prefect OSS version, release date and URL when available, and a concise summary of enhancements and fixes.",
@@ -228,36 +216,36 @@
     },
     {
       "description": "Answer a Prefect usage question from current documentation.",
-      "user_prompt": "How should I configure retries for a Prefect flow?",
+      "user_prompt": "Using Prefect, how should I configure retries and retry delays for a flow?",
       "file_attachment_urls": null,
       "tools_triggered": "docs_search_prefect",
       "expected_output": "Explains the relevant current Prefect guidance using matching documentation excerpts and source links when available.",
       "expected_output_url": null
     },
     {
-      "description": "Review recent Prefect Cloud throttling, including the valid case where no throttling occurred.",
-      "user_prompt": "Did Prefect Cloud throttle any of my API operations during the last 24 hours?",
+      "description": "List work pools from a Prefect Cloud workspace selected during OAuth consent.",
+      "user_prompt": "Using the first Prefect workspace I authorized, list up to five work pools and summarize their current status.",
       "file_attachment_urls": null,
-      "tools_triggered": "review_rate_limits",
-      "expected_output": "Reports whether throttling occurred. If present, identifies the affected operation groups, periods, and denial counts; otherwise, clearly reports that no throttling was observed. It does not change account settings.",
+      "tools_triggered": "list_authorized_workspaces, get_work_pools",
+      "expected_output": "Selects an authorized workspace, then returns up to five work pools with their names, types, statuses, and relevant worker or queue details; if no work pools exist, clearly says so.",
       "expected_output_url": null
     }
   ],
   "negative_test_cases": [
     {
-      "description": "Do not invoke read-only MCP tools to trigger a deployment.",
-      "user_prompt": "Trigger my production Prefect deployment now.",
+      "description": "Do not invoke Prefect for a GitHub Actions deployment request.",
+      "user_prompt": "Trigger my production GitHub Actions workflow now.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "The app should not invoke an MCP tool because the server is read-only; it should explain that the Prefect CLI is required for this mutation.",
+      "expected_output": "The Prefect app should not be invoked because the request concerns GitHub Actions rather than Prefect.",
       "expected_output_url": null
     },
     {
-      "description": "Do not invoke read-only MCP tools to cancel or delete a run.",
-      "user_prompt": "Cancel and delete this Prefect flow run.",
+      "description": "Do not invoke Prefect for logs from a local Docker container.",
+      "user_prompt": "Show me the logs from my local Docker container.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "The app should not invoke an MCP tool because cancellation and deletion are mutations; it should direct the user to the Prefect CLI.",
+      "expected_output": "The Prefect app should not be invoked because local Docker logs are outside its supported Prefect workspace data; ChatGPT may explain how to use docker logs.",
       "expected_output_url": null
     },
     {
