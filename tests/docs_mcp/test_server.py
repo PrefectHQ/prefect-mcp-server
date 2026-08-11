@@ -57,6 +57,23 @@ async def test_docs_mcp_server_has_documentation_tools(
             assert tool.annotations.destructiveHint is False
 
 
+async def test_docs_tool_descriptions_do_not_route_between_tools(
+    docs_mcp_server: FastMCP,
+) -> None:
+    async with Client(docs_mcp_server) as client:
+        tools = await client.list_tools()
+
+    for tool in tools:
+        description = tool.description or ""
+        for other_tool in tools:
+            if other_tool.name != tool.name:
+                assert other_tool.name not in description
+
+    descriptions = {tool.name: tool.description or "" for tool in tools}
+    assert "use" not in descriptions["search_prefect"].lower()
+    assert "instead of" not in descriptions["get_release_notes"].lower()
+
+
 @pytest.mark.vcr
 async def test_search_prefect_successful_query(
     snapshot: SnapshotAssertion, docs_mcp_server: FastMCP
