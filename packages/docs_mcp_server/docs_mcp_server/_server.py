@@ -85,8 +85,8 @@ async def search_prefect(
 ) -> dict[str, Any]:
     """Search Prefect documentation for concepts, examples, and best practices.
 
-    For latest or version-specific Prefect OSS release notes, use
-    get_release_notes instead.
+    Returns ranked excerpts from Prefect's knowledge base for a natural-language
+    query.
     """
 
     if not query.strip():
@@ -227,8 +227,8 @@ async def get_release_notes(
 ) -> ReleaseNotes:
     """Get authoritative, structured release notes for a Prefect OSS release.
 
-    Use this for questions like "what changed in the latest Prefect release?"
-    instead of semantic documentation search.
+    Accepts "latest" or an exact version and returns the release title, date,
+    Markdown notes, and source URL.
     """
     async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
         return await fetch_release_notes(version, client=client)
