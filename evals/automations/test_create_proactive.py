@@ -6,7 +6,7 @@ import pytest
 from prefect.client.orchestration import PrefectClient
 from pydantic import BaseModel
 from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServer
+from pydantic_ai.mcp import MCPToolset
 
 from evals._tools import read_file, run_shell_command, write_file
 from evals._tools.spy import ToolCallSpy
@@ -18,7 +18,7 @@ class AutomationIDOutput(BaseModel):
 
 @pytest.fixture
 def eval_agent(
-    prefect_mcp_server: MCPServer, reasoning_model: str
+    prefect_mcp_server: MCPToolset, reasoning_model: str
 ) -> Agent[None, AutomationIDOutput]:
     """Reasoning agent for creating proactive automations.
 

@@ -5,7 +5,7 @@ description = "MCP server for searching Prefect documentation using FastMCP and 
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "fastmcp>=2.12.3",
+    "fastmcp==4.0.0b2",
     "httpx>=0.28.1",
     "logfire>=4.9.0",
     "openai>=1.109.1",

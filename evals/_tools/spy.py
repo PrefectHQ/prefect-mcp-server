@@ -77,7 +77,7 @@ class ToolCallSpy:
             The result from the actual tool execution
         """
         self._calls.append(ToolCall(ctx=ctx, name=name, tool_args=tool_args))
-        return await call_tool_func(name, tool_args, None)
+        return await call_tool_func(name, tool_args)
 
     @property
     def calls(self) -> list[ToolCall]:

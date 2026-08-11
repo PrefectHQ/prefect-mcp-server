@@ -17,7 +17,7 @@ from fastapi import APIRouter, FastAPI, Request, Response
 from prefect.client.orchestration import PrefectClient
 from prefect.settings import get_current_settings
 from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServer, MCPServerStdio, MCPServerStreamableHTTP
+from pydantic_ai.mcp import MCPToolset, StdioTransport, StreamableHttpTransport
 
 from evals._tools.spy import ToolCallSpy
 
@@ -187,7 +187,7 @@ def cloud_api_router(
 
 
 @pytest.fixture(scope="session")
-def oss_server_url(prefect_mcp_server: MCPServer) -> str:
+def oss_server_url(prefect_mcp_server: MCPToolset) -> str:
     """OSS Prefect server URL from the session-scoped test harness.
 
     Depends on prefect_mcp_server to ensure the session harness is running.
@@ -358,19 +358,23 @@ def cloud_mcp_server(
     cloud_account_id: str,
     cloud_workspace_id: str,
     tool_call_spy: ToolCallSpy,
-) -> MCPServer:
+) -> MCPToolset:
     """MCP server configured to use Cloud proxy."""
     api_url = f"{cloud_proxy_server}/api/accounts/{cloud_account_id}/workspaces/{cloud_workspace_id}"
 
-    return MCPServerStdio(
-        command="uv",
-        args=["run", "-m", "prefect_mcp_server"],
-        env={
-            "PREFECT_API_URL": api_url,
-            "PREFECT_CLOUD_API_URL": f"{cloud_proxy_server}/api",
-        },
+    return MCPToolset(
+        StdioTransport(
+            command="uv",
+            args=["run", "-m", "prefect_mcp_server"],
+            env={
+                "PREFECT_API_URL": api_url,
+                "PREFECT_CLOUD_API_URL": f"{cloud_proxy_server}/api",
+            },
+            keep_alive=False,
+        ),
         process_tool_call=tool_call_spy,
         max_retries=3,
+        init_timeout=60,
     )
 
 
@@ -467,19 +471,22 @@ def cloud_oauth_mcp_server(
     cloud_oauth_mcp_server_url: str,
     cloud_oauth_access_token: str,
     tool_call_spy: ToolCallSpy,
-) -> MCPServer:
+) -> MCPToolset:
     """Cloud OAuth MCP server connected over HTTP."""
-    return MCPServerStreamableHTTP(
-        cloud_oauth_mcp_server_url,
-        headers={"Authorization": f"Bearer {cloud_oauth_access_token}"},
+    return MCPToolset(
+        StreamableHttpTransport(
+            cloud_oauth_mcp_server_url,
+            headers={"Authorization": f"Bearer {cloud_oauth_access_token}"},
+        ),
         process_tool_call=tool_call_spy,
         max_retries=3,
+        init_timeout=60,
     )
 
 
 @pytest.fixture
 def cloud_oauth_simple_agent(
-    cloud_oauth_mcp_server: MCPServer,
+    cloud_oauth_mcp_server: MCPToolset,
     simple_model: str,
 ) -> Agent:
     """Agent using Cloud OAuth MCP mode."""
@@ -491,7 +498,7 @@ def cloud_oauth_simple_agent(
 
 
 @pytest.fixture
-def cloud_simple_agent(cloud_mcp_server: MCPServer, simple_model: str) -> Agent:
+def cloud_simple_agent(cloud_mcp_server: MCPToolset, simple_model: str) -> Agent:
     """Agent using Cloud MCP server for simple tasks."""
     return Agent(
         name="Prefect Cloud Simple Agent",
@@ -501,7 +508,7 @@ def cloud_simple_agent(cloud_mcp_server: MCPServer, simple_model: str) -> Agent:
 
 
 @pytest.fixture
-def cloud_reasoning_agent(cloud_mcp_server: MCPServer, reasoning_model: str) -> Agent:
+def cloud_reasoning_agent(cloud_mcp_server: MCPToolset, reasoning_model: str) -> Agent:
     """Agent using Cloud MCP server for complex reasoning tasks."""
     return Agent(
         name="Prefect Cloud Reasoning Agent",

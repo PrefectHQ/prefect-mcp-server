@@ -9,7 +9,7 @@ from prefect.client.schemas.filters import DeploymentFilter, DeploymentFilterId
 from prefect.client.schemas.objects import Flow as FlowSchema
 from prefect.client.schemas.responses import DeploymentResponse
 from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServer
+from pydantic_ai.mcp import MCPToolset
 
 from evals._tools import run_shell_command
 from evals._tools.spy import ToolCallSpy
@@ -40,7 +40,9 @@ async def test_deployment(
 
 
 @pytest.fixture
-def trigger_agent(prefect_mcp_server: MCPServer, simple_model: str) -> Agent[None, str]:
+def trigger_agent(
+    prefect_mcp_server: MCPToolset, simple_model: str
+) -> Agent[None, str]:
     return Agent(
         name="Deployment Trigger Agent",
         instructions=(
