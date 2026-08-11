@@ -57,11 +57,10 @@ WorkspaceId = Annotated[
 
 
 def orientation() -> str:
-    """Explain which Prefect MCP tool to use for common Prefect operations.
+    """Return an overview of Prefect MCP capabilities and access boundaries.
 
-    Covers workspace inspection, failure diagnosis, documentation, release notes,
-    object schemas, and the separately gated execution-plan authoring tools.
-    Returns routing guidance only and does not access or modify Prefect data.
+    Summarizes supported inspection, documentation, schema, and optional authoring
+    capabilities. It does not access or modify Prefect data.
     """
     return """
     Default Prefect inspection tools are read-only. For ordinary mutations, use the CLI.
@@ -88,9 +87,9 @@ async def get_identity(
 async def list_authorized_workspaces() -> dict[str, object]:
     """List Prefect Cloud workspaces selected during OAuth consent.
 
-    This tool is only available when the server is running in Prefect Cloud
-    OAuth mode. Use it before calling workspace-scoped tools when the user
-    names a workspace by handle, account/workspace pair, or nickname.
+    Returns account handles, workspace handles, workspace IDs, and grant metadata
+    for the workspaces available to this connection. Only available in Prefect
+    Cloud OAuth mode.
     """
     workspaces = await cloud_oauth.list_authorized_workspaces()
     access_token = cloud_oauth.current_oauth_access_token()

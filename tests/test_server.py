@@ -65,6 +65,30 @@ async def test_all_prefect_tools_declare_submission_annotations(
         assert tool.annotations.readOnlyHint is (tool.name != "execution_plans_publish")
 
 
+async def test_tool_descriptions_do_not_route_between_tools(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings.experimental, "execution_plans_enabled", False)
+    server = build_prefect_mcp_server(
+        include_docs_proxy=False,
+        include_cloud_tools=True,
+        include_cloud_oauth_tools=True,
+    )
+
+    async with Client(server) as client:
+        tools = await client.list_tools()
+
+    for tool in tools:
+        description = tool.description or ""
+        for other_tool in tools:
+            if other_tool.name != tool.name:
+                assert other_tool.name not in description
+
+    descriptions = {tool.name: tool.description or "" for tool in tools}
+    assert "which Prefect MCP tool to use" not in descriptions["orientation"]
+    assert "workspace-scoped tools" not in descriptions["list_authorized_workspaces"]
+
+
 def test_openai_apps_challenge_returns_configured_token(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
