@@ -55,6 +55,11 @@ codex plugin add prefect@prefect
 Like the Claude Code plugin, Codex authenticates directly with Prefect Cloud OAuth.
 The plugin contains no API keys or placeholder credentials.
 
+If you also configure a local MCP server, give it a distinct name such as
+`prefect-local`. The plugin endpoint uses Prefect Cloud OAuth; a local server uses
+the Prefect profile or environment variables available to its process. Call
+`get_identity` before acting on workspace state to confirm which target is active.
+
 The same plugin bundle is suitable for Cowork and Claude Tag because it references
 the hosted MCP URL instead of launching a process on the user's machine. Claude Tag
 administrators attach it and its Prefect credential to the appropriate Access bundle.

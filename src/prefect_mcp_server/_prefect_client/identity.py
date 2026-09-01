@@ -128,7 +128,9 @@ async def get_identity(workspace_id: UUID | None = None) -> IdentityResult:
             # Otherwise build ServerIdentityInfo
             else:
                 version: str | None = None
-                version_response = await client._client.get("/version")
+                version_response = await client._client.get("/admin/version")
+                if version_response.status_code != 200:
+                    version_response = await client._client.get("/version")
                 if version_response.status_code == 200:
                     version = version_response.text.strip('"')
 

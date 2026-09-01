@@ -93,17 +93,31 @@ async def fetch_events(
                 if occurred_before:
                     filter_dict["occurred"]["until"] = occurred_before
 
-            # Make the API call to the events/filter endpoint
+            # The Prefect API caps each events page at 50. Follow its opaque
+            # next-page URL until the MCP-level limit is satisfied.
+            page_limit = min(limit, 50)
             response = await client._client.post(
                 "/events/filter",
-                json={"filter": filter_dict if filter_dict else None, "limit": limit},
+                json={
+                    "filter": filter_dict if filter_dict else None,
+                    "limit": page_limit,
+                },
             )
             response.raise_for_status()
             data = response.json()
 
+            events = list(data.get("events", []))
+            next_page = data.get("next_page")
+            while next_page and len(events) < limit:
+                response = await client._client.get(next_page)
+                response.raise_for_status()
+                page = response.json()
+                events.extend(page.get("events", []))
+                next_page = page.get("next_page")
+
             # Format events for better LLM consumption
             formatted_events = []
-            for event in data.get("events", []):
+            for event in events[:limit]:
                 formatted_event = _format_event(event)
                 formatted_events.append(formatted_event)
 

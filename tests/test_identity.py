@@ -1,7 +1,7 @@
 """Unit tests for identity client module."""
 
 from typing import cast
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 from prefect_mcp_server._prefect_client.identity import get_identity
 from prefect_mcp_server.types import CloudIdentityInfo, ServerIdentityInfo
@@ -35,6 +35,32 @@ async def test_get_identity_oss() -> None:
     assert "account_id" not in identity
     assert "workspace_id" not in identity
     assert "user" not in identity
+    mock_client._client.get.assert_awaited_once_with("/admin/version")
+
+
+async def test_get_identity_oss_falls_back_for_older_servers() -> None:
+    mock_client = AsyncMock()
+    mock_client.api_url = "http://localhost:4200/api"
+    missing_admin_version = MagicMock(status_code=404, text="not found")
+    api_version = MagicMock(status_code=200, text='"0.8.4"')
+    mock_client._client.get = AsyncMock(
+        side_effect=[missing_admin_version, api_version]
+    )
+
+    with patch(
+        "prefect_mcp_server._prefect_client.identity.get_prefect_client"
+    ) as mock_get_client:
+        mock_get_client.return_value.__aenter__.return_value = mock_client
+        result = await get_identity()
+
+    assert result["success"] is True
+    assert result["identity"] is not None
+    identity = cast(ServerIdentityInfo, result["identity"])
+    assert identity["version"] == "0.8.4"
+    assert mock_client._client.get.await_args_list == [
+        call("/admin/version"),
+        call("/version"),
+    ]
 
 
 async def test_get_identity_cloud_basic() -> None:
