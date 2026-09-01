@@ -35,6 +35,13 @@ This connects Claude to Prefect's hosted, read-only MCP server for diagnostics,
 documentation, and current release notes. Claude opens Prefect Cloud OAuth during
 installation so you can select the workspaces it may access.
 
+The plugin also bundles two skills:
+
+- `sdk` - idiomatic Prefect 3.x authoring (flows, tasks, retries, caching,
+  serving, and deployments)
+- `cli` - Prefect CLI usage for mutations when a shell with an authenticated
+  `prefect` CLI is available (the MCP tools themselves are read-only)
+
 > [!NOTE]
 > The plugin does not read `~/.prefect/profiles.toml` or require a local Prefect
 > installation. For self-hosted Prefect or explicit credentials, use the local
@@ -42,7 +49,7 @@ installation so you can select the workspaces it may access.
 
 ## Codex Plugin
 
-The same hosted MCP server and workflow guidance are available as a Codex plugin:
+The same hosted MCP server and skills are available as a Codex plugin:
 
 ```bash
 # add from marketplace
