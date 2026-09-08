@@ -361,10 +361,17 @@ async def get_flow_run_logs(
     """
     async with get_prefect_client(workspace_id=workspace_id) as client:
         try:
+            try:
+                parsed_id = UUID(flow_run_id)
+            except ValueError as exc:
+                raise ValueError(
+                    "flow_run_id must be a UUID "
+                    "(e.g. 068adce4-aeec-7e9b-8000-97b7feeb70fa); "
+                    f"received {flow_run_id!r}"
+                ) from exc
+
             # Fetch logs directly
-            log_filter = LogFilter(
-                flow_run_id=LogFilterFlowRunId(any_=[UUID(flow_run_id)])
-            )
+            log_filter = LogFilter(flow_run_id=LogFilterFlowRunId(any_=[parsed_id]))
 
             logs = await client.read_logs(
                 log_filter=log_filter,
