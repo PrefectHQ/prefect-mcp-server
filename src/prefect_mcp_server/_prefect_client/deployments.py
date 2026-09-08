@@ -52,13 +52,23 @@ async def get_deployments(
             # Build filter from JSON if provided
             deployment_filter = None
             if filter:
-                deployment_filter = DeploymentFilter.model_validate(filter, extra="forbid")
+                deployment_filter = DeploymentFilter.model_validate(
+                    filter, extra="forbid"
+                )
 
             # Fetch deployments
             deployments = await client.read_deployments(
                 deployment_filter=deployment_filter,
                 limit=limit,
             )
+            truncated = False
+            if len(deployments) == limit:
+                extra = await client.read_deployments(
+                    deployment_filter=deployment_filter,
+                    limit=1,
+                    offset=limit,
+                )
+                truncated = bool(extra)
 
             # Build list of deployments with same shape as detail view
             deployment_list: list[DeploymentDetail] = []
@@ -236,6 +246,7 @@ async def get_deployments(
 
             return {
                 "success": True,
+                "truncated": truncated,
                 "detail": detail,
                 "count": len(deployment_list),
                 "deployments": deployment_list,
@@ -244,6 +255,7 @@ async def get_deployments(
     except Exception as e:
         return {
             "success": False,
+            "truncated": False,
             "count": 0,
             "deployments": [],
             "error": f"Failed to fetch deployments: {str(e)}",

@@ -123,6 +123,15 @@ async def get_task_runs(
                 limit=limit,
                 sort=TaskRunSort.EXPECTED_START_TIME_DESC,
             )
+            truncated = False
+            if len(task_runs) == limit:
+                extra = await client.read_task_runs(
+                    task_run_filter=task_run_filter,
+                    limit=1,
+                    offset=limit,
+                    sort=TaskRunSort.EXPECTED_START_TIME_DESC,
+                )
+                truncated = bool(extra)
 
             # Format the task runs
             task_run_list = []
@@ -177,6 +186,7 @@ async def get_task_runs(
 
             return {
                 "success": True,
+                "truncated": truncated,
                 "count": len(task_run_list),
                 "task_runs": task_run_list,
                 "error": None,
@@ -185,6 +195,7 @@ async def get_task_runs(
         except Exception as e:
             return {
                 "success": False,
+                "truncated": False,
                 "count": 0,
                 "task_runs": [],
                 "error": f"Failed to fetch task runs: {str(e)}",

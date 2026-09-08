@@ -36,6 +36,14 @@ async def get_flows(
                 flow_filter=flow_filter,
                 limit=limit,
             )
+            truncated = False
+            if len(flows) == limit:
+                extra = await client.read_flows(
+                    flow_filter=flow_filter,
+                    limit=1,
+                    offset=limit,
+                )
+                truncated = bool(extra)
 
             # Format minimal flow information
             flow_list = []
@@ -52,6 +60,7 @@ async def get_flows(
 
             return {
                 "success": True,
+                "truncated": truncated,
                 "count": len(flow_list),
                 "flows": flow_list,
                 "error": None,
@@ -59,6 +68,7 @@ async def get_flows(
     except Exception as e:
         return {
             "success": False,
+            "truncated": False,
             "count": 0,
             "flows": [],
             "error": f"Failed to fetch flows: {str(e)}",

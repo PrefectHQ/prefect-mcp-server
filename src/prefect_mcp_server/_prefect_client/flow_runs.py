@@ -195,6 +195,15 @@ async def get_flow_runs(
                 limit=limit,
                 sort=FlowRunSort.START_TIME_DESC,
             )
+            truncated = False
+            if len(flow_runs) == limit:
+                extra = await client.read_flow_runs(
+                    flow_run_filter=flow_run_filter,
+                    limit=1,
+                    offset=limit,
+                    sort=FlowRunSort.START_TIME_DESC,
+                )
+                truncated = bool(extra)
 
             # Only batch fetch related objects in detail mode
             deployment_cache: dict[str, DeploymentDetail] = {}
@@ -330,6 +339,7 @@ async def get_flow_runs(
 
             return {
                 "success": True,
+                "truncated": truncated,
                 "detail": detail,
                 "count": len(flow_run_list),
                 "flow_runs": flow_run_list,
@@ -339,6 +349,7 @@ async def get_flow_runs(
         except Exception as e:
             return {
                 "success": False,
+                "truncated": False,
                 "count": 0,
                 "flow_runs": [],
                 "error": f"Failed to fetch flow runs: {str(e)}",

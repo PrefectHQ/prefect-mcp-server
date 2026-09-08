@@ -136,6 +136,8 @@ async def get_deployments(
     detail including parameters, parameter_openapi_schema, job_variables,
     work_pool details, and recent_runs.
 
+    The response includes truncated=true when more matching records exist.
+
     Filter operators:
     - any_: Match any value in list
     - all_: Match all values
@@ -176,6 +178,8 @@ async def get_flows(
     """Get flows with optional filters.
 
     Returns a list of flows registered in the workspace.
+
+    The response includes truncated=true when more matching records exist.
 
     Filter operators:
     - any_: Match any value in list
@@ -222,6 +226,8 @@ async def get_flow_runs(
 
     Returns compact summaries by default. Filter by specific ID(s) for full
     detail including parameters, inlined deployment info, and work pool info.
+
+    The response includes truncated=true when more matching records exist.
 
     Filter operators:
     - any_: Match any value in list
@@ -297,6 +303,8 @@ async def get_task_runs(
     Note that 'task_inputs' contains dependency tracking
     information (upstream task relationships), not the actual parameter values
     passed to the task.
+
+    The response includes truncated=true when more matching records exist.
 
     Filter operators:
     - any_: Match any value in list
