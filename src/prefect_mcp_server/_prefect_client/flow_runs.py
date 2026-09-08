@@ -187,7 +187,7 @@ async def get_flow_runs(
             # Build filter from JSON if provided
             flow_run_filter = None
             if filter:
-                flow_run_filter = FlowRunFilter.model_validate(filter)
+                flow_run_filter = FlowRunFilter.model_validate(filter, extra="forbid")
 
             # Fetch flow runs
             flow_runs = await client.read_flow_runs(

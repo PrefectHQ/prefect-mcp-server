@@ -52,7 +52,7 @@ async def get_deployments(
             # Build filter from JSON if provided
             deployment_filter = None
             if filter:
-                deployment_filter = DeploymentFilter.model_validate(filter)
+                deployment_filter = DeploymentFilter.model_validate(filter, extra="forbid")
 
             # Fetch deployments
             deployments = await client.read_deployments(

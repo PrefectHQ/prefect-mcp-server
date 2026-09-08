@@ -29,7 +29,7 @@ async def get_flows(
             # Build filter from JSON if provided
             flow_filter = None
             if filter:
-                flow_filter = FlowFilter.model_validate(filter)
+                flow_filter = FlowFilter.model_validate(filter, extra="forbid")
 
             # Fetch flows
             flows = await client.read_flows(

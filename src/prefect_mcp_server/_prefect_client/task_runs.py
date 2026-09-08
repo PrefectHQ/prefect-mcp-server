@@ -115,7 +115,7 @@ async def get_task_runs(
             # Build filter from JSON if provided
             task_run_filter = None
             if filter:
-                task_run_filter = TaskRunFilter.model_validate(filter)
+                task_run_filter = TaskRunFilter.model_validate(filter, extra="forbid")
 
             # Fetch task runs
             task_runs = await client.read_task_runs(

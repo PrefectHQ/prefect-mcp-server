@@ -3021,6 +3021,7 @@ source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
     { name = "prefect" },
+    { name = "pydantic" },
 ]
 
 [package.optional-dependencies]
@@ -3052,6 +3053,7 @@ requires-dist = [
     { name = "fastmcp", specifier = ">=3.0.0" },
     { name = "logfire", marker = "extra == 'logfire'" },
     { name = "prefect", specifier = ">=3.4.22" },
+    { name = "pydantic", specifier = ">=2.12.0" },
 ]
 provides-extras = ["logfire"]
 
