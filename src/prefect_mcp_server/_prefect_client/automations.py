@@ -110,3 +110,79 @@ async def get_automations(
                 "automations": [],
                 "error": f"Failed to fetch automations: {str(e)}",
             }
+
+
+def get_automation_schema(action_type: str | None = None) -> dict[str, Any]:
+    """Build the complete automation schema or focus its action definitions."""
+    from prefect.events.schemas.automations import AutomationCore
+
+    schema = AutomationCore.model_json_schema()
+    schema["x-prefect-mcp-guidance"] = {
+        "proactive_stuck_pending_flow_runs": {
+            "description": (
+                "To detect flow runs stuck in Pending, use a proactive event "
+                "trigger that starts after a Pending event and expects the "
+                "specific state transition event that would prove the run is "
+                "no longer stuck."
+            ),
+            "trigger": {
+                "type": "event",
+                "posture": "Proactive",
+                "after": ["prefect.flow-run.Pending"],
+                "expect": [
+                    "prefect.flow-run.Running",
+                    "prefect.flow-run.Crashed",
+                ],
+                "for_each": ["prefect.resource.id"],
+                "threshold": 1,
+                "within": 300,
+            },
+            "note": (
+                "Do not use prefect.flow-run.* as the expected event for a "
+                "stuck Pending detector; it is too broad. Prefer explicit "
+                "state events such as prefect.flow-run.Running and "
+                "prefect.flow-run.Crashed."
+            ),
+        }
+    }
+    if action_type is not None:
+        definitions = schema["$defs"]
+        choices = schema["properties"]["actions"]["items"]["anyOf"]
+        actions = {
+            definitions[choice["$ref"].split("/")[-1]]["properties"]["type"][
+                "const"
+            ]: choice
+            for choice in choices
+        }
+        if action_type not in actions:
+            raise ValueError(
+                f"Unknown automation action type {action_type!r}. "
+                f"Expected one of: {', '.join(sorted(actions))}"
+            )
+        for field in ("actions", "actions_on_trigger", "actions_on_resolve"):
+            schema["properties"][field]["items"]["anyOf"] = [actions[action_type]]
+
+        # Follow references from the root, including recursive trigger definitions.
+        schema.pop("$defs")
+        needed: set[str] = set()
+
+        def visit(value: Any) -> None:
+            if isinstance(value, dict):
+                for child in value.values():
+                    visit(child)
+            elif isinstance(value, list):
+                for child in value:
+                    visit(child)
+            elif isinstance(value, str) and value.startswith("#/$defs/"):
+                name = value.split("/")[-1]
+                if name not in needed:
+                    needed.add(name)
+                    visit(definitions[name])
+
+        visit(schema)
+        schema["$defs"] = {
+            name: definition
+            for name, definition in definitions.items()
+            if name in needed
+        }
+    return schema
