@@ -136,6 +136,8 @@ async def get_deployments(
     detail including parameters, parameter_openapi_schema, job_variables,
     work_pool details, and recent_runs.
 
+    The response includes truncated=true when more matching records exist.
+
     Filter operators:
     - any_: Match any value in list
     - all_: Match all values
@@ -176,6 +178,8 @@ async def get_flows(
     """Get flows with optional filters.
 
     Returns a list of flows registered in the workspace.
+
+    The response includes truncated=true when more matching records exist.
 
     Filter operators:
     - any_: Match any value in list
@@ -222,6 +226,8 @@ async def get_flow_runs(
 
     Returns compact summaries by default. Filter by specific ID(s) for full
     detail including parameters, inlined deployment info, and work pool info.
+
+    The response includes truncated=true when more matching records exist.
 
     Filter operators:
     - any_: Match any value in list
@@ -297,6 +303,8 @@ async def get_task_runs(
     Note that 'task_inputs' contains dependency tracking
     information (upstream task relationships), not the actual parameter values
     passed to the task.
+
+    The response includes truncated=true when more matching records exist.
 
     Filter operators:
     - any_: Match any value in list
@@ -459,43 +467,24 @@ async def get_object_schema(
             examples=["automation"],
         ),
     ],
+    action_type: Annotated[
+        str | None,
+        Field(
+            description="Return a schema for only this automation action type; omit for all action types",
+            examples=["cancel-flow-run", "run-deployment", "send-notification"],
+        ),
+    ] = None,
 ) -> dict[str, Any]:
-    """Get a schema for an object type."""
-    if object_type == "automation":
-        from prefect.events.schemas.automations import AutomationCore
+    """Get a schema for an object type.
 
-        schema = AutomationCore.model_json_schema()
-        schema["x-prefect-mcp-guidance"] = {
-            "proactive_stuck_pending_flow_runs": {
-                "description": (
-                    "To detect flow runs stuck in Pending, use a proactive event "
-                    "trigger that starts after a Pending event and expects the "
-                    "specific state transition event that would prove the run is "
-                    "no longer stuck."
-                ),
-                "trigger": {
-                    "type": "event",
-                    "posture": "Proactive",
-                    "after": ["prefect.flow-run.Pending"],
-                    "expect": [
-                        "prefect.flow-run.Running",
-                        "prefect.flow-run.Crashed",
-                    ],
-                    "for_each": ["prefect.resource.id"],
-                    "threshold": 1,
-                    "within": 300,
-                },
-                "note": (
-                    "Do not use prefect.flow-run.* as the expected event for a "
-                    "stuck Pending detector; it is too broad. Prefer explicit "
-                    "state events such as prefect.flow-run.Running and "
-                    "prefect.flow-run.Crashed."
-                ),
-            }
-        }
-        return schema
-    else:
+    An action_type narrows all three action lists and includes only referenced
+    definitions. Trigger variants and automation guidance remain available.
+    """
+    from prefect_mcp_server._prefect_client.automations import get_automation_schema
+
+    if object_type != "automation":
         raise ValueError(f"Unknown object type: {object_type}")
+    return get_automation_schema(action_type=action_type)
 
 
 async def review_rate_limits(

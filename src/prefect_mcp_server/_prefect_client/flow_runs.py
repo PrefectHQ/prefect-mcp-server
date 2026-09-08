@@ -187,7 +187,7 @@ async def get_flow_runs(
             # Build filter from JSON if provided
             flow_run_filter = None
             if filter:
-                flow_run_filter = FlowRunFilter.model_validate(filter)
+                flow_run_filter = FlowRunFilter.model_validate(filter, extra="forbid")
 
             # Fetch flow runs
             flow_runs = await client.read_flow_runs(
@@ -195,6 +195,15 @@ async def get_flow_runs(
                 limit=limit,
                 sort=FlowRunSort.START_TIME_DESC,
             )
+            truncated = False
+            if len(flow_runs) == limit:
+                extra = await client.read_flow_runs(
+                    flow_run_filter=flow_run_filter,
+                    limit=1,
+                    offset=limit,
+                    sort=FlowRunSort.START_TIME_DESC,
+                )
+                truncated = bool(extra)
 
             # Only batch fetch related objects in detail mode
             deployment_cache: dict[str, DeploymentDetail] = {}
@@ -330,6 +339,7 @@ async def get_flow_runs(
 
             return {
                 "success": True,
+                "truncated": truncated,
                 "detail": detail,
                 "count": len(flow_run_list),
                 "flow_runs": flow_run_list,
@@ -339,6 +349,7 @@ async def get_flow_runs(
         except Exception as e:
             return {
                 "success": False,
+                "truncated": False,
                 "count": 0,
                 "flow_runs": [],
                 "error": f"Failed to fetch flow runs: {str(e)}",
@@ -361,10 +372,17 @@ async def get_flow_run_logs(
     """
     async with get_prefect_client(workspace_id=workspace_id) as client:
         try:
+            try:
+                parsed_id = UUID(flow_run_id)
+            except ValueError as exc:
+                raise ValueError(
+                    "flow_run_id must be a UUID "
+                    "(e.g. 068adce4-aeec-7e9b-8000-97b7feeb70fa); "
+                    f"received {flow_run_id!r}"
+                ) from exc
+
             # Fetch logs directly
-            log_filter = LogFilter(
-                flow_run_id=LogFilterFlowRunId(any_=[UUID(flow_run_id)])
-            )
+            log_filter = LogFilter(flow_run_id=LogFilterFlowRunId(any_=[parsed_id]))
 
             logs = await client.read_logs(
                 log_filter=log_filter,

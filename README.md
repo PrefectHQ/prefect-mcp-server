@@ -13,11 +13,32 @@ The server gives MCP clients read-only tools for inspecting Prefect Cloud and se
 
 | Use case | Recommended setup | Authentication |
 | --- | --- | --- |
+| ChatGPT | [Prefect plugin](https://chatgpt.com/plugins/plugin_asdk_app_6a5fe5e3471881919daf83971db15505) | Prefect Cloud OAuth |
+| Claude | [Prefect connector](https://claude.ai/directory/prefect) | Prefect Cloud OAuth |
 | Claude Code or Codex | Prefect plugin for your client | Prefect Cloud OAuth |
 | Claude Tag or Cowork | The same Prefect plugin | Organization-managed Prefect Cloud OAuth |
 | Local MCP client | `uvx` stdio server | Active local Prefect profile or env vars |
 | Self-hosted Prefect or custom Cloud workspace | Self-hosted HTTP or stdio server | API key, basic auth, env vars, or headers |
 | Team-operated shared server | HTTP deployment with per-request headers | User or service-account credentials in headers |
+
+## ChatGPT Plugin and Claude Connector
+
+Install the [Prefect plugin in ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6a5fe5e3471881919daf83971db15505)
+or connect the [Prefect connector in Claude](https://claude.ai/directory/prefect).
+Sign in to Prefect Cloud and select the workspaces the assistant may read. Both
+use Prefect's hosted MCP server; no local installation or API key is required.
+
+In ChatGPT, installing the plugin and connecting your Prefect account are separate
+steps. Start a chat with Prefect selected and complete the **Connect** prompt. If
+an existing chat does not discover the newly connected tools, start a fresh chat.
+In Claude, connect from the directory listing and approve tool calls when prompted.
+
+Try asking: "Which Prefect workspaces can you access?" Then choose a workspace and
+ask: "Why did my most recent failed flow run fail?" The hosted tools inspect runs,
+logs, and workspace health and search documentation; they do not change Prefect state.
+
+See the [Prefect MCP setup guide](https://docs.prefect.io/v3/how-to-guides/ai/use-prefect-mcp-server)
+for more connection options.
 
 ## Claude Code Plugin
 

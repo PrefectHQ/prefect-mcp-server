@@ -111,7 +111,7 @@ async def get_work_pools(
             # Build filter from JSON if provided
             work_pool_filter = None
             if filter:
-                work_pool_filter = WorkPoolFilter.model_validate(filter)
+                work_pool_filter = WorkPoolFilter.model_validate(filter, extra="forbid")
 
             # Fetch work pools
             work_pools = await client.read_work_pools(

@@ -42,6 +42,7 @@ class FlowsResult(TypedDict):
     """Result of listing flows."""
 
     success: bool
+    truncated: bool  # True when more matching records exist beyond this page
     count: int
     flows: list[FlowDetail]
     error: str | None
@@ -261,6 +262,7 @@ class DeploymentsResult(TypedDict):
 
     success: bool
     detail: NotRequired[bool]
+    truncated: bool  # True when more matching records exist beyond this page
     count: int
     deployments: list[DeploymentDetail]
     error: str | None
@@ -334,6 +336,7 @@ class FlowRunsResult(TypedDict):
 
     success: bool
     detail: NotRequired[bool]
+    truncated: bool  # True when more matching records exist beyond this page
     count: int
     flow_runs: list[FlowRunDetail]
     error: str | None
@@ -374,6 +377,7 @@ class TaskRunsResult(TypedDict):
     """Result of listing task runs."""
 
     success: bool
+    truncated: bool  # True when more matching records exist beyond this page
     count: int
     task_runs: list[TaskRunDetail]
     error: str | None
