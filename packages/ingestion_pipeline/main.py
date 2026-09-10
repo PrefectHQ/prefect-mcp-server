@@ -17,6 +17,7 @@ import os
 import re
 from collections.abc import AsyncGenerator
 from typing import TypedDict, cast
+from urllib.parse import urlsplit
 
 import httpx
 from defusedxml import ElementTree
@@ -87,6 +88,9 @@ async def fetch_page_content(url: str) -> dict[str, str] | None:
                 follow_redirects=True,
             )
             response.raise_for_status()
+
+            if "text/html" in response.headers.get("content-type", "").lower():
+                raise ValueError("Expected Markdown, received HTML")
 
             # Extract title from markdown (look for first # heading)
             content = response.text
@@ -306,14 +310,31 @@ async def refresh_tpuf_namespace(
     page_batch_size: int = 50,
     embedding_batch_size: int = 100,
     upsert_batch_size: int = 1000,
+    sitemap_url: str = PREFECT_DOCS_SITEMAP_URL,
+    exclude_path_prefixes: list[str] | None = None,
 ):
-    """Flow updating Turbopuffer vector store with info from the Prefect docs."""
+    """Index a documentation sitemap into a dedicated Turbopuffer namespace.
+
+    Use a separate namespace for each documentation source. Path exclusions
+    match complete path segments (e.g. /v2 excludes /v2/servers, not /v20).
+    """
     print("=" * 60)
     print(f"Starting ingestion pipeline for namespace: {namespace}")
     print("=" * 60)
 
     # Fetch sitemap
-    urls = await fetch_sitemap_urls(PREFECT_DOCS_SITEMAP_URL)
+    urls = await fetch_sitemap_urls(sitemap_url)
+    prefixes = ["/" + prefix.strip("/") for prefix in (exclude_path_prefixes or [])]
+    urls = [
+        url
+        for url in urls
+        if not any(
+            urlsplit(url).path == prefix or urlsplit(url).path.startswith(prefix + "/")
+            for prefix in prefixes
+        )
+    ]
+    if not urls:
+        raise ValueError("No documentation URLs remain after sitemap filtering")
     try:
         secret_block = await Secret.load("docs-mcp-turbopuffer-api-key")
         api_key = cast(str, secret_block.get())
@@ -398,17 +419,26 @@ async def refresh_tpuf_namespace(
 
 
 if __name__ == "__main__":
-    import asyncio
-    import sys
+    import argparse
 
-    if len(sys.argv) > 1:
-        test_mode = sys.argv[1] != "prod"
-    else:
-        test_mode = True
-
-    if test_mode:
-        namespace = "TESTING-docs-v1"
-    else:
-        namespace = "docs-v1"
-
-    asyncio.run(refresh_tpuf_namespace(namespace=namespace, reset=True))
+    parser = argparse.ArgumentParser(description="Index a documentation sitemap.")
+    parser.add_argument("mode", nargs="?", choices=["test", "prod"], default="test")
+    parser.add_argument(
+        "--namespace", help="Destination namespace; required for other sources"
+    )
+    parser.add_argument("--sitemap-url", default=PREFECT_DOCS_SITEMAP_URL)
+    parser.add_argument("--exclude-path-prefix", action="append", default=[])
+    args = parser.parse_args()
+    if args.sitemap_url != PREFECT_DOCS_SITEMAP_URL and not args.namespace:
+        parser.error("--namespace is required when using a different sitemap")
+    namespace = args.namespace or (
+        "docs-v1" if args.mode == "prod" else "TESTING-docs-v1"
+    )
+    asyncio.run(
+        refresh_tpuf_namespace(
+            namespace=namespace,
+            reset=True,
+            sitemap_url=args.sitemap_url,
+            exclude_path_prefixes=args.exclude_path_prefix,
+        )
+    )
