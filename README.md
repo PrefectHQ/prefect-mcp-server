@@ -53,7 +53,8 @@ The easiest setup for Claude Code is the Prefect plugin:
 ```
 
 This connects Claude to Prefect's hosted, read-only MCP server for diagnostics,
-documentation, and current release notes. Claude opens Prefect Cloud OAuth during
+documentation, and current release notes. It also installs the portable skills
+from [PrefectHQ/skills](https://github.com/PrefectHQ/skills) as a dependency. Claude opens Prefect Cloud OAuth during
 installation so you can select the workspaces it may access.
 
 > [!NOTE]
