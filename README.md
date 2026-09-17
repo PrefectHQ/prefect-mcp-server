@@ -11,6 +11,8 @@ The server gives MCP clients read-only tools for inspecting Prefect Cloud and se
 
 ## Choose Your Setup
 
+See the [agent setup guides](https://www.prefect.io/agents) for client-specific instructions and setup prompts, or give your agent the [plain-text setup index](https://www.prefect.io/agents/llms.txt).
+
 | Use case | Recommended setup | Authentication |
 | --- | --- | --- |
 | ChatGPT | [Prefect plugin](https://chatgpt.com/plugins/plugin_asdk_app_6a5fe5e3471881919daf83971db15505) | Prefect Cloud OAuth |
