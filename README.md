@@ -42,53 +42,42 @@ logs, and workspace health and search documentation; they do not change Prefect 
 See the [Prefect MCP setup guide](https://docs.prefect.io/v3/how-to-guides/ai/use-prefect-mcp-server)
 for more connection options.
 
-## Claude Code Plugin
+## Plugins
 
-The easiest setup for Claude Code is the Prefect plugin:
+The plugin bundles the hosted, read-only MCP server for diagnostics,
+documentation, and current release notes. The portable skills live in
+[PrefectHQ/skills](https://github.com/PrefectHQ/skills) and are published as a
+second plugin, `prefect-skills`, from the same marketplace.
+
+Claude Code installs both in one step because `prefect` declares `prefect-skills`
+as a dependency:
 
 ```bash
-# add from marketplace
 /plugin marketplace add prefecthq/prefect-mcp-server
-
-# install the plugin
 /plugin install prefect
 ```
 
-This connects Claude to Prefect's hosted, read-only MCP server for diagnostics,
-documentation, and current release notes. Claude opens Prefect Cloud OAuth during
-installation so you can select the workspaces it may access.
+Codex has no plugin dependencies, so install both:
+
+```bash
+codex plugin marketplace add prefecthq/prefect-mcp-server
+codex plugin add prefect@prefect
+codex plugin add prefect-skills@prefect
+```
+
+Either way the plugin opens Prefect Cloud OAuth during installation so you can
+select the workspaces it may access. It contains no API keys or placeholder
+credentials.
 
 > [!NOTE]
 > The plugin does not read `~/.prefect/profiles.toml` or require a local Prefect
 > installation. For self-hosted Prefect or explicit credentials, use the local
 > `uvx` setup below.
 
-## Codex Plugin
-
-The same hosted MCP server and workflow guidance are available as a Codex plugin:
-
-```bash
-# add from marketplace
-codex plugin marketplace add prefecthq/prefect-mcp-server
-
-# install the plugin
-codex plugin add prefect@prefect
-```
-
-Like the Claude Code plugin, Codex authenticates directly with Prefect Cloud OAuth.
-The plugin contains no API keys or placeholder credentials.
-
 If you also configure a local MCP server, give it a distinct name such as
 `prefect-local`. The plugin endpoint uses Prefect Cloud OAuth; a local server uses
 the Prefect profile or environment variables available to its process. Call
 `get_identity` before acting on workspace state to confirm which target is active.
-
-The same plugin bundle is suitable for Cowork and Claude Tag because it references
-the hosted MCP URL instead of launching a process on the user's machine. Claude Tag
-administrators attach it and its Prefect credential to the appropriate Access bundle.
-
-Prefect's [privacy policy](https://www.prefect.io/legal/privacy-policy) and
-[terms and conditions](https://www.prefect.io/legal/terms) apply to the hosted service.
 
 ## Run Locally
 
