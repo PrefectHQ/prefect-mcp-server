@@ -35,6 +35,8 @@ from pydantic_ai.mcp import MCPServer, MCPServerStdio
 
 from evals._tools.spy import ToolCallSpy
 
+pytest_plugins = ("evals.cloud_fixtures",)
+
 load_dotenv(".env.local")
 logfire.configure(
     send_to_logfire="if-token-present", environment=os.getenv("ENVIRONMENT") or "local"
