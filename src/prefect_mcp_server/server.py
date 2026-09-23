@@ -51,7 +51,7 @@ except ImportError:
 WorkspaceId = Annotated[
     UUID,
     Field(
-        description="Prefect Cloud workspace ID. Required when using Prefect Cloud OAuth mode.",
+        description="Prefect Cloud workspace ID. In Prefect Cloud OAuth mode, required only when more than one workspace is authorized.",
     ),
 ]
 
