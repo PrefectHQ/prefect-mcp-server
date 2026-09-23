@@ -301,6 +301,30 @@ async def require_authorized_workspace(workspace_id: UUID) -> WorkspaceRef:
     )
 
 
+async def resolve_authorized_workspace(workspace_id: UUID | None) -> WorkspaceRef:
+    """Return the requested consented workspace, or the grant's only workspace."""
+    if workspace_id is not None:
+        return await require_authorized_workspace(workspace_id)
+
+    workspaces = await list_authorized_workspaces()
+    if len(workspaces) == 1:
+        return workspaces[0]
+    if not workspaces:
+        raise RuntimeError(
+            "The Prefect Cloud OAuth grant does not include any workspaces. "
+            "Reconnect and select at least one workspace."
+        )
+    choices = ", ".join(
+        f"{workspace.display_name} ({workspace.workspace_id})"
+        for workspace in workspaces
+    )
+    raise RuntimeError(
+        "workspace_id is required because this Prefect Cloud OAuth grant "
+        f"includes {len(workspaces)} workspaces: {choices}. Pass one of those "
+        "workspace IDs to this tool."
+    )
+
+
 async def exchange_client_credentials_token(
     *,
     client_id: str | None = None,

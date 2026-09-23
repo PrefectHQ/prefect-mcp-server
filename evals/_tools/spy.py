@@ -8,7 +8,7 @@ during pydantic-ai agent execution, particularly useful for evaluation tests.
 from typing import Any, TypedDict
 from unittest.mock import ANY
 
-from pydantic_ai import RunContext
+from pydantic_ai import ModelRetry, RunContext
 from pydantic_ai.mcp import CallToolFunc, ToolResult
 
 
@@ -19,11 +19,14 @@ class ToolCall(TypedDict):
         ctx: The run context from pydantic-ai
         name: The name of the tool that was called
         tool_args: The arguments passed to the tool
+        error: The error returned to the model, either raised by the tool or
+            reported as a `success: false` result, or None on success
     """
 
     ctx: RunContext[Any]
     name: str
     tool_args: dict[str, Any]
+    error: str | None
 
 
 class ToolCallSpy:
@@ -76,8 +79,17 @@ class ToolCallSpy:
         Returns:
             The result from the actual tool execution
         """
-        self._calls.append(ToolCall(ctx=ctx, name=name, tool_args=tool_args))
-        return await call_tool_func(name, tool_args, None)
+        call = ToolCall(ctx=ctx, name=name, tool_args=tool_args, error=None)
+        self._calls.append(call)
+        try:
+            result = await call_tool_func(name, tool_args)
+        except ModelRetry as exc:
+            call["error"] = str(exc)
+            raise
+        match result:
+            case {"success": False, **payload}:
+                call["error"] = str(payload.get("error"))
+        return result
 
     @property
     def calls(self) -> list[ToolCall]:
@@ -96,6 +108,23 @@ class ToolCallSpy:
             The number of recorded tool calls
         """
         return len(self.calls)
+
+    @property
+    def errors(self) -> list[ToolCall]:
+        """Get the recorded tool calls that returned an error to the model."""
+        return [call for call in self.calls if call["error"] is not None]
+
+    def assert_no_tool_errors(self) -> None:
+        """Assert that no tool call returned an error to the model.
+
+        Raises:
+            AssertionError: If any tool call errored, listing each call's
+                arguments and error message
+        """
+        assert not self.errors, "Tool calls returned errors:\n" + "\n".join(
+            f"- {call['name']}({call['tool_args']}): {call['error']}"
+            for call in self.errors
+        )
 
     def assert_tool_was_called(self, tool_name: str) -> None:
         """Assert that a specific tool was called at least once.

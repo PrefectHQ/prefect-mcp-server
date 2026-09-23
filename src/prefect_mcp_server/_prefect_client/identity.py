@@ -29,7 +29,9 @@ async def _get_cloud_oauth_identity(
     }
     if workspace_id is None:
         identity["next_step"] = (
-            "Pass one authorized workspace_id to workspace-scoped tools."
+            "Workspace-scoped tools use the only authorized workspace by default."
+            if len(workspaces) == 1
+            else "Pass one authorized workspace_id to workspace-scoped tools."
         )
         return identity
 

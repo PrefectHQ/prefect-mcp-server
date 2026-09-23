@@ -402,6 +402,7 @@ def cloud_oauth_mcp_server_url(
     base_url = f"http://127.0.0.1:{port}"
     env = {
         **os.environ,
+        "PREFECT_MCP_CLOUD_ENABLED": "true",
         "PREFECT_MCP_CLOUD_AUTH_TOKEN_KEY": CLOUD_OAUTH_TOKEN_KEY,
         "PREFECT_MCP_CLOUD_API_BASE_URL": cloud_proxy_server,
         "PREFECT_MCP_CLOUD_AUTH_BASE_URL": cloud_proxy_server,

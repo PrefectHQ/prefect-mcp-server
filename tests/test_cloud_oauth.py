@@ -76,15 +76,99 @@ async def test_get_prefect_client_requires_oauth_token_for_workspace() -> None:
                 pass
 
 
-async def test_get_prefect_client_requires_workspace_in_oauth_mode() -> None:
+async def test_get_prefect_client_requires_workspace_when_grant_has_several() -> None:
+    other_workspace_id = UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")
+    workspaces = [
+        cloud_oauth.WorkspaceRef(
+            account_id=ACCOUNT_ID,
+            account_handle="acme",
+            workspace_id=WORKSPACE_ID,
+            workspace_handle="prod",
+        ),
+        cloud_oauth.WorkspaceRef(
+            account_id=ACCOUNT_ID,
+            account_handle="acme",
+            workspace_id=other_workspace_id,
+            workspace_handle="staging",
+        ),
+    ]
+
     with (
         patch(
             "prefect_mcp_server._prefect_client.client.cloud_oauth.current_oauth_access_token",
             return_value="oauth-token",
         ),
         patch.object(cloud_oauth.settings, "enabled", True),
+        patch(
+            "prefect_mcp_server.cloud_oauth.list_authorized_workspaces",
+            AsyncMock(return_value=workspaces),
+        ),
     ):
-        with pytest.raises(RuntimeError, match="workspace_id is required"):
+        with pytest.raises(RuntimeError, match="workspace_id is required") as exc:
+            async with get_prefect_client():
+                pass
+
+    assert f"acme/prod ({WORKSPACE_ID})" in str(exc.value)
+    assert f"acme/staging ({other_workspace_id})" in str(exc.value)
+
+
+async def test_get_prefect_client_defaults_to_only_authorized_workspace() -> None:
+    workspace = cloud_oauth.WorkspaceRef(
+        account_id=ACCOUNT_ID,
+        account_handle="acme",
+        workspace_id=WORKSPACE_ID,
+        workspace_handle="prod",
+    )
+
+    with (
+        patch(
+            "prefect_mcp_server._prefect_client.client.cloud_oauth.current_oauth_access_token",
+            return_value="oauth-token",
+        ),
+        patch.object(cloud_oauth.settings, "enabled", True),
+        patch(
+            "prefect_mcp_server.cloud_oauth.list_authorized_workspaces",
+            AsyncMock(return_value=[workspace]),
+        ),
+        patch(
+            "prefect_mcp_server.cloud_oauth.CloudOAuthSettings.resolved_api_base_url",
+            new_callable=PropertyMock,
+            return_value="https://api.prefect.cloud",
+        ),
+        patch(
+            "prefect_mcp_server._prefect_client.client.PrefectClient",
+        ) as mock_client_cls,
+    ):
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mock_client_cls.return_value = mock_client
+
+        async with get_prefect_client() as client:
+            assert client is mock_client
+
+    mock_client_cls.assert_called_once_with(
+        api=(
+            "https://api.prefect.cloud/api/accounts/"
+            f"{ACCOUNT_ID}/workspaces/{WORKSPACE_ID}"
+        ),
+        api_key="oauth-token",
+    )
+
+
+async def test_get_prefect_client_rejects_grant_without_workspaces() -> None:
+    with (
+        patch(
+            "prefect_mcp_server._prefect_client.client.cloud_oauth.current_oauth_access_token",
+            return_value="oauth-token",
+        ),
+        patch.object(cloud_oauth.settings, "enabled", True),
+        patch(
+            "prefect_mcp_server.cloud_oauth.list_authorized_workspaces",
+            AsyncMock(return_value=[]),
+        ),
+    ):
+        with pytest.raises(RuntimeError, match="does not include any workspaces"):
             async with get_prefect_client():
                 pass
 
@@ -122,7 +206,7 @@ async def test_get_identity_describes_oauth_grant_without_workspace() -> None:
         "grant_id": "grant-1",
         "authorized_workspace_count": 1,
         "authorized_workspaces": [workspace.as_dict()],
-        "next_step": "Pass one authorized workspace_id to workspace-scoped tools.",
+        "next_step": "Workspace-scoped tools use the only authorized workspace by default.",
     }
     mock_list_authorized_workspaces.assert_awaited_once_with(
         "header.eyJtY3BfZ3JhbnRfaWQiOiAiZ3JhbnQtMSJ9.signature"
