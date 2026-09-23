@@ -5,7 +5,12 @@ readme = "README.md"
 dynamic = ["version"]
 authors = [{ name = "Prefect Technologies", email = "help@prefect.io" }]
 requires-python = ">=3.10"
-dependencies = ["fastmcp>=3.0.0", "prefect>=3.4.22", "pydantic>=2.12.0"]
+dependencies = [
+    "fastmcp>=3.0.0",
+    "logfire>=4.9.0",
+    "prefect>=3.4.22",
+    "pydantic>=2.12.0",
+]
 
 
 [project.scripts]
@@ -15,9 +20,6 @@ prefect-mcp-cloud-token = "prefect_mcp_server.cloud_token:main"
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
-
-[project.optional-dependencies]
-logfire = ["logfire"]
 
 [dependency-groups]
 dev = [

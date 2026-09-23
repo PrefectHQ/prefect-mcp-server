@@ -3,6 +3,7 @@
 from datetime import timedelta
 from typing import Literal
 
+from logfire import LevelName
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -32,6 +33,11 @@ class LogfireSettings(BaseSettings):
         env_prefix="LOGFIRE_", extra="ignore", env_file=".env"
     )
 
+    service_name: str = Field(
+        default="prefect-mcp-server",
+        description="Service name attached to Logfire telemetry",
+    )
+
     token: str | None = Field(
         default=None,
         description="Logfire token",
@@ -45,6 +51,31 @@ class LogfireSettings(BaseSettings):
     send_to_logfire: Literal["if-token-present"] | None = Field(
         default="if-token-present",
         description="Whether to send logs to Logfire",
+    )
+
+    sampling_head_rate: float = Field(
+        default=0.1,
+        ge=0.0,
+        le=1.0,
+        description="Fraction of traces to sample upfront",
+    )
+
+    sampling_level_threshold: LevelName = Field(
+        default="warn",
+        description="Minimum log level to always retain",
+    )
+
+    sampling_duration_threshold: float = Field(
+        default=5.0,
+        ge=0.0,
+        description="Minimum duration in seconds to always retain",
+    )
+
+    sampling_background_rate: float = Field(
+        default=0.01,
+        ge=0.0,
+        le=1.0,
+        description="Fraction of otherwise unsampled traces to retain",
     )
 
 
