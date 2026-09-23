@@ -1,9 +1,7 @@
-from pathlib import Path
-
-from tomllib import loads
+from importlib.metadata import requires
 
 
 def test_logfire_is_a_runtime_dependency() -> None:
-    pyproject = loads((Path(__file__).parents[1] / "pyproject.toml").read_text())
+    runtime_requirements = requires("prefect-mcp") or []
 
-    assert "logfire>=4.9.0" in pyproject["project"]["dependencies"]
+    assert "logfire>=4.9.0" in runtime_requirements

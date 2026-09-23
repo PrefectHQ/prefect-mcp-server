@@ -39,11 +39,18 @@ from prefect_mcp_server.types import (
 
 
 def _configure_logfire() -> None:
+    sampling = logfire.SamplingOptions.level_or_duration(
+        head=settings.logfire.sampling_head_rate,
+        level_threshold=settings.logfire.sampling_level_threshold,
+        duration_threshold=settings.logfire.sampling_duration_threshold,
+        background_rate=settings.logfire.sampling_background_rate,
+    )
     logfire.configure(
-        service_name="prefect-mcp-server",
+        service_name=settings.logfire.service_name,
         send_to_logfire=settings.logfire.send_to_logfire,
         environment=settings.logfire.environment,
         token=settings.logfire.token,
+        sampling=sampling,
     )
     logfire.instrument_mcp()
 

@@ -22,6 +22,13 @@ def test_logfire_instruments_mcp_with_service_name(
 ) -> None:
     configure_calls = []
     instrument_calls = []
+    sampling = object()
+    sampling_calls = []
+    monkeypatch.setattr(
+        server.logfire.SamplingOptions,
+        "level_or_duration",
+        lambda **kwargs: sampling_calls.append(kwargs) or sampling,
+    )
     monkeypatch.setattr(
         server.logfire, "configure", lambda **kwargs: configure_calls.append(kwargs)
     )
@@ -33,10 +40,19 @@ def test_logfire_instruments_mcp_with_service_name(
 
     assert configure_calls == [
         {
-            "service_name": "prefect-mcp-server",
+            "service_name": settings.logfire.service_name,
             "send_to_logfire": settings.logfire.send_to_logfire,
             "environment": settings.logfire.environment,
             "token": settings.logfire.token,
+            "sampling": sampling,
+        }
+    ]
+    assert sampling_calls == [
+        {
+            "head": settings.logfire.sampling_head_rate,
+            "level_threshold": settings.logfire.sampling_level_threshold,
+            "duration_threshold": settings.logfire.sampling_duration_threshold,
+            "background_rate": settings.logfire.sampling_background_rate,
         }
     ]
     assert instrument_calls == [True]
