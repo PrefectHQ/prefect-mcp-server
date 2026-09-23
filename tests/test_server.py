@@ -8,12 +8,38 @@ from fastmcp.client import Client
 from prefect.client.orchestration import PrefectClient
 from starlette.testclient import TestClient
 
+from prefect_mcp_server import server
 from prefect_mcp_server.server import build_prefect_mcp_server
 from prefect_mcp_server.settings import settings
 
 # Apply timeout to all tests in this module
 # CI can hang when interacting with the server, especially the docs proxy
 pytestmark = pytest.mark.timeout(30)
+
+
+def test_logfire_instruments_mcp_with_service_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    configure_calls = []
+    instrument_calls = []
+    monkeypatch.setattr(
+        server.logfire, "configure", lambda **kwargs: configure_calls.append(kwargs)
+    )
+    monkeypatch.setattr(
+        server.logfire, "instrument_mcp", lambda: instrument_calls.append(True)
+    )
+
+    server._configure_logfire()
+
+    assert configure_calls == [
+        {
+            "service_name": "prefect-mcp-server",
+            "send_to_logfire": settings.logfire.send_to_logfire,
+            "environment": settings.logfire.environment,
+            "token": settings.logfire.token,
+        }
+    ]
+    assert instrument_calls == [True]
 
 
 async def test_server_has_expected_capabilities(prefect_mcp_server: FastMCP) -> None:

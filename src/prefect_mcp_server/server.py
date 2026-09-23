@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
+import logfire
 import prefect.main  # noqa: F401 - Import to resolve Pydantic forward references
 from fastmcp import FastMCP
 from fastmcp.server import create_proxy
@@ -36,17 +37,18 @@ from prefect_mcp_server.types import (
     WorkPoolsResult,
 )
 
-try:
-    import logfire
 
+def _configure_logfire() -> None:
     logfire.configure(
+        service_name="prefect-mcp-server",
         send_to_logfire=settings.logfire.send_to_logfire,
         environment=settings.logfire.environment,
         token=settings.logfire.token,
     )
     logfire.instrument_mcp()
-except ImportError:
-    pass
+
+
+_configure_logfire()
 
 WorkspaceId = Annotated[
     UUID,
