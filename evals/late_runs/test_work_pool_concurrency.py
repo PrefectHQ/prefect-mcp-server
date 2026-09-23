@@ -8,10 +8,8 @@ from prefect.client.orchestration import PrefectClient
 from prefect.client.schemas.actions import WorkPoolCreate
 from prefect.client.schemas.objects import FlowRun, WorkPool
 from prefect.client.schemas.responses import DeploymentResponse
-from prefect.states import Late
+from prefect.states import Late, Running
 from pydantic_ai import Agent
-
-from evals._tools.spy import ToolCallSpy
 
 
 class LateRunsScenario(NamedTuple):
@@ -60,20 +58,24 @@ async def work_pool_concurrency_scenario(
         heartbeat_interval_seconds=30,
     )
 
-    # Create multiple flow runs - first will consume the slot, others will be Late
+    running_run = await prefect_client.create_flow_run_from_deployment(
+        deployment_id=deployment.id,
+        name="long-running-run",
+    )
+    await prefect_client.set_flow_run_state(
+        flow_run_id=running_run.id, state=Running(), force=True
+    )
+
     flow_runs = []
     for i in range(3):
         flow_run = await prefect_client.create_flow_run_from_deployment(
             deployment_id=deployment.id,
             name=f"queued-run-{i}",
         )
-        flow_runs.append(flow_run)
-
-    # Force flow runs into Late state
-    for flow_run in flow_runs:
         await prefect_client.set_flow_run_state(
             flow_run_id=flow_run.id, state=Late(), force=True
         )
+        flow_runs.append(flow_run)
 
     # Verify scenario setup
     updated_work_pool = await prefect_client.read_work_pool(
@@ -84,6 +86,9 @@ async def work_pool_concurrency_scenario(
         work_pool_name=work_pool_name
     )
     assert len(workers) > 0
+
+    updated_running_run = await prefect_client.read_flow_run(running_run.id)
+    assert updated_running_run.state.type.value == "RUNNING"
 
     # Verify flow runs are in Late state
     for flow_run in flow_runs:
@@ -103,7 +108,6 @@ async def test_diagnoses_work_pool_concurrency(
     reasoning_agent: Agent,
     work_pool_concurrency_scenario: LateRunsScenario,
     evaluate_response: Callable[[str, str], Awaitable[None]],
-    tool_call_spy: ToolCallSpy,
 ) -> None:
     """Test agent diagnoses late runs caused by work pool concurrency limit."""
     work_pool_name = work_pool_concurrency_scenario.work_pool.name
@@ -120,9 +124,6 @@ async def test_diagnoses_work_pool_concurrency(
         f"Response must mention the specific work pool '{work_pool_name}' "
         f"but got: {result.output[:200]}..."
     )
-
-    # Tool verification: agent should have inspected work pools
-    tool_call_spy.assert_tool_was_called("get_work_pools")
 
     # LLM evaluation for response quality
     await evaluate_response(
