@@ -268,6 +268,55 @@ class DeploymentsResult(TypedDict):
     error: str | None
 
 
+class DeploymentRunCounts(TypedDict):
+    """Flow runs of a deployment that started within the activity window."""
+
+    total: int | None
+    completed: int | None
+    failed: int | None
+    crashed: int | None
+    cancelled: int | None
+
+
+class LastRunInfo(TypedDict):
+    """The most recently started flow run of a deployment."""
+
+    state_name: str | None
+    state_type: str | None
+    start_time: str | None
+
+
+class DeploymentActivity(TypedDict):
+    """Run outcomes and emitted events for one deployment over a window.
+
+    Fields are None when the Prefect API could not answer that query.
+    """
+
+    id: str
+    name: str
+    flow_name: str | None
+    paused: bool
+    has_active_schedule: bool
+    run_by_automations: int | None
+    runs: DeploymentRunCounts
+    last_run: LastRunInfo | None
+    last_completed_time: str | None
+    output_events: int | None
+
+
+class DeploymentActivityResult(TypedDict):
+    """Result of summarizing deployment activity."""
+
+    success: bool
+    truncated: bool  # True when more deployments exist beyond this page
+    window_start: str
+    window_end: str
+    count: int
+    deployments: list[DeploymentActivity]
+    notes: list[str]  # Queries the Prefect API could not answer
+    error: str | None
+
+
 class FlowRunDetail(TypedDict):
     """Detailed flow run information with inlined relationships.
 

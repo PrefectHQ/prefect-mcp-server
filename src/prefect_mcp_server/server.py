@@ -26,6 +26,7 @@ from prefect_mcp_server.settings import settings
 from prefect_mcp_server.types import (
     AutomationsResult,
     DashboardResult,
+    DeploymentActivityResult,
     DeploymentsResult,
     EventsResult,
     FlowRunsResult,
@@ -163,6 +164,44 @@ async def get_deployments(
     """
     return await _prefect_client.get_deployments(
         filter=filter,
+        limit=limit,
+        workspace_id=workspace_id,
+    )
+
+
+async def get_deployment_activity(
+    workspace_id: WorkspaceId | None = None,
+    window_days: Annotated[
+        int, Field(description="How many days back to summarize", ge=1, le=90)
+    ] = 30,
+    limit: Annotated[
+        int, Field(description="Maximum number of deployments to include", ge=1, le=200)
+    ] = 100,
+) -> DeploymentActivityResult:
+    """Summarize recent run outcomes and emitted events for every deployment.
+
+    One compact record per deployment: paused and schedule status, how many
+    enabled automations run it, counts of runs that started in the window
+    (total, completed, failed, crashed, cancelled), the latest run and latest
+    completion, and output_events.
+
+    output_events counts events in the window whose related resources include
+    the deployment and whose names do not start with "prefect." or
+    "prefect-cloud.". Prefect relates events emitted inside a flow run to that
+    run's deployment, so this shows whether the deployment's runs produced
+    anything beyond their own lifecycle events.
+
+    Useful for spotting patterns that run state alone hides:
+    - dormant: no runs in the window
+    - spinning: many runs, all completing, but no output events
+    - broken: failed or crashed runs dominate the window
+
+    Fields are null when the Prefect API could not answer that query; notes
+    lists which queries failed. The response includes truncated=true when more
+    deployments exist beyond the limit.
+    """
+    return await _prefect_client.get_deployment_activity(
+        window_days=window_days,
         limit=limit,
         workspace_id=workspace_id,
     )
@@ -547,6 +586,7 @@ CORE_TOOLS = (
     get_identity,
     get_dashboard,
     get_deployments,
+    get_deployment_activity,
     get_flows,
     get_flow_runs,
     get_flow_run_logs,
