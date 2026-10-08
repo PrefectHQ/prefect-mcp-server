@@ -10,7 +10,10 @@
       "name": "prefect",
       "description": "Prefect workflow orchestration - hosted MCP tools for diagnostics, documentation, and release notes",
       "source": "./",
-      "skills": ["./plugins/prefect/skills/workflows"]
+      "skills": [
+        "./plugins/prefect/skills/sdk",
+        "./plugins/prefect/skills/cli"
+      ]
     }
   ]
 }
