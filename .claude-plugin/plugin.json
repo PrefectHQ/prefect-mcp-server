@@ -18,5 +18,8 @@
     "observability"
   ],
   "skills": "./plugins/prefect/skills/",
-  "mcpServers": "./plugins/prefect/.mcp.json"
+  "mcpServers": "./plugins/prefect/.mcp.json",
+  "dependencies": [
+    "prefect-skills"
+  ]
 }
