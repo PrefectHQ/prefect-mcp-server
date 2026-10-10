@@ -1,0 +1,141 @@
+name: Evals
+
+# Paid model calls run only for changes that can affect evaluated behavior.
+# Workflow-only changes can be tested explicitly with workflow_dispatch.
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "evals/**"
+      - "src/**"
+      - "uv.lock"
+      - "pyproject.toml"
+  pull_request:
+    paths:
+      - "evals/**"
+      - "src/**"
+      - "uv.lock"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 10
+
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: "3.12"
+
+      - name: Post Logfire Link
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.payload.pull_request.head.sha;
+            const serviceName = 'prefect-mcp-server-evals';
+
+            // Get current time and 15 minutes later
+            const now = new Date();
+            const later = new Date(now.getTime() + 15 * 60 * 1000);
+
+            // Format as ISO strings and encode for URL
+            const since = encodeURIComponent(now.toISOString());
+            const until = encodeURIComponent(later.toISOString());
+
+            const logfireUrl = `https://logfire-us.pydantic.dev/prefect/prefect-mcp-server?env=ci&service=${serviceName}&version=${sha}&since=${since}&until=${until}`;
+
+            const comment = `## 📊 Observability
+
+            View eval run traces in Logfire: [${serviceName} @ ${sha.substring(0, 7)}](${logfireUrl})`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Observability')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+
+      - name: Run evals
+        id: run_evals
+        run: |
+          # Run pytest and capture exit code
+          # Exit codes: 0=pass, 1=test failures (acceptable), 3+=collection/setup errors (should fail)
+          uv run --frozen pytest -n auto evals --junit-xml=evals-results.xml --tb=short || EXIT_CODE=$?
+
+          # If no exit code set, tests passed
+          if [ -z "$EXIT_CODE" ]; then
+            echo "✅ All evals passed"
+            exit 0
+          fi
+
+          # Exit code 1 = tests ran but some failed (acceptable with continue-on-error behavior)
+          if [ "$EXIT_CODE" -eq 1 ]; then
+            echo "⚠️ Some evals failed (exit code 1)"
+            exit 0
+          fi
+
+          # Exit codes 2-5 = collection errors, internal errors, etc (should fail the job)
+          echo "❌ Eval setup/collection failed (exit code $EXIT_CODE)"
+          exit "$EXIT_CODE"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
+          ENVIRONMENT: ci
+          LOGFIRE_SERVICE_NAME: prefect-mcp-server-evals
+          LOGFIRE_SERVICE_VERSION: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: evals-results.xml
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            evals-results.xml
+          check_name: Evaluation Results
+          comment_mode: always
+          fail_on: nothing
