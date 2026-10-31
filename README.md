@@ -140,8 +140,10 @@ Deploy your own server when you need a custom Prefect API target, self-hosted Pr
    claude mcp add prefect --transport http https://your-server-name.fastmcp.app/mcp
    ```
 
-> [!NOTE]
-> For self-hosted deployments, environment variables are configured on the deployed MCP server, not in your MCP client configuration. The MCP host authenticates access to the MCP server, while this server uses the configured Prefect credentials to access Prefect.
+> [!WARNING]
+> **Protect self-hosted HTTP endpoints before exposing them outside a trusted network.** In the default self-hosted configuration, this server does not authenticate callers of `/mcp`. Setting `PREFECT_API_KEY` or `PREFECT_API_AUTH_STRING` authorizes the server's outgoing requests to Prefect; it does not restrict who can invoke this server's MCP tools. Without separate inbound access controls, anyone who can reach the endpoint may query Prefect data using those credentials. Require client authentication at a trusted gateway or MCP auth layer, and use credentials with only the necessary Prefect permissions. Prefect's hosted Cloud OAuth endpoint uses a separate, authenticated mode.
+>
+> For self-hosted deployments, configure Prefect credentials as environment variables on the deployed server, not in the MCP client configuration. See [Security Considerations](SECURITY.md) for the authentication modes.
 
 <details>
 <summary>Hosted Prefect Cloud OAuth MCP</summary>
