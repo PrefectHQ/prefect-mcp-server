@@ -31,7 +31,11 @@ def build_server(repo: Path, *, env: dict[str, str] | None = None) -> FastMCP:
     )
     server.add_provider(
         SkillCatalogProvider(
-            [Skill.from_package("prefect_mcp_skills", "skills/diagnose-flow-run")]
+            [
+                Skill.from_package(
+                    "prefect_mcp_skills", "skills/prefect-database-retention"
+                )
+            ]
         )
     )
     return server

@@ -1,9 +1,10 @@
 # Skills over MCP experiment
 
 This opt-in stdio server exposes Prefect MCP's existing tools alongside a bundled
-`diagnose-flow-run` skill using FastMCP's experimental Skills extension
+`prefect-database-retention` skill using FastMCP's experimental Skills extension
 (SEP-2640). It proves out `skills/list`, `skills/get`, verified resource reads,
-and an agent applying the retrieved instructions to a real failed Prefect run.
+and an agent planning retention against real Prefect run records. The skill is
+distilled from the [advanced database maintenance guide](https://docs.prefect.io/v3/advanced/database-maintenance).
 
 ## Run
 
@@ -24,6 +25,16 @@ The gateway has its own project, environment, and lockfile. It runs FastMCP
 server in the root project's FastMCP 3 environment. This avoids reopening the
 production MCP SDK/instrumentation migration in #189 and #220. The production
 entrypoints and dependency resolution are unchanged. Alpha APIs may change.
+
+## Discovery and plugin coexistence
+
+The bundled skill is specific to self-hosted database retention. It is separate
+from the plugin's existing `workflows` skill; neither is installed over the other.
+It adds no tools, prompts, or server instructions. A legacy client keeps the
+existing tool descriptions and can ignore skills entirely. FastMCP also lists
+the files as ordinary `skill://` resources, so they are visible in resource
+browsers even without Skills-extension support; they are not completely hidden.
+Only a skills-aware host adapter advertises the skill catalog to the model.
 
 ## Client experiment
 
@@ -47,13 +58,20 @@ ANTHROPIC_API_KEY=... uv run --project experiments/skills-mcp --frozen pytest ex
 ```
 
 The protocol tests exercise real MCP discovery, verified reads, tool proxying,
-and rejection of corrupted resource bytes. The live eval starts an ephemeral
-Prefect API, runs a flow that fails CSV validation, and asks for an incident
-handoff without naming the skill or providing its body. It requires a skill
-load, supporting-file read, run and log queries, the actual UUID and failing
-column, the reference's report headings, and an unchanged run state. It uses
-Claude Haiku 4.5 by default (`SKILLS_EVAL_MODEL` overrides it), with a 15-request
-limit and no LLM judge.
+corrupted-resource rejection, and the unchanged legacy tool/prompt surface.
+The live eval seeds an ephemeral Prefect API with old terminal runs, a recent
+completion that started long ago, and an active run. The agent must preview only
+the eligible records and propose a 30-day policy that preserves event retention,
+starts the missing background services, requires backup/approval, and avoids
+`VACUUM FULL` for a no-downtime scenario. Configuration is validated with the
+installed Prefect settings model; assertions do not depend on report wording.
+
+The same scenario runs with and without the existing plugin's `workflows`
+instructions loaded. A negative case asks for a flow listing and verifies that
+the database skill is not loaded. The eval does not execute deletion, change
+settings, or test PostgreSQL maintenance itself; its API fixture uses SQLite.
+It uses Claude Haiku 4.5 by default (`SKILLS_EVAL_MODEL` overrides it), with a
+15-request limit per cleanup scenario and no LLM judge.
 
 The `Skills over MCP experiment` workflow runs protocol tests on PRs, and the
 paid eval on same-repository PRs, main, and manual dispatch. Fork PRs run only

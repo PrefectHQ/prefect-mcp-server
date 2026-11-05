@@ -30,11 +30,11 @@ async def test_bundled_skill_and_prefect_tools_share_a_connection():
     ) as client:
         entries = await client.list_skills()
         assert [str(entry.uri) for entry in entries] == [
-            "skill://diagnose-flow-run/SKILL.md"
+            "skill://prefect-database-retention/SKILL.md"
         ]
         skill = await client.read_skill(entries[0].uri)
-        assert skill.name == "diagnose-flow-run"
-        assert "references/handoff.md" in skill.files
+        assert skill.name == "prefect-database-retention"
+        assert "references/retention.md" in skill.files
         assert "get_flow_run_logs" in {tool.name for tool in await client.list_tools()}
         result = await client.call_tool("orientation", {})
         assert not result.is_error
@@ -64,3 +64,41 @@ async def test_client_rejects_tampered_skill_content():
             ValueError, match="(?i)(bytes|size|digest|sha256|integrity)"
         ):
             await client.read_skill(entry.uri)
+
+
+async def test_legacy_client_keeps_existing_tool_and_prompt_surface():
+    from prefect_mcp_skills.server import build_server
+
+    async with Client(
+        StdioTransport(
+            command="uv",
+            args=[
+                "run",
+                "--frozen",
+                "--project",
+                str(REPO),
+                "-m",
+                "prefect_mcp_server",
+            ],
+            keep_alive=False,
+        ),
+        mode="legacy",
+        init_timeout=60,
+    ) as backend:
+        expected_tools = {
+            tool.name: tool.description for tool in await backend.list_tools()
+        }
+        expected_prompts = [prompt.name for prompt in await backend.list_prompts()]
+
+    async with Client(build_server(REPO), mode="legacy") as client:
+        assert {
+            tool.name: tool.description for tool in await client.list_tools()
+        } == expected_tools
+        assert [
+            prompt.name for prompt in await client.list_prompts()
+        ] == expected_prompts
+        assert client.initialize_result is not None
+        assert not client.initialize_result.instructions
+        assert "skill://prefect-database-retention/SKILL.md" in {
+            str(resource.uri) for resource in await client.list_resources()
+        }
