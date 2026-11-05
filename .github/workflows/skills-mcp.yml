@@ -1,0 +1,58 @@
+name: Skills over MCP experiment
+
+on:
+  pull_request:
+    paths:
+      - "experiments/skills-mcp/**"
+      - "plugins/prefect/skills/**"
+      - "src/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/skills-mcp.yml"
+  push:
+    branches: [main]
+    paths:
+      - "experiments/skills-mcp/**"
+      - "plugins/prefect/skills/**"
+      - "src/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/skills-mcp.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen
+      - run: uv run --project experiments/skills-mcp --frozen pytest experiments/skills-mcp/tests -q
+      - run: uv run --frozen ty check --project experiments/skills-mcp --python experiments/skills-mcp/.venv/bin/python
+
+  eval:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen
+      - name: Evaluate database-retention skill
+        run: uv run --project experiments/skills-mcp --frozen pytest experiments/skills-mcp/evals -q --junitxml=skills-eval-results.xml
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PREFECT_SERVER_ANALYTICS_ENABLED: "false"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: skills-eval-results
+          path: skills-eval-results.xml

@@ -1,0 +1,30 @@
+[project]
+name = "prefect-mcp-skills"
+version = "0.1.0"
+description = "Isolated skills-over-MCP proof of concept for Prefect MCP"
+requires-python = ">=3.12"
+dependencies = ["fastmcp==4.2.0a3", "fastmcp-slim==4.2.0a3", "pydantic-ai-slim[anthropic]>=2.64,<3"]
+
+[project.scripts]
+prefect-mcp-skills = "prefect_mcp_skills.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pytest", "pytest-asyncio", "prefect==3.7.1", "fastapi==0.136.1"]
+
+[tool.uv.workspace]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+junit_logging = "system-out"
+
+[tool.ty.src]
+include = ["src", "tests", "evals"]
+
+[tool.ty.environment]
+python-version = "3.12"

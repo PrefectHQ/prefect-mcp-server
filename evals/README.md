@@ -67,6 +67,21 @@ Provider defaults:
 | **rate_limits/test_cloud_oauth_cross_workspace** | verifies Cloud OAuth mode can answer support-style questions across consented workspaces | ✅ implemented | - |
 | **rate_limits/test_cloud_oauth_single_workspace** | verifies a single-workspace Cloud OAuth user gets a failure diagnosis without any tool call erroring | ✅ implemented | - |
 
+## skills-over-MCP experiment
+
+The isolated FastMCP 4.2 experiment has its own CI workflow and environment:
+
+```bash
+uv run --project experiments/skills-mcp --frozen pytest experiments/skills-mcp/evals -q
+```
+
+| eval | scenario |
+|------|----------|
+| `test_agent_previews_database_retention` | preview a 30-day self-hosted retention policy without deleting active/recent runs; exercised with and without the existing plugin instructions |
+| `test_flow_listing_does_not_load_retention_skill` | an ordinary flow listing does not load database-cleanup guidance |
+
+See [the experiment](../experiments/skills-mcp/README.md) for setup, protocol tests, and limits.
+
 ## adding new evals
 
 1. create an issue describing the expectation (see [#27](https://github.com/PrefectHQ/prefect-mcp-server/issues/27))
