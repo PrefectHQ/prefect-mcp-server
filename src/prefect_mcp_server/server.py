@@ -1,5 +1,6 @@
 """Prefect MCP Server - Clean implementation following FastMCP patterns."""
 
+import sys
 from datetime import datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID
@@ -51,6 +52,8 @@ def _configure_logfire() -> None:
         environment=settings.logfire.environment,
         token=settings.logfire.token,
         sampling=sampling,
+        # stdout carries the stdio transport's JSON-RPC stream.
+        console=logfire.ConsoleOptions(output=sys.stderr),
     )
     logfire.instrument_mcp()
 

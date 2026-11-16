@@ -1,5 +1,6 @@
 """Tests for Prefect MCP server."""
 
+import sys
 from uuid import UUID
 
 import pytest
@@ -38,6 +39,7 @@ def test_logfire_instruments_mcp_with_service_name(
 
     server._configure_logfire()
 
+    assert configure_calls[0].pop("console").output is sys.stderr
     assert configure_calls == [
         {
             "service_name": settings.logfire.service_name,
