@@ -18,11 +18,10 @@ from prefect_mcp_server.settings import settings
 pytestmark = pytest.mark.timeout(30)
 
 
-def test_logfire_instruments_mcp_with_service_name(
+def test_logfire_configures_service_name_and_sampling(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     configure_calls = []
-    instrument_calls = []
     sampling = object()
     sampling_calls = []
     monkeypatch.setattr(
@@ -32,9 +31,6 @@ def test_logfire_instruments_mcp_with_service_name(
     )
     monkeypatch.setattr(
         server.logfire, "configure", lambda **kwargs: configure_calls.append(kwargs)
-    )
-    monkeypatch.setattr(
-        server.logfire, "instrument_mcp", lambda: instrument_calls.append(True)
     )
 
     server._configure_logfire()
@@ -57,7 +53,6 @@ def test_logfire_instruments_mcp_with_service_name(
             "background_rate": settings.logfire.sampling_background_rate,
         }
     ]
-    assert instrument_calls == [True]
 
 
 async def test_server_has_expected_capabilities(prefect_mcp_server: FastMCP) -> None:
@@ -102,11 +97,13 @@ async def test_all_prefect_tools_declare_submission_annotations(
     for tool in tools:
         assert tool.annotations is not None
         assert tool.annotations.title
-        assert tool.annotations.openWorldHint is False
-        assert tool.annotations.destructiveHint is (
+        assert tool.annotations.open_world_hint is False
+        assert tool.annotations.destructive_hint is (
             tool.name == "execution_plans_publish"
         )
-        assert tool.annotations.readOnlyHint is (tool.name != "execution_plans_publish")
+        assert tool.annotations.read_only_hint is (
+            tool.name != "execution_plans_publish"
+        )
 
 
 async def test_tool_descriptions_do_not_route_between_tools(

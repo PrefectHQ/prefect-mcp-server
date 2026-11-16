@@ -11,7 +11,7 @@ from fastmcp import FastMCP
 from fastmcp.server import create_proxy
 from fastmcp.server.auth import AuthProvider
 from fastmcp.server.providers.proxy import ProxyClient
-from mcp.types import ToolAnnotations
+from mcp_types import ToolAnnotations
 from prefect.client.base import ServerType, determine_server_type
 from pydantic import Field
 from starlette.requests import Request
@@ -55,7 +55,6 @@ def _configure_logfire() -> None:
         # stdout carries the stdio transport's JSON-RPC stream.
         console=logfire.ConsoleOptions(output=sys.stderr),
     )
-    logfire.instrument_mcp()
 
 
 _configure_logfire()
@@ -569,9 +568,9 @@ def tool_annotations(tool: Any, *, read_only: bool) -> ToolAnnotations:
     """Return directory-ready safety annotations for a registered tool."""
     return ToolAnnotations(
         title=tool.__name__.replace("_", " ").title(),
-        readOnlyHint=read_only,
-        openWorldHint=False,
-        destructiveHint=not read_only,
+        read_only_hint=read_only,
+        open_world_hint=False,
+        destructive_hint=not read_only,
     )
 
 

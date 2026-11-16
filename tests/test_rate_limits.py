@@ -871,5 +871,5 @@ async def test_review_rate_limits_tool_accepts_workspace_id() -> None:
     async with Client(server) as client:
         tools = {tool.name: tool for tool in await client.list_tools()}
 
-    schema = tools["review_rate_limits"].inputSchema
+    schema = tools["review_rate_limits"].input_schema
     assert "workspace_id" in schema["properties"]
