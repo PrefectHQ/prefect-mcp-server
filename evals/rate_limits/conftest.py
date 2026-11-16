@@ -7,7 +7,7 @@ import threading
 import time
 from collections.abc import AsyncGenerator, Callable, Generator
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import jwt
@@ -377,7 +377,7 @@ def cloud_mcp_server(
 @pytest.fixture
 def cloud_oauth_access_token() -> str:
     """Signed bearer token for the Cloud OAuth MCP eval server."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return jwt.encode(
         {
             "iss": "AuthServerID",

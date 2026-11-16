@@ -4,7 +4,7 @@ description = "MCP server for interacting with Prefect"
 readme = "README.md"
 dynamic = ["version"]
 authors = [{ name = "Prefect Technologies", email = "help@prefect.io" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "fastmcp>=3.3.1,<4",
     "logfire>=4.9.0",
@@ -56,7 +56,7 @@ include = ["src", "tests"]
 exclude = ["**/node_modules", "**/__pycache__", ".venv", ".git", "dist"]
 
 [tool.ty.environment]
-python-version = "3.10"
+python-version = "3.11"
 
 [tool.ty.rules]
 # invalid-argument-type = "ignore"

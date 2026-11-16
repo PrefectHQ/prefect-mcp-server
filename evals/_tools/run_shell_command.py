@@ -42,7 +42,7 @@ async def run_shell_command(ctx: RunContext[Any], args: ShellArgs) -> ShellResul
     )
     try:
         out, err = await asyncio.wait_for(proc.communicate(), timeout=20)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         proc.kill()
         return ShellResult(exit_code=124, stdout="", stderr="Timed out after 20s")
     return ShellResult(

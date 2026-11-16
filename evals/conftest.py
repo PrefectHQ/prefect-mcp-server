@@ -19,7 +19,7 @@ Environment Variables:
 import os
 import textwrap
 from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import NamedTuple
 
 import logfire
@@ -94,7 +94,7 @@ class EvaluationResult(BaseModel):
 @pytest.fixture(scope="session")
 def start_of_test() -> datetime:
     """Test start time for generating realistic timestamps."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @pytest.fixture(scope="session", autouse=True)

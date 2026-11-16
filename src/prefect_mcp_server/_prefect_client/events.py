@@ -1,6 +1,6 @@
 """Events functionality for Prefect MCP server."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -82,7 +82,7 @@ async def fetch_events(
 
             # Set default time range if not specified (from settings)
             if not occurred_after and not occurred_before:
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 occurred_after = (now - settings.events_default_lookback).isoformat()
                 occurred_before = now.isoformat()
 

@@ -1,6 +1,6 @@
 """Rate limits inspection for Prefect Cloud."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from prefect_mcp_server._prefect_client.client import (
@@ -65,9 +65,9 @@ async def get_rate_limits(
 
             # Set defaults matching API defaults
             if since is None:
-                since = datetime.now(timezone.utc) - timedelta(days=3)
+                since = datetime.now(UTC) - timedelta(days=3)
             if until is None:
-                until = datetime.now(timezone.utc) - timedelta(minutes=1)
+                until = datetime.now(UTC) - timedelta(minutes=1)
 
             async with get_prefect_cloud_client(
                 workspace_id=workspace_id
