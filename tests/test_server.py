@@ -130,6 +130,17 @@ async def test_tool_descriptions_do_not_route_between_tools(
     assert "workspace-scoped tools" not in descriptions["list_authorized_workspaces"]
 
 
+async def test_tool_descriptions_keep_docstring_examples() -> None:
+    server = build_prefect_mcp_server(include_docs_proxy=False)
+
+    async with Client(server) as client:
+        tools = {tool.name: tool for tool in await client.list_tools()}
+
+    description = tools["get_flows"].description or ""
+    assert "Examples:" in description
+    assert "get_flows(filter=" in description
+
+
 def test_openai_apps_challenge_returns_configured_token(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

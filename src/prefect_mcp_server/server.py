@@ -1,5 +1,6 @@
 """Prefect MCP Server - Clean implementation following FastMCP patterns."""
 
+import inspect
 import sys
 from datetime import datetime
 from typing import Annotated, Any, Literal
@@ -574,6 +575,16 @@ def tool_annotations(tool: Any, *, read_only: bool) -> ToolAnnotations:
     )
 
 
+def add_tool(server: FastMCP, tool: Any, *, read_only: bool) -> None:
+    """Register a tool with its whole docstring as the description."""
+    # FastMCP ends the description at the first docstring section, which would
+    # drop the Examples that show agents the filter syntax.
+    server.tool(
+        annotations=tool_annotations(tool, read_only=read_only),
+        description=inspect.getdoc(tool),
+    )(tool)
+
+
 async def openai_apps_challenge(_: Request) -> Response:
     """Return the configured OpenAI public plugin domain challenge token."""
     token = settings.openai_apps_challenge_token
@@ -625,7 +636,7 @@ def build_prefect_mcp_server(
         server.mount(docs_proxy, namespace="docs")
 
     for tool in CORE_TOOLS:
-        server.tool(annotations=tool_annotations(tool, read_only=True))(tool)
+        add_tool(server, tool, read_only=True)
 
     should_include_cloud_tools = (
         include_cloud_tools
@@ -637,18 +648,18 @@ def build_prefect_mcp_server(
     # but must not be advertised by the hosted OAuth server.
     if should_include_cloud_tools and not include_cloud_oauth_tools:
         for tool in CLOUD_TOOLS:
-            server.tool(annotations=tool_annotations(tool, read_only=True))(tool)
+            add_tool(server, tool, read_only=True)
 
     if include_cloud_oauth_tools:
         for tool in CLOUD_OAUTH_TOOLS:
-            server.tool(annotations=tool_annotations(tool, read_only=True))(tool)
+            add_tool(server, tool, read_only=True)
 
     for tool in EXECUTION_PLAN_TOOLS:
-        annotations = tool_annotations(
+        add_tool(
+            server,
             tool,
             read_only=tool is not execution_plans.execution_plans_publish,
         )
-        server.tool(annotations=annotations)(tool)
 
     return server
 
