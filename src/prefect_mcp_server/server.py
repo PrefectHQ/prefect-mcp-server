@@ -1,5 +1,7 @@
 """Prefect MCP Server - Clean implementation following FastMCP patterns."""
 
+import inspect
+import sys
 from datetime import datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID
@@ -10,7 +12,7 @@ from fastmcp import FastMCP
 from fastmcp.server import create_proxy
 from fastmcp.server.auth import AuthProvider
 from fastmcp.server.providers.proxy import ProxyClient
-from mcp.types import ToolAnnotations
+from mcp_types import ToolAnnotations
 from prefect.client.base import ServerType, determine_server_type
 from pydantic import Field
 from starlette.requests import Request
@@ -51,8 +53,9 @@ def _configure_logfire() -> None:
         environment=settings.logfire.environment,
         token=settings.logfire.token,
         sampling=sampling,
+        # stdout carries the stdio transport's JSON-RPC stream.
+        console=logfire.ConsoleOptions(output=sys.stderr),
     )
-    logfire.instrument_mcp()
 
 
 _configure_logfire()
@@ -566,10 +569,20 @@ def tool_annotations(tool: Any, *, read_only: bool) -> ToolAnnotations:
     """Return directory-ready safety annotations for a registered tool."""
     return ToolAnnotations(
         title=tool.__name__.replace("_", " ").title(),
-        readOnlyHint=read_only,
-        openWorldHint=False,
-        destructiveHint=not read_only,
+        read_only_hint=read_only,
+        open_world_hint=False,
+        destructive_hint=not read_only,
     )
+
+
+def add_tool(server: FastMCP, tool: Any, *, read_only: bool) -> None:
+    """Register a tool with its whole docstring as the description."""
+    # FastMCP ends the description at the first docstring section, which would
+    # drop the Examples that show agents the filter syntax.
+    server.tool(
+        annotations=tool_annotations(tool, read_only=read_only),
+        description=inspect.getdoc(tool),
+    )(tool)
 
 
 async def openai_apps_challenge(_: Request) -> Response:
@@ -623,7 +636,7 @@ def build_prefect_mcp_server(
         server.mount(docs_proxy, namespace="docs")
 
     for tool in CORE_TOOLS:
-        server.tool(annotations=tool_annotations(tool, read_only=True))(tool)
+        add_tool(server, tool, read_only=True)
 
     should_include_cloud_tools = (
         include_cloud_tools
@@ -635,18 +648,18 @@ def build_prefect_mcp_server(
     # but must not be advertised by the hosted OAuth server.
     if should_include_cloud_tools and not include_cloud_oauth_tools:
         for tool in CLOUD_TOOLS:
-            server.tool(annotations=tool_annotations(tool, read_only=True))(tool)
+            add_tool(server, tool, read_only=True)
 
     if include_cloud_oauth_tools:
         for tool in CLOUD_OAUTH_TOOLS:
-            server.tool(annotations=tool_annotations(tool, read_only=True))(tool)
+            add_tool(server, tool, read_only=True)
 
     for tool in EXECUTION_PLAN_TOOLS:
-        annotations = tool_annotations(
+        add_tool(
+            server,
             tool,
             read_only=tool is not execution_plans.execution_plans_publish,
         )
-        server.tool(annotations=annotations)(tool)
 
     return server
 

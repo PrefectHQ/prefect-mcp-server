@@ -7,7 +7,7 @@ from prefect.client.orchestration import PrefectClient
 from prefect.client.schemas.actions import WorkPoolCreate
 from prefect.states import Late
 from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServer
+from pydantic_ai.mcp import MCPToolset
 
 from evals._tools import run_shell_command
 from evals._tools.spy import ToolCallSpy
@@ -73,7 +73,7 @@ async def deployment_with_late_runs(
 
 @pytest.fixture
 def prefect_reasoning_agent(
-    prefect_mcp_server: MCPServer, reasoning_model: str
+    prefect_mcp_server: MCPToolset, reasoning_model: str
 ) -> Agent:
     return Agent(
         name="Prefect Assistant",

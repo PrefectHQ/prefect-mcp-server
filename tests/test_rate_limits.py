@@ -1,6 +1,6 @@
 """Unit tests for rate limits client module."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 from uuid import UUID
 
@@ -524,8 +524,8 @@ async def test_get_rate_limits_with_custom_timerange() -> None:
         mock_get_cloud_client.return_value.__aenter__.return_value = mock_cloud_client
         mock_get_cloud_client.return_value.__aexit__.return_value = None
 
-        since = datetime(2025, 9, 30, tzinfo=timezone.utc)
-        until = datetime(2025, 10, 1, tzinfo=timezone.utc)
+        since = datetime(2025, 9, 30, tzinfo=UTC)
+        until = datetime(2025, 10, 1, tzinfo=UTC)
         result = await get_rate_limits(since=since, until=until)
 
     assert result["success"] is True
@@ -871,5 +871,5 @@ async def test_review_rate_limits_tool_accepts_workspace_id() -> None:
     async with Client(server) as client:
         tools = {tool.name: tool for tool in await client.list_tools()}
 
-    schema = tools["review_rate_limits"].inputSchema
+    schema = tools["review_rate_limits"].input_schema
     assert "workspace_id" in schema["properties"]

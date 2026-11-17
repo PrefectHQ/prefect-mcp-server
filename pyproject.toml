@@ -4,10 +4,10 @@ description = "MCP server for interacting with Prefect"
 readme = "README.md"
 dynamic = ["version"]
 authors = [{ name = "Prefect Technologies", email = "help@prefect.io" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
-    "fastmcp>=3.3.1,<4",
-    "logfire>=4.9.0",
+    "fastmcp>=4.2.0,<5",
+    "logfire>=5.6.0",
     "prefect>=3.4.22",
     "pydantic>=2.12.0",
 ]
@@ -26,7 +26,7 @@ dev = [
     "docs-mcp-server",
     "ipython",
     "pre-commit>=4.3.0",
-    "pydantic-ai>=1.0.10",
+    "pydantic-ai>=2.68.0",
     "pytest-asyncio>=0.21.0",
     "pytest-env>=1.2.0",
     "pytest-recording>=0.13.4",
@@ -56,7 +56,7 @@ include = ["src", "tests"]
 exclude = ["**/node_modules", "**/__pycache__", ".venv", ".git", "dist"]
 
 [tool.ty.environment]
-python-version = "3.10"
+python-version = "3.11"
 
 [tool.ty.rules]
 # invalid-argument-type = "ignore"

@@ -1,6 +1,6 @@
 """Dashboard functionality for Prefect MCP server."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import cast
 from uuid import UUID
 
@@ -32,7 +32,7 @@ async def fetch_dashboard(workspace_id: UUID | None = None) -> DashboardResult:
             # 2. Recent failures that need attention
             # We'll make targeted queries for each instead of fetching everything
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             # Get currently running flows
             running_runs = await client.read_flow_runs(

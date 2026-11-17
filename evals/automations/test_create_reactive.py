@@ -7,7 +7,7 @@ from prefect.client.schemas.objects import Flow
 from prefect.client.schemas.responses import DeploymentResponse
 from pydantic import BaseModel
 from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServer
+from pydantic_ai.mcp import MCPToolset
 
 from evals._tools import read_file, run_shell_command, write_file
 
@@ -37,7 +37,7 @@ class AutomationIDOutput(BaseModel):
 
 @pytest.fixture
 def eval_agent(
-    prefect_mcp_server: MCPServer, reasoning_model: str
+    prefect_mcp_server: MCPToolset, reasoning_model: str
 ) -> Agent[None, AutomationIDOutput]:
     """
     Reasoning agent for creating reactive automations.

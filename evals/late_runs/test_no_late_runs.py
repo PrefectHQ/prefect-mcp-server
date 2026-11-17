@@ -97,8 +97,10 @@ async def test_no_late_runs_for_deployment(
     async with simple_agent:
         result = await simple_agent.run(
             f"Are there any late flow runs for the deployment '{deployment_name}'? "
-            "Check if any runs from this deployment have been scheduled for a while "
-            "but haven't started executing."
+            f"Restrict your answer to '{deployment_name}' only — other deployments "
+            "in this workspace are not part of the question. Check whether any runs "
+            "belonging to that deployment have been scheduled for a while but "
+            "haven't started executing."
         )
 
     await evaluate_response(
