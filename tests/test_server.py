@@ -126,6 +126,7 @@ async def test_tool_descriptions_do_not_route_between_tools(
                 assert other_tool.name not in description
 
     descriptions = {tool.name: tool.description or "" for tool in tools}
+    assert "which Prefect MCP tool to use" not in descriptions["orientation"]
     assert "workspace-scoped tools" not in descriptions["list_authorized_workspaces"]
 
 

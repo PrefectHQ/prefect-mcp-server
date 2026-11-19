@@ -8,6 +8,18 @@
     "category": "DEVELOPER_TOOLS"
   },
   "tools": {
+    "orientation": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns guidance about the available Prefect tools without accessing or changing workspace data.",
+        "open_world_justification": "Does not write to public internet state or any external system.",
+        "destructive_justification": "Does not delete, overwrite, revoke, or otherwise modify data."
+      }
+    },
     "get_identity": {
       "annotations": {
         "readOnlyHint": true,
