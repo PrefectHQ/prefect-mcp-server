@@ -47,7 +47,8 @@ async def test_oss_agent_loads_workflows_skill_to_triage_failure(
 ) -> None:
     agent, loaded = await skills_aware_agent(skills_mcp_server, simple_model)
     async with agent:
-        result = await agent.run("Something in Prefect just failed. What and why?")
+        # other evals share this server's database, so name the flow
+        result = await agent.run("Our warehouse-sync flow just failed. Why?")
 
     assert loaded == ["skill://workflows/SKILL.md"]
     tool_call_spy.assert_tool_was_called("get_identity")

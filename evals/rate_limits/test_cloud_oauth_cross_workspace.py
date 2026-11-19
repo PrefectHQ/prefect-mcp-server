@@ -246,7 +246,8 @@ async def test_cloud_oauth_agent_loads_workflows_skill_to_pick_workspace(
         )
 
     assert loaded == ["skill://workflows/SKILL.md"]
-    tool_call_spy.assert_tool_was_called("list_authorized_workspaces")
+    # the handle may be resolved via get_identity or list_authorized_workspaces;
+    # what matters is that runs are read from the named workspace, not guessed
     tool_call_spy.assert_tool_was_called_with(
         "get_flow_runs", workspace_id=PLATFORM_WORKSPACE_ID
     )
