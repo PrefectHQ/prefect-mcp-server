@@ -24,8 +24,13 @@ async def skills_aware_agent(server: MCPServer, model: str) -> tuple[Agent, list
     agent = Agent(
         model,
         toolsets=[server],
-        instructions="Skills available via load_skill:\n"
-        + "\n".join(f"- {uri}: {description}" for uri, description in catalog.items()),
+        # mirrors how hosts like Claude Code advertise skills to the model
+        instructions=(
+            "The connected server provides skills: task-specific instructions. "
+            "When a request matches a skill's description, call load_skill with "
+            "its URI before doing anything else, then follow it.\n\nAvailable skills:\n"
+            + "\n".join(f"- {uri}: {desc}" for uri, desc in catalog.items())
+        ),
     )
 
     @agent.tool_plain
