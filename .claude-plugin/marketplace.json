@@ -10,7 +10,21 @@
       "name": "prefect",
       "description": "Prefect workflow orchestration - hosted MCP tools for diagnostics, documentation, and release notes",
       "source": "./",
-      "skills": ["./plugins/prefect/skills/workflows"]
+      "skills": [
+        "./plugins/prefect/skills/workflows"
+      ],
+      "dependencies": [
+        "prefect-skills"
+      ]
+    },
+    {
+      "name": "prefect-skills",
+      "description": "Portable Prefect skills (debugging, CLI) that work with or without the MCP server",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/PrefectHQ/skills.git"
+      },
+      "strict": false
     }
   ]
 }
