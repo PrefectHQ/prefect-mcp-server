@@ -35,6 +35,8 @@ Start broad and narrow only as needed:
 1. Use `get_dashboard` for an overview of recent failures, lateness, deployments,
    and work-pool health.
 2. Use `get_flow_runs` to inspect the affected run and preserve its full UUID.
+   Its filter has no flow field: to find a flow's runs, filter by state (e.g.
+   `{"state": {"type": {"any_": ["FAILED", "CRASHED"]}}}`) and match `flow_name`.
 3. Use `get_deployments`, `get_work_pools`, `get_task_runs`, or `read_events` for
    the specific layer implicated by the run.
 4. Explain the evidence, distinguish the observed failure from likely causes,
