@@ -6,13 +6,13 @@ from fastmcp.utilities.skills import list_skills
 
 from prefect_mcp_server.server import build_cloud_mcp_server, build_prefect_mcp_server
 
-WORKFLOWS_SKILL = (
-    Path(__file__).parents[1] / "plugins/prefect/skills/workflows/SKILL.md"
+ORIENTATION_SKILL = (
+    Path(__file__).parents[1] / "src/prefect_mcp_server/_skills/orientation/SKILL.md"
 ).read_text()
 
 
 @pytest.mark.parametrize("cloud_oauth", [False, True], ids=["oss", "cloud-oauth"])
-async def test_serves_the_plugin_workflows_skill(
+async def test_serves_the_orientation_skill(
     monkeypatch: pytest.MonkeyPatch, cloud_oauth: bool
 ) -> None:
     if cloud_oauth:
@@ -24,6 +24,6 @@ async def test_serves_the_plugin_workflows_skill(
         server = build_prefect_mcp_server(include_docs_proxy=False)
 
     async with Client(server) as client:
-        assert [skill.name for skill in await list_skills(client)] == ["workflows"]
-        [content] = await client.read_resource("skill://workflows/SKILL.md")
-        assert getattr(content, "text") == WORKFLOWS_SKILL
+        assert [skill.name for skill in await list_skills(client)] == ["orientation"]
+        [content] = await client.read_resource("skill://orientation/SKILL.md")
+        assert getattr(content, "text") == ORIENTATION_SKILL

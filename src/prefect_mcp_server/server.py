@@ -622,7 +622,7 @@ def build_prefect_mcp_server(
         )
         server.mount(docs_proxy, namespace="docs")
 
-    server.add_provider(skills.workflows_skill_provider())
+    server.add_provider(skills.orientation_skill_provider())
 
     for tool in CORE_TOOLS:
         server.tool(annotations=tool_annotations(tool, read_only=True))(tool)
