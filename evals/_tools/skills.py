@@ -24,6 +24,9 @@ async def skills_aware_agent(server: MCPServer, model: str) -> tuple[Agent, list
     agent = Agent(
         model,
         toolsets=[server],
+        # without this, models batch load_skill with the very calls the skill
+        # should shape, so its guidance arrives too late to matter
+        model_settings={"parallel_tool_calls": False},
         # mirrors how hosts like Claude Code advertise skills to the model
         instructions=(
             "The connected server provides skills: task-specific instructions. "
