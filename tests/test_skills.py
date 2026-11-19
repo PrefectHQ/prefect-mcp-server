@@ -27,3 +27,10 @@ async def test_serves_the_orientation_skill(
         assert [skill.name for skill in await list_skills(client)] == ["orientation"]
         [content] = await client.read_resource("skill://orientation/SKILL.md")
         assert getattr(content, "text") == ORIENTATION_SKILL
+
+
+def test_orientation_skill_covers_capabilities_and_write_exception() -> None:
+    assert "Default Prefect inspection tools are read-only" in ORIENTATION_SKILL
+    assert "docs_get_release_notes" in ORIENTATION_SKILL
+    assert "execution_plans_publish" in ORIENTATION_SKILL
+    assert "credentials that have those write permissions" in ORIENTATION_SKILL

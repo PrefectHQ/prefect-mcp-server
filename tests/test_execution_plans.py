@@ -14,7 +14,7 @@ from httpx import HTTPStatusError, Request, Response
 from prefect_mcp_server import execution_plans
 from prefect_mcp_server import server as server_module
 from prefect_mcp_server._prefect_client.execution_plans import call_execution_plan_api
-from prefect_mcp_server.server import build_prefect_mcp_server, orientation
+from prefect_mcp_server.server import build_prefect_mcp_server
 from prefect_mcp_server.settings import ExperimentalSettings, settings
 
 
@@ -1027,15 +1027,6 @@ async def test_execution_plans_authoring_loop_validates_repairs_publishes_and_re
             workspace_id=workspace_id,
         ),
     ]
-
-
-def test_orientation_documents_execution_plan_publish_write_exception() -> None:
-    oriented_text = orientation()
-
-    assert "Default Prefect inspection tools are read-only" in oriented_text
-    assert "execution_plans_get_schema" in oriented_text
-    assert "execution_plans_publish" in oriented_text
-    assert "credentials that have those write permissions" in oriented_text
 
 
 def test_experimental_setting_reads_execution_plans_env_var(
