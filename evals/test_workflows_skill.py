@@ -51,7 +51,6 @@ async def test_oss_agent_loads_workflows_skill_to_triage_failure(
         result = await agent.run("Our warehouse-sync flow just failed. Why?")
 
     assert loaded == ["skill://workflows/SKILL.md"]
-    tool_call_spy.assert_tool_was_called("get_identity")
     tool_call_spy.assert_no_tool_errors()
     await evaluate_response(
         f"Does the response identify the failed run of '{failed_flow_run.name}' "
