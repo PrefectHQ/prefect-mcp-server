@@ -66,7 +66,7 @@ Provider defaults:
 | **rate_limits/test_cloud_correlate_logs** | verifies agent can correlate 429 warnings in flow logs with rate limit data (Cloud) | ✅ implemented | [#46](https://github.com/PrefectHQ/prefect-mcp-server/issues/46) |
 | **rate_limits/test_cloud_oauth_cross_workspace** | verifies Cloud OAuth mode can answer support-style questions across consented workspaces | ✅ implemented | - |
 | **rate_limits/test_cloud_oauth_single_workspace** | verifies a single-workspace Cloud OAuth user gets a failure diagnosis without any tool call erroring | ✅ implemented | - |
-| **test_workflows_skill** | with `PREFECT_MCP_EXPERIMENTAL_SKILLS_ENABLED`, a skills-aware host loads the served `workflows` skill and triages a failure without tool errors (OSS) | ✅ implemented | - |
+| **test_workflows_skill** | a skills-aware host loads the served `workflows` skill and triages a failure (OSS) | ✅ implemented | - |
 | **rate_limits/test_cloud_oauth_cross_workspace** (skill case) | the same served skill steers Cloud OAuth workspace selection by handle across two workspaces | ✅ implemented | - |
 
 ## adding new evals

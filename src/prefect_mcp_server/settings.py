@@ -93,11 +93,6 @@ class ExperimentalSettings(BaseSettings):
         description="Whether to enable the experimental execution-plan authoring MCP surface",
     )
 
-    skills_enabled: bool = Field(
-        default=False,
-        description="Whether to serve the Prefect plugin's agent skills as skill:// resources",
-    )
-
 
 class Settings(BaseSettings):
     """Settings for the Prefect MCP server."""

@@ -218,14 +218,7 @@ async def test_cloud_oauth_agent_triages_unknown_workspace_failure(
 
 
 @pytest.fixture
-def skills_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
-    # the Cloud OAuth server subprocess inherits os.environ
-    monkeypatch.setenv("PREFECT_MCP_EXPERIMENTAL_SKILLS_ENABLED", "true")
-
-
-@pytest.fixture
 async def cloud_oauth_skills_agent(
-    skills_enabled: None,
     cloud_oauth_mcp_server: MCPServer,
     simple_model: str,
 ) -> tuple[Agent, list[str]]:
