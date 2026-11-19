@@ -3,8 +3,6 @@
 from fastmcp import FastMCP
 from fastmcp.client import Client
 
-from prefect_mcp_server.server import orientation
-
 
 async def test_docs_proxy_tools_available(prefect_mcp_server: FastMCP) -> None:
     """Test that the docs proxy mounts without breaking the server.
@@ -26,11 +24,3 @@ async def test_docs_proxy_tools_available(prefect_mcp_server: FastMCP) -> None:
         if len(docs_tools) > 0:
             # All docs tools should have the docs_ prefix
             assert all(name.startswith("docs_") for name in docs_tools)
-
-
-def test_orientation_describes_capabilities_without_cross_tool_routing() -> None:
-    docstring = orientation.__doc__
-    assert docstring is not None
-    assert "capabilities and access boundaries" in docstring
-    assert "does not access or modify Prefect data" in docstring
-    assert "docs_get_release_notes" in orientation()

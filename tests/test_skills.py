@@ -4,11 +4,7 @@ import pytest
 from fastmcp.client import Client
 from fastmcp.utilities.skills import list_skills
 
-from prefect_mcp_server.server import (
-    build_cloud_mcp_server,
-    build_prefect_mcp_server,
-    orientation,
-)
+from prefect_mcp_server.server import build_cloud_mcp_server, build_prefect_mcp_server
 
 ORIENTATION_SKILL = (
     Path(__file__).parents[1] / "src/prefect_mcp_server/_skills/orientation/SKILL.md"
@@ -33,7 +29,8 @@ async def test_serves_the_orientation_skill(
         assert getattr(content, "text") == ORIENTATION_SKILL
 
 
-def test_orientation_tool_returns_the_skill_body() -> None:
-    body = orientation()
-    assert body.startswith("# Prefect MCP Orientation")
-    assert body in ORIENTATION_SKILL
+def test_orientation_skill_covers_capabilities_and_write_exception() -> None:
+    assert "Default Prefect inspection tools are read-only" in ORIENTATION_SKILL
+    assert "docs_get_release_notes" in ORIENTATION_SKILL
+    assert "execution_plans_publish" in ORIENTATION_SKILL
+    assert "credentials that have those write permissions" in ORIENTATION_SKILL
