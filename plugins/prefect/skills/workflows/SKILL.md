@@ -9,10 +9,16 @@ Use the Prefect MCP tools as the canonical source for Prefect state, documentati
 and release notes. They return structured data with complete identifiers and are
 read-only unless a tool explicitly says otherwise.
 
-## Choose a Workspace
+## Identify the Instance
 
-The hosted MCP server authenticates with Prefect Cloud OAuth. If a tool needs a
-`workspace_id` and the user has not selected one:
+Call `get_identity` first. It reports whether the connection is Prefect Cloud or a
+self-hosted (OSS) server, and which workspace or API URL it targets.
+
+On a self-hosted server, or a Cloud connection pinned to one workspace by API key,
+no workspace selection is needed.
+
+In Prefect Cloud OAuth mode, a tool may need a `workspace_id`. If the user has not
+selected one:
 
 1. Call `list_authorized_workspaces`.
 2. Use the only workspace automatically when exactly one is available.
@@ -45,9 +51,12 @@ notes and report the exact version and release date returned by the source.
 Do not answer version-sensitive questions from memory when the documentation tools
 are available.
 
+For complex objects such as automations, call `get_object_schema` before describing
+or drafting their structure.
+
 ## Mutations and the Prefect CLI
 
-The hosted Prefect MCP surface is read-only. Do not claim that it triggered,
+The Prefect MCP inspection tools are read-only. Do not claim that it triggered,
 cancelled, created, updated, or deleted anything unless an exposed tool actually
 performed that operation.
 

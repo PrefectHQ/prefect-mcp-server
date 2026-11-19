@@ -7,7 +7,9 @@ from prefect import flow
 from prefect.client.orchestration import PrefectClient
 from prefect.states import Completed, Failed
 from pydantic_ai import Agent
+from pydantic_ai.mcp import MCPServer
 
+from evals._tools.skills import skills_aware_agent
 from evals._tools.spy import ToolCallSpy
 
 OBSERVABILITY_WORKSPACE_ID = "11111111-2222-3333-4444-555555555555"
@@ -213,3 +215,45 @@ async def test_cloud_oauth_agent_triages_unknown_workspace_failure(
     }
     assert OBSERVABILITY_WORKSPACE_ID in called_workspace_ids
     assert PLATFORM_WORKSPACE_ID in called_workspace_ids
+
+
+@pytest.fixture
+def skills_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    # the Cloud OAuth server subprocess inherits os.environ
+    monkeypatch.setenv("PREFECT_MCP_EXPERIMENTAL_SKILLS_ENABLED", "true")
+
+
+@pytest.fixture
+async def cloud_oauth_skills_agent(
+    skills_enabled: None,
+    cloud_oauth_mcp_server: MCPServer,
+    simple_model: str,
+) -> tuple[Agent, list[str]]:
+    return await skills_aware_agent(cloud_oauth_mcp_server, simple_model)
+
+
+async def test_cloud_oauth_agent_loads_workflows_skill_to_pick_workspace(
+    cloud_oauth_skills_agent: tuple[Agent, list[str]],
+    cross_workspace_failed_run: dict[str, str],
+    evaluate_response: Callable[[str, str], Awaitable[None]],
+    tool_call_spy: ToolCallSpy,
+) -> None:
+    """The served skill steers workspace selection by handle, not by guessing IDs."""
+    agent, loaded = cloud_oauth_skills_agent
+    async with agent:
+        result = await agent.run(
+            "Release sync is failing in our platform workspace. What happened?"
+        )
+
+    assert loaded == ["skill://workflows/SKILL.md"]
+    tool_call_spy.assert_tool_was_called("list_authorized_workspaces")
+    tool_call_spy.assert_tool_was_called_with(
+        "get_flow_runs", workspace_id=PLATFORM_WORKSPACE_ID
+    )
+    tool_call_spy.assert_no_tool_errors()
+    await evaluate_response(
+        f"""Does the response explain that run
+        '{cross_workspace_failed_run["run_name"]}' failed because
+        '{cross_workspace_failed_run["failure_message"]}'?""",
+        result.output,
+    )

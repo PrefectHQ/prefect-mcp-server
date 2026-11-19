@@ -16,7 +16,7 @@ from pydantic import Field
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse, Response
 
-from prefect_mcp_server import _prefect_client, cloud_oauth, execution_plans
+from prefect_mcp_server import _prefect_client, cloud_oauth, execution_plans, skills
 from prefect_mcp_server.middleware import (
     FeatureFlag,
     FeatureFlagMiddleware,
@@ -621,6 +621,9 @@ def build_prefect_mcp_server(
             name="Prefect Documentation Search",
         )
         server.mount(docs_proxy, namespace="docs")
+
+    if settings.experimental.skills_enabled:
+        server.add_provider(skills.workflows_skill_provider())
 
     for tool in CORE_TOOLS:
         server.tool(annotations=tool_annotations(tool, read_only=True))(tool)
