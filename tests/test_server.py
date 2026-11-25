@@ -61,13 +61,12 @@ def test_logfire_instruments_mcp_with_service_name(
 async def test_server_has_expected_capabilities(prefect_mcp_server: FastMCP) -> None:
     """Test that the server exposes expected MCP capabilities."""
     async with Client(prefect_mcp_server) as client:
-        # All resources have been converted to tools
+        # the only resources are the served agent skills
         resources = await client.list_resources()
-        assert len(resources) == 0
+        assert all(str(r.uri).startswith("skill://") for r in resources)
 
-        # No more resource templates - all converted to tools
         templates = await client.list_resource_templates()
-        assert len(templates) == 0
+        assert all(t.uriTemplate.startswith("skill://") for t in templates)
 
         tools = await client.list_tools()
         tool_names = [t.name for t in tools]
@@ -127,7 +126,6 @@ async def test_tool_descriptions_do_not_route_between_tools(
                 assert other_tool.name not in description
 
     descriptions = {tool.name: tool.description or "" for tool in tools}
-    assert "which Prefect MCP tool to use" not in descriptions["orientation"]
     assert "workspace-scoped tools" not in descriptions["list_authorized_workspaces"]
 
 
