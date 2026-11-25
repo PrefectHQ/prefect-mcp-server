@@ -3,6 +3,9 @@
 from prefect_mcp_server._prefect_client.automations import get_automations
 from prefect_mcp_server._prefect_client.client import get_prefect_client
 from prefect_mcp_server._prefect_client.dashboard import fetch_dashboard
+from prefect_mcp_server._prefect_client.deployment_activity import (
+    get_deployment_activity,
+)
 from prefect_mcp_server._prefect_client.deployments import get_deployments
 from prefect_mcp_server._prefect_client.events import fetch_events
 from prefect_mcp_server._prefect_client.execution_plans import call_execution_plan_api
@@ -22,6 +25,7 @@ __all__ = [
     "fetch_events",
     "call_execution_plan_api",
     "get_automations",
+    "get_deployment_activity",
     "get_deployments",
     "get_flow_run",
     "get_flow_run_logs",
