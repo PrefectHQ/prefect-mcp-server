@@ -1,11 +1,11 @@
 """Integration tests for inspection tools that actually call the Prefect API."""
 
-from uuid import uuid4
+from uuid import UUID, uuid4
 
-import pytest  # for pytest.skip
 from prefect import flow, task
 from prefect.client.orchestration import get_client
 from prefect.client.schemas.sorting import FlowRunSort
+from prefect.events.schemas.automations import AutomationCore, EventTrigger
 
 from prefect_mcp_server._prefect_client import (
     get_automations,
@@ -28,29 +28,32 @@ def sample_flow(n: int = 3):
     return "completed"
 
 
-async def test_deployment_operations():
+async def test_deployment_operations(test_flow):
     """Test deployment operations with real API."""
     async with get_client() as client:
-        # List deployments to find a real one
-        deployments = await client.read_deployments(limit=1)
+        deployment_id = str(
+            await client.create_deployment(
+                flow_id=test_flow,
+                name=f"inspection-{uuid4()}",
+            )
+        )
 
-        if not deployments:
-            pytest.skip("No deployments available for testing")
+        try:
+            # Test get_deployments
+            result = await get_deployments(filter={"id": {"any_": [deployment_id]}})
 
-        deployment_id = str(deployments[0].id)
+            assert result["success"] is True
+            assert result["deployments"] is not None
+            assert len(result["deployments"]) == 1
+            deployment = result["deployments"][0]
+            assert deployment["id"] == deployment_id
+            assert deployment["name"] is not None
+            assert "parameters" in deployment
+            assert "job_variables" in deployment
+            assert result["error"] is None
 
-        # Test get_deployments
-        result = await get_deployments(filter={"id": {"any_": [deployment_id]}})
-
-        assert result["success"] is True
-        assert result["deployments"] is not None
-        assert len(result["deployments"]) == 1
-        deployment = result["deployments"][0]
-        assert deployment["id"] == deployment_id
-        assert deployment["name"] is not None
-        assert "parameters" in deployment
-        assert "job_variables" in deployment
-        assert result["error"] is None
+        finally:
+            await client.delete_deployment(UUID(deployment_id))
 
 
 async def test_get_deployment_not_found():
@@ -75,8 +78,7 @@ async def test_flow_and_task_runs():
             limit=1, sort=FlowRunSort.START_TIME_DESC
         )
 
-        if not flow_runs:
-            pytest.skip("No flow runs available for testing")
+        assert flow_runs, "sample flow must create a flow run"
 
         # Get task runs directly from client to test get_task_run
         from prefect.client.schemas.filters import FlowRunFilter, FlowRunFilterId
@@ -132,24 +134,29 @@ async def test_get_automations():
 async def test_get_automations_with_filter():
     """Test filtering automations."""
     async with get_client() as client:
-        # Get all automations first
-        all_automations = await client.read_automations()
+        target_name = f"inspection-{uuid4()}"
+        target_id = str(
+            await client.create_automation(
+                AutomationCore(
+                    name=target_name,
+                    enabled=False,
+                    trigger=EventTrigger(expect={"inspection.never"}),
+                    actions=[],
+                )
+            )
+        )
+        try:
+            result = await get_automations(filter={"id": {"any_": [target_id]}})
 
-        if not all_automations:
-            pytest.skip("No automations available for testing")
+            assert result["success"] is True
+            assert result["count"] == 1
+            assert result["automations"][0]["id"] == target_id
 
-        # Test filtering by ID
-        target_id = str(all_automations[0].id)
-        result = await get_automations(filter={"id": {"any_": [target_id]}})
+            # Test filtering by name
+            result = await get_automations(filter={"name": {"any_": [target_name]}})
 
-        assert result["success"] is True
-        assert result["count"] == 1
-        assert result["automations"][0]["id"] == target_id
-
-        # Test filtering by name
-        target_name = all_automations[0].name
-        result = await get_automations(filter={"name": {"any_": [target_name]}})
-
-        assert result["success"] is True
-        assert result["count"] >= 1
-        assert any(a["name"] == target_name for a in result["automations"])
+            assert result["success"] is True
+            assert result["count"] >= 1
+            assert any(a["name"] == target_name for a in result["automations"])
+        finally:
+            await client.delete_automation(UUID(target_id))
